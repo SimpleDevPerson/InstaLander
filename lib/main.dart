@@ -27,10 +27,11 @@ class InstagramFollowerCheckerApp extends StatelessWidget {
         builder: (context, themeProvider, _) {
           final isSamsung = themeProvider.isSamsungTheme;
           return MaterialApp(
-            title: 'Instagram Follower Checker',
+            title: 'InstaLander',
             debugShowCheckedModeBanner: false,
             theme: isSamsung ? AppTheme.samsungLightTheme : AppTheme.lightTheme,
-            darkTheme: isSamsung ? AppTheme.samsungDarkTheme : AppTheme.darkTheme,
+            darkTheme:
+                isSamsung ? AppTheme.samsungDarkTheme : AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             home: const MainScreen(),
             routes: {

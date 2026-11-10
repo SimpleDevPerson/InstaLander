@@ -294,7 +294,7 @@ class AppTheme {
             fontFamily: 'Roboto',
           );
         }),
-        height: 72,
+        height: 80,
         surfaceTintColor: isDark ? Colors.transparent : Colors.white,
       ),
       bottomSheetTheme: BottomSheetThemeData(

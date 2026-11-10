@@ -1,5 +1,5 @@
-name: instagram_follower_checker
-description: "Instagram Follower Checker - Find who doesn't follow you back"
+name: instalander
+description: "InstaLander - Instagram follower report"
 publish_to: 'none'
 version: 1.0.1+2002
 
@@ -16,6 +16,7 @@ dependencies:
   provider: ^6.1.2
   url_launcher: ^6.2.5
   intl: ^0.19.0
+  archive: ^4.6.0
 
 dev_dependencies:
   flutter_test:

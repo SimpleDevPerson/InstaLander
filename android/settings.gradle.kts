@@ -19,7 +19,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "instagram_follower_checker"
+rootProject.name = "instalander"
 
 // Include Flutter plugin projects from .flutter-plugins-dependencies
 val flutterPluginsDepsFile = File(rootDir.parentFile, ".flutter-plugins-dependencies")

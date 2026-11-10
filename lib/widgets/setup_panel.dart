@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class SetupPanel extends StatelessWidget {
-  const SetupPanel({super.key});
+  final VoidCallback onShowGuide;
+
+  const SetupPanel({super.key, required this.onShowGuide});
 
   @override
   Widget build(BuildContext context) {
@@ -26,18 +28,16 @@ class SetupPanel extends StatelessWidget {
           Text(
             'Configura il report',
             style: Theme.of(context).textTheme.displayMedium?.copyWith(
-              fontSize: 21,
-            ),
+                  fontSize: 21,
+                ),
           ),
           const SizedBox(height: 10),
           Text(
-            'Per iniziare, aggiungi i file JSON di Instagram con i tuoi follower e i profili che segui.\n\n'
-            'Puoi scaricarli da Instagram:\n'
-            'Impostazioni → Privacy e sicurezza → Scarica i dati',
+            'Per iniziare, aggiungi i file JSON di Instagram con i tuoi follower e i profili che segui.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppTheme.getSubTextColor(context),
-              height: 1.5,
-            ),
+                  color: AppTheme.getSubTextColor(context),
+                  height: 1.5,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -58,6 +58,12 @@ class SetupPanel extends StatelessWidget {
                 color: Colors.purple,
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          TextButton.icon(
+            onPressed: onShowGuide,
+            icon: const Icon(Icons.menu_book_outlined),
+            label: const Text('Come scaricare i file da Instagram'),
           ),
         ],
       ),

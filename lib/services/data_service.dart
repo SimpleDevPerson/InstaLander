@@ -1,9 +1,43 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/user.dart';
+
+Map<String, List<int>> _decodeInstagramArchive(List<int> bytes) {
+  final files = <String, List<int>>{};
+  final archive = ZipDecoder().decodeBytes(bytes);
+
+  for (final entry in archive) {
+    if (!entry.isFile) continue;
+
+    final name = entry.name.split(RegExp(r'[/\\]')).last.toLowerCase();
+    if (!name.endsWith('.json') ||
+        !(name.startsWith('followers') || name.startsWith('following'))) {
+      continue;
+    }
+
+    if (files.containsKey(name)) {
+      throw FormatException('Nome file duplicato nell’archivio: $name');
+    }
+
+    final content = entry.readBytes();
+    if (content == null) {
+      throw FormatException('Impossibile leggere il file $name nell’archivio');
+    }
+    files[name] = content;
+  }
+
+  if (files.isEmpty) {
+    throw const FormatException(
+      'Nell’archivio non sono stati trovati file followers*.json o following*.json',
+    );
+  }
+
+  return files;
+}
 
 class DataService {
   static const String _whitelistFile = 'whitelist.txt';
@@ -19,10 +53,14 @@ class DataService {
     int totalUsersParsed = 0;
 
     try {
-      final files = directory.listSync()
-          .where((f) => f is File &&
-              f.path.split('/').last.startsWith(prefix) &&
-              f.path.endsWith('.json'))
+      final files = directory
+          .listSync()
+          .where((f) =>
+              f is File &&
+              f.uri.pathSegments.last
+                  .toLowerCase()
+                  .startsWith(prefix.toLowerCase()) &&
+              f.path.toLowerCase().endsWith('.json'))
           .cast<File>()
           .toList();
 
@@ -42,16 +80,19 @@ class DataService {
 
           // DEBUG: Print JSON structure
           if (jsonData is Map) {
-            debugPrint('   -> Chiavi JSON principali: ${jsonData.keys.toList()}');
+            debugPrint(
+                '   -> Chiavi JSON principali: ${jsonData.keys.toList()}');
             for (final entry in jsonData.entries) {
-              debugPrint('   -> Chiave "${entry.key}": tipo=${entry.value.runtimeType}');
+              debugPrint(
+                  '   -> Chiave "${entry.key}": tipo=${entry.value.runtimeType}');
               if (entry.value is List) {
                 debugPrint('      -> Lista di ${entry.value.length} elementi');
                 if (entry.value.isNotEmpty) {
                   debugPrint('      -> Primo elemento: ${entry.value.first}');
                 }
               } else if (entry.value is Map) {
-                debugPrint('      -> Mappa con chiavi: ${(entry.value as Map).keys.toList()}');
+                debugPrint(
+                    '      -> Mappa con chiavi: ${(entry.value as Map).keys.toList()}');
               }
             }
           } else if (jsonData is List) {
@@ -63,7 +104,8 @@ class DataService {
 
           final itemsToProcess = _extractUserEntries(jsonData);
 
-          debugPrint('   -> Voci estratte per parsing: ${itemsToProcess.length}');
+          debugPrint(
+              '   -> Voci estratte per parsing: ${itemsToProcess.length}');
 
           for (final entry in itemsToProcess) {
             final user = InstagramUser.fromJson(entry);
@@ -80,7 +122,8 @@ class DataService {
           debugPrint('   -> Errore parsing file ${file.path}: $e');
         }
       }
-      debugPrint('✅ TOTALE $label: $filesFound file, ${usersMap.length} utenti unici (parsati: $totalUsersParsed)');
+      debugPrint(
+          '✅ TOTALE $label: $filesFound file, ${usersMap.length} utenti unici (parsati: $totalUsersParsed)');
     } catch (e) {
       debugPrint('Errore durante caricamento $label: $e');
     }
@@ -124,7 +167,7 @@ class DataService {
     final directory = await getApplicationDocumentsDirectory();
 
     for (final file in files) {
-      if (!file.name.endsWith('.json')) continue;
+      if (!file.name.toLowerCase().endsWith('.json')) continue;
 
       try {
         final savedFile = File('${directory.path}/${file.name}');
@@ -138,7 +181,8 @@ class DataService {
           final bytes = await sourceFile.readAsBytes();
           await savedFile.writeAsBytes(bytes);
         } else {
-          debugPrint('⚠️ Impossibile salvare \'${file.name}\': né bytes né path disponibili');
+          debugPrint(
+              '⚠️ Impossibile salvare \'${file.name}\': né bytes né path disponibili');
           continue;
         }
 
@@ -146,6 +190,23 @@ class DataService {
       } catch (e) {
         debugPrint('❌ Errore salvataggio \'${file.name}\': $e');
       }
+    }
+  }
+
+  static Future<void> saveInstagramArchive(PlatformFile archiveFile) async {
+    final Uint8List bytes;
+    if (archiveFile.bytes != null) {
+      bytes = archiveFile.bytes!;
+    } else if (archiveFile.path != null) {
+      bytes = await File(archiveFile.path!).readAsBytes();
+    } else {
+      throw const FormatException('Impossibile leggere l’archivio selezionato');
+    }
+
+    final extractedFiles = await compute(_decodeInstagramArchive, bytes);
+    final directory = await getApplicationDocumentsDirectory();
+    for (final entry in extractedFiles.entries) {
+      await File('${directory.path}/${entry.key}').writeAsBytes(entry.value);
     }
   }
 
@@ -192,7 +253,8 @@ class DataService {
       type: FileType.custom,
       allowedExtensions: ['json'],
       allowMultiple: true,
-      dialogTitle: 'Seleziona file JSON di Instagram (followers_*.json, following_*.json)',
+      dialogTitle:
+          'Seleziona file JSON di Instagram (followers_*.json, following_*.json)',
       // withData: true would load file bytes into memory (useful for web)
       // On mobile, we read from path instead for better memory efficiency
     );
@@ -209,15 +271,35 @@ class DataService {
     return result.files;
   }
 
+  static Future<PlatformFile?> pickInstagramArchive() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['zip'],
+      allowMultiple: false,
+      dialogTitle: 'Seleziona l’archivio ZIP di Instagram',
+    );
+
+    if (result == null || result.files.isEmpty) return null;
+    return result.files.single;
+  }
+
+  @visibleForTesting
+  static Map<String, List<int>> decodeInstagramArchive(List<int> bytes) =>
+      _decodeInstagramArchive(bytes);
+
   // Count JSON files with given prefix
   static Future<int> countFilesWithPrefix(String prefix) async {
     final directory = await getApplicationDocumentsDirectory();
 
     try {
-      final files = directory.listSync()
-          .where((f) => f is File &&
-              f.path.split('/').last.startsWith(prefix) &&
-              f.path.endsWith('.json'))
+      final files = directory
+          .listSync()
+          .where((f) =>
+              f is File &&
+              f.uri.pathSegments.last
+                  .toLowerCase()
+                  .startsWith(prefix.toLowerCase()) &&
+              f.path.toLowerCase().endsWith('.json'))
           .cast<File>()
           .toList();
       return files.length;
@@ -238,9 +320,7 @@ class DataService {
     final notFollowingBack = followingSet.difference(followersSet);
     final visibleUsers = notFollowingBack.difference(whitelist);
 
-    return visibleUsers
-        .map((username) => following[username]!)
-        .toList();
+    return visibleUsers.map((username) => following[username]!).toList();
   }
 
   // Get summary stats

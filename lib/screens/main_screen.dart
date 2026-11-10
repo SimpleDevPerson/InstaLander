@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/user.dart';
 import '../providers/app_provider.dart';
 import '../providers/theme_provider.dart';
+import '../screens/onboarding_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/whitelist_screen.dart';
 import '../services/data_service.dart';
@@ -21,13 +22,10 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  int _programmaticNavigationRequest = 0;
   late final PageController _pageController;
 
   // Navbar constants
   static const double navbarHeight = 60;
-  static const double navbarHorizontalMargin = 6;
-  static const double navbarMaxWidth = 260;
   static const double navbarBottomMargin = 12;
 
   @override
@@ -46,20 +44,14 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _navigateToPage(int index) async {
-    final request = ++_programmaticNavigationRequest;
+    if (index == _currentIndex) return;
     setState(() => _currentIndex = index);
 
-    try {
-      await _pageController.animateToPage(
-        index,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    } finally {
-      if (request == _programmaticNavigationRequest) {
-        _programmaticNavigationRequest = 0;
-      }
-    }
+    await _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   Future<void> _openInstagramProfile(String username) async {
@@ -73,156 +65,155 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, child) {
+        if (provider.shouldShowOnboarding) {
+          return OnboardingScreen(onComplete: provider.completeOnboarding);
+        }
+
+        final isSamsung = context.watch<ThemeProvider>().isSamsungTheme;
         final bottomSafePadding = MediaQuery.of(context).padding.bottom;
 
-        return Scaffold(
-          backgroundColor: AppTheme.getBgColor(context),
-          // No bottomNavigationBar - we use Stack with Positioned navbar overlay
-          body: Stack(
-            children: [
-              // PageView fills ENTIRE screen - content scrolls under navbar
-              PageView(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  if (_programmaticNavigationRequest == 0) {
-                    setState(() => _currentIndex = index);
-                  }
-                },
-                children: [
-                  _buildReportScreen(context, provider),
-                  const WhitelistScreen(),
-                  const SettingsScreen(),
-                ],
-              ),
-              // Floating navbar overlay at bottom - covers content
-              _buildBottomNavBar(context, provider, bottomSafePadding),
-            ],
+        return PopScope<Object?>(
+          canPop: _currentIndex == 0,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop && _currentIndex != 0) {
+              _navigateToPage(0);
+            }
+          },
+          child: Scaffold(
+            backgroundColor: AppTheme.getBgColor(context),
+            body: Stack(
+              children: [
+                _buildPageView(context, provider),
+                if (isSamsung)
+                  _buildSamsungBottomNavBar(
+                    context,
+                    bottomSafePadding,
+                  ),
+              ],
+            ),
+            bottomNavigationBar:
+                isSamsung ? null : _buildMaterialNavigationBar(),
           ),
         );
       },
     );
   }
 
-  Widget _buildBottomNavBar(
-      BuildContext context, AppProvider provider, double bottomSafePadding) {
-    final isSamsung = context.watch<ThemeProvider>().isSamsungTheme;
+  Widget _buildPageView(BuildContext context, AppProvider provider) {
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (index) {
+        if (_currentIndex != index) {
+          setState(() => _currentIndex = index);
+        }
+      },
+      children: [
+        _buildReportScreen(context, provider),
+        const WhitelistScreen(),
+        const SettingsScreen(),
+      ],
+    );
+  }
+
+  Widget _buildMaterialNavigationBar() {
+    return NavigationBar(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: _navigateToPage,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.analytics_outlined),
+          selectedIcon: Icon(Icons.analytics),
+          label: 'Report',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.favorite_outline),
+          selectedIcon: Icon(Icons.favorite),
+          label: 'Whitelist',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.settings_outlined),
+          selectedIcon: Icon(Icons.settings),
+          label: 'Impostazioni',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSamsungBottomNavBar(
+    BuildContext context,
+    double bottomSafePadding,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Samsung theme: Floating pill navbar
-    if (isSamsung) {
-      // Total navbar area height = pill + bottom margin + safe area
-      final totalHeight = navbarHeight + navbarBottomMargin + bottomSafePadding;
+    final totalHeight = navbarHeight + navbarBottomMargin + bottomSafePadding;
 
-      return Positioned(
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: totalHeight,
-        child: Center(
-          child: SizedBox(
-            width: _getNavbarWidth(context),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Main navbar pill - semi-transparent so content behind is visible
-                Container(
-                  height: navbarHeight,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(navbarHeight / 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: colorScheme.shadow.withValues(alpha: 0.2),
-                        blurRadius: 30,
-                        offset: const Offset(0, 8),
-                        spreadRadius: -4,
-                      ),
-                      BoxShadow(
-                        color: colorScheme.shadow.withValues(alpha: 0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                      width: 0.5,
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 250),
-                        curve: Curves.easeInOutCubic,
-                        left: _getIndicatorLeft(context),
-                        top: 4,
-                        bottom: 4,
-                        width: _getIndicatorWidth(context),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary.withValues(alpha: 0.15),
-                            borderRadius:
-                                BorderRadius.circular((navbarHeight - 8) / 2),
-                          ),
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          _buildNavIcon(context, 0, Icons.analytics_outlined,
-                              Icons.analytics),
-                          _buildNavIcon(context, 1, Icons.favorite_outline,
-                              Icons.favorite),
-                          _buildNavIcon(context, 2, Icons.settings_outlined,
-                              Icons.settings),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Bottom margin spacer
-                const SizedBox(height: navbarBottomMargin),
-                // Safe area spacer
-                if (bottomSafePadding > 0) SizedBox(height: bottomSafePadding),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Non-Samsung theme: Standard NavigationBar at bottom
     return Positioned(
       left: 0,
       right: 0,
-      bottom: bottomSafePadding,
+      bottom: 0,
+      height: totalHeight,
       child: Center(
         child: SizedBox(
-          width: _getNavbarWidth(context),
-          child: NavigationBar(
-            selectedIndex: _currentIndex,
-            onDestinationSelected: _navigateToPage,
-            height: 72,
-            indicatorColor: colorScheme.primaryContainer,
-            overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.analytics_outlined),
-                selectedIcon: Icon(Icons.analytics, color: Colors.white),
-                label: 'Report',
+          width: _getSamsungNavbarWidth(context),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Container(
+                height: navbarHeight,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(navbarHeight / 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.shadow.withValues(alpha: 0.2),
+                      blurRadius: 30,
+                      offset: const Offset(0, 8),
+                      spreadRadius: -4,
+                    ),
+                    BoxShadow(
+                      color: colorScheme.shadow.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                    width: 0.5,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOutCubic,
+                      left: _getSamsungIndicatorLeft(context),
+                      top: 4,
+                      bottom: 4,
+                      width: _getIndicatorWidth(context),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.15),
+                          borderRadius:
+                              BorderRadius.circular((navbarHeight - 8) / 2),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        _buildNavIcon(context, 0, Icons.analytics_outlined,
+                            Icons.analytics),
+                        _buildNavIcon(
+                            context, 1, Icons.favorite_outline, Icons.favorite),
+                        _buildNavIcon(context, 2, Icons.settings_outlined,
+                            Icons.settings),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              NavigationDestination(
-                icon: Badge(
-                    isLabelVisible: false, child: Icon(Icons.favorite_outline)),
-                selectedIcon: Badge(
-                    isLabelVisible: false,
-                    child: Icon(Icons.favorite, color: Colors.white)),
-                label: 'Whitelist',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings, color: Colors.white),
-                label: 'Impostazioni',
-              ),
+              const SizedBox(height: navbarBottomMargin),
+              if (bottomSafePadding > 0) SizedBox(height: bottomSafePadding),
             ],
           ),
         ),
@@ -230,15 +221,14 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  double _getNavbarWidth(BuildContext context) {
-    final availableWidth =
-        MediaQuery.of(context).size.width - navbarHorizontalMargin * 2;
-    return availableWidth.clamp(0.0, navbarMaxWidth).toDouble();
+  double _getSamsungNavbarWidth(BuildContext context) {
+    final availableWidth = MediaQuery.of(context).size.width - 4;
+    return availableWidth.clamp(0.0, 260).toDouble();
   }
 
   // Helper: Indicator left position - fixed thirds (centers at 1/6, 3/6, 5/6)
-  double _getIndicatorLeft(BuildContext context) {
-    final navbarWidth = _getNavbarWidth(context);
+  double _getSamsungIndicatorLeft(BuildContext context) {
+    final navbarWidth = _getSamsungNavbarWidth(context);
     final indicatorWidth = _getIndicatorWidth(context);
     final centerX = (2 * _currentIndex + 1) * navbarWidth / 6;
     return centerX - (indicatorWidth / 2);
@@ -279,8 +269,9 @@ class _MainScreenState extends State<MainScreen> {
               child: Center(
                 child: Icon(
                   isSelected ? selectedIcon : icon,
-                  color:
-                      isSelected ? Colors.white : colorScheme.onSurfaceVariant,
+                  color: isSelected
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
                   size: 26,
                 ),
               ),
@@ -305,6 +296,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildAppBar(BuildContext context, AppProvider provider) {
     final isSamsung = context.watch<ThemeProvider>().isSamsungTheme;
+    final title = provider.hasData ? 'Il tuo unfollower report' : 'Instalander';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -322,7 +314,7 @@ class _MainScreenState extends State<MainScreen> {
           _buildInstagramLogo(),
           const SizedBox(width: 12),
           Text(
-            'Unfollower Report',
+            title,
             style: Theme.of(context)
                 .textTheme
                 .displayLarge
@@ -376,6 +368,9 @@ class _MainScreenState extends State<MainScreen> {
     if (provider.errorMessage != null) {
       return _buildErrorState(context, provider);
     }
+    if (provider.hasPartialData) {
+      return _buildMissingFileState(context, provider);
+    }
     if (!provider.hasData) {
       return _buildSetupState(context, provider);
     }
@@ -416,13 +411,92 @@ class _MainScreenState extends State<MainScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         children: [
-          const SetupPanel(),
-          const SizedBox(height: 24),
-          const StatsCounter(count: 0),
+          SetupPanel(onShowGuide: () => _openOnboarding(context, provider)),
           const SizedBox(height: 24),
           _buildUploadButton(context, provider),
+          const SizedBox(height: 10),
+          _buildArchiveUploadButton(provider),
           const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMissingFileState(
+    BuildContext context,
+    AppProvider provider,
+  ) {
+    final missingFollowers = !provider.hasFollowersFile;
+    final missingLabel = missingFollowers ? 'dei follower' : 'dei seguiti';
+    final missingFileName =
+        missingFollowers ? 'followers_*.json' : 'following_*.json';
+    final icon = missingFollowers
+        ? Icons.people_alt_outlined
+        : Icons.person_add_alt_1_outlined;
+
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 56, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              'Manca un file',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Abbiamo rilevato il file ${missingFollowers ? 'dei seguiti' : 'dei follower'}. '
+              'Per creare il report, carica anche il file $missingLabel '
+              '($missingFileName).',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppTheme.getSubTextColor(context),
+                    height: 1.5,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: 220,
+              height: 190,
+              child: FilledButton(
+                onPressed: () => _pickAndLoadFiles(provider),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  padding: const EdgeInsets.all(20),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.upload_file_outlined, size: 64),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Carica file\n$missingLabel',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () => _pickAndLoadArchive(provider),
+              icon: const Icon(Icons.folder_zip_outlined),
+              label: const Text('Oppure carica un archivio ZIP'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -433,7 +507,34 @@ class _MainScreenState extends State<MainScreen> {
       icon: const Icon(Icons.cloud_upload_outlined, size: 20),
       label: const Text('Carica JSON'),
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      ),
+    );
+  }
+
+  Widget _buildArchiveUploadButton(AppProvider provider) {
+    return OutlinedButton.icon(
+      onPressed: () => _pickAndLoadArchive(provider),
+      icon: const Icon(Icons.folder_zip_outlined, size: 20),
+      label: const Text('Carica archivio ZIP'),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      ),
+    );
+  }
+
+  Future<void> _openOnboarding(
+    BuildContext context,
+    AppProvider provider,
+  ) {
+    return Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) => OnboardingScreen(
+          onComplete: () async {
+            await provider.completeOnboarding();
+            if (context.mounted) Navigator.of(context).pop();
+          },
+        ),
       ),
     );
   }
@@ -497,10 +598,24 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () => _pickAndLoadFiles(provider),
-              icon: const Icon(Icons.cloud_upload_outlined, size: 20),
-              label: const Text('Carica JSON'),
+              icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+              label: const Text('JSON'),
               style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12)),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () => _pickAndLoadArchive(provider),
+              icon: const Icon(Icons.folder_zip_outlined, size: 18),
+              label: const Text('ZIP'),
+              style: OutlinedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+              ),
             ),
           ),
         ],
@@ -516,6 +631,17 @@ class _MainScreenState extends State<MainScreen> {
       }
     } catch (e) {
       provider.setError('Errore selezione file: $e');
+    }
+  }
+
+  Future<void> _pickAndLoadArchive(AppProvider provider) async {
+    try {
+      final archive = await DataService.pickInstagramArchive();
+      if (archive != null) {
+        await provider.loadInstagramArchive(archive);
+      }
+    } catch (e) {
+      provider.setError('Errore selezione archivio ZIP: $e');
     }
   }
 

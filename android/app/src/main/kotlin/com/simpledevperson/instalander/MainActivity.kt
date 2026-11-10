@@ -1,4 +1,4 @@
-package com.example.instagram_follower_checker
+package com.simpledevperson.instalander
 
 import io.flutter.embedding.android.FlutterActivity
 

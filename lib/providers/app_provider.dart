@@ -7,6 +7,7 @@ import '../services/data_service.dart';
 
 class AppProvider extends ChangeNotifier {
   static const String _viewedProfilesKey = 'viewed_profiles';
+  static const String _onboardingCompletedKey = 'onboarding_completed_v2';
 
   // Data
   Map<String, InstagramUser> _followers = {};
@@ -18,8 +19,11 @@ class AppProvider extends ChangeNotifier {
 
   // UI State
   SortOption _currentSort = SortOption.dateDesc;
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool _hasData = false;
+  bool _hasFollowersFile = false;
+  bool _hasFollowingFile = false;
+  bool _hasCompletedOnboarding = false;
   String? _errorMessage;
 
   // Getters
@@ -31,6 +35,11 @@ class AppProvider extends ChangeNotifier {
   SortOption get currentSort => _currentSort;
   bool get isLoading => _isLoading;
   bool get hasData => _hasData;
+  bool get hasFollowersFile => _hasFollowersFile;
+  bool get hasFollowingFile => _hasFollowingFile;
+  bool get hasPartialData => _hasFollowersFile != _hasFollowingFile;
+  bool get shouldShowOnboarding =>
+      !_isLoading && !_hasData && !_hasCompletedOnboarding;
   String? get errorMessage => _errorMessage;
 
   // Sorted non-followers based on current sort option
@@ -69,13 +78,19 @@ class AppProvider extends ChangeNotifier {
         prefix: 'following',
         label: 'SEGUITI (Chi segui tu)',
       );
+      _hasFollowersFile =
+          await DataService.countFilesWithPrefix('followers') > 0;
+      _hasFollowingFile =
+          await DataService.countFilesWithPrefix('following') > 0;
       _whitelist = await DataService.loadWhitelist();
       final preferences = await SharedPreferences.getInstance();
       _viewedProfiles =
           preferences.getStringList(_viewedProfilesKey)?.toSet() ?? {};
+      _hasCompletedOnboarding =
+          preferences.getBool(_onboardingCompletedKey) ?? false;
 
       _recomputeData();
-      _hasData = _followers.isNotEmpty && _following.isNotEmpty;
+      _hasData = _hasFollowersFile && _hasFollowingFile;
       // Note: Non impostiamo _errorMessage se non ci sono file al primo avvio.
       // Lo stato _hasData = false farà vedere la schermata di setup con il pulsante "Carica JSON".
     } catch (e) {
@@ -83,6 +98,13 @@ class AppProvider extends ChangeNotifier {
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<void> completeOnboarding() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_onboardingCompletedKey, true);
+    _hasCompletedOnboarding = true;
+    notifyListeners();
   }
 
   // Load and process new JSON files
@@ -93,50 +115,53 @@ class AppProvider extends ChangeNotifier {
     try {
       await DataService.saveJsonFiles(files.cast<PlatformFile>());
 
-      // Check how many files exist for each prefix before loading
-      final followersFileCount =
-          await DataService.countFilesWithPrefix('followers');
-      final followingFileCount =
-          await DataService.countFilesWithPrefix('following');
-
-      _followers = await DataService.loadUsersFromFiles(
-        prefix: 'followers',
-        label: 'FOLLOWER (Chi ti segue)',
-      );
-      _following = await DataService.loadUsersFromFiles(
-        prefix: 'following',
-        label: 'SEGUITI (Chi segui tu)',
-      );
-
-      // Check if files were actually loaded with better error messages
-      if (_followers.isEmpty && _following.isEmpty) {
-        _errorMessage =
-            'Nessun file JSON valido trovato. Assicurati di selezionare file followers_*.json e following_*.json';
-      } else if (_followers.isEmpty) {
-        if (followersFileCount == 0) {
-          _errorMessage =
-              'File "followers" non trovato. Seleziona un file followers_*.json';
-        } else {
-          _errorMessage =
-              'File "followers" trovato ma vuoto o formato non riconosciuto. Controlla il file JSON.';
-        }
-      } else if (_following.isEmpty) {
-        if (followingFileCount == 0) {
-          _errorMessage =
-              'File "following" non trovato. Seleziona un file following_*.json';
-        } else {
-          _errorMessage =
-              'File "following" trovato ma vuoto o formato non riconosciuto. Controlla il file JSON.';
-        }
-      }
-
-      _recomputeData();
-      _hasData = _followers.isNotEmpty && _following.isNotEmpty;
+      await _loadSavedFiles();
     } catch (e) {
       _errorMessage = 'Errore durante il caricamento dei file: $e';
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<void> loadInstagramArchive(PlatformFile archiveFile) async {
+    _setLoading(true);
+    _errorMessage = null;
+
+    try {
+      await DataService.saveInstagramArchive(archiveFile);
+    } catch (e) {
+      _errorMessage = 'Errore durante il caricamento dell’archivio ZIP: $e';
+      _setLoading(false);
+      return;
+    }
+
+    await loadJsonFiles(const []);
+  }
+
+  Future<void> _loadSavedFiles() async {
+    final followersFileCount =
+        await DataService.countFilesWithPrefix('followers');
+    final followingFileCount =
+        await DataService.countFilesWithPrefix('following');
+
+    _hasFollowersFile = followersFileCount > 0;
+    _hasFollowingFile = followingFileCount > 0;
+    _followers = await DataService.loadUsersFromFiles(
+      prefix: 'followers',
+      label: 'FOLLOWER (Chi ti segue)',
+    );
+    _following = await DataService.loadUsersFromFiles(
+      prefix: 'following',
+      label: 'SEGUITI (Chi segui tu)',
+    );
+
+    if (!_hasFollowersFile && !_hasFollowingFile) {
+      _errorMessage =
+          'Nessun file JSON valido trovato. Seleziona file followers_*.json e following_*.json';
+    }
+
+    _recomputeData();
+    _hasData = _hasFollowersFile && _hasFollowingFile;
   }
 
   // Recompute derived data

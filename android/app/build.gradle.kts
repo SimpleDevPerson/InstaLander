@@ -7,7 +7,7 @@ plugins {
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 android {
-    namespace = "com.example.instagram_follower_checker"
+    namespace = "com.simpledevperson.instalander"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -17,7 +17,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.instagram_follower_checker"
+        applicationId = "com.simpledevperson.instalander"
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
