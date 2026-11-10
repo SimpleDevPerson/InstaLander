@@ -1,0 +1,36 @@
+# Flutter and Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/build/
+**/.cxx/
+**/.gradle/
+
+# Android local configuration and signing credentials
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# Local workspace configuration
+.claude/
+flutter-wrapper.bat
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS and logs
+.DS_Store
+Thumbs.db
+*.log
+
+# Instagram export data
+followers*.json
+following*.json
+whitelist.txt

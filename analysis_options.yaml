@@ -1,0 +1,34 @@
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    - avoid_print
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    - prefer_final_fields
+    - use_key_in_widget_constructors
+    - sort_child_properties_last
+    - unnecessary_const
+    - unnecessary_new
+    - unnecessary_this
+    - prefer_collection_literals
+    - prefer_spread_collections
+    - prefer_if_null_operators
+    - prefer_null_aware_operators
+    - avoid_relative_lib_imports
+    - prefer_relative_imports
+    - directives_ordering
+    - package_prefixed_library_names
+    - library_names
+    - file_names
+    - constant_identifier_names
+    - type_annotate_public_apis
+    - avoid_returning_null_for_void
+    - avoid_types_on_closure_parameters
+    - avoid_web_libraries_in_flutter
+    - no_duplicate_case_values
+    - prefer_void_to_null

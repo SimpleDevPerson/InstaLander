@@ -1,0 +1,28 @@
+name: instagram_follower_checker
+description: "Instagram Follower Checker - Find who doesn't follow you back"
+publish_to: 'none'
+version: 1.0.1+2002
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  file_picker: ^8.0.0+1
+  path_provider: ^2.1.3
+  shared_preferences: ^2.2.3
+  provider: ^6.1.2
+  url_launcher: ^6.2.5
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
