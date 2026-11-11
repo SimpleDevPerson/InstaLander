@@ -45,7 +45,13 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _navigateToPage(int index) async {
     if (index == _currentIndex) return;
+    final pageDistance = (index - _currentIndex).abs();
     setState(() => _currentIndex = index);
+
+    if (pageDistance > 1) {
+      _pageController.jumpToPage(index);
+      return;
+    }
 
     await _pageController.animateToPage(
       index,
@@ -66,7 +72,14 @@ class _MainScreenState extends State<MainScreen> {
     return Consumer<AppProvider>(
       builder: (context, provider, child) {
         if (provider.shouldShowOnboarding) {
-          return OnboardingScreen(onComplete: provider.completeOnboarding);
+          return OnboardingScreen(
+            onComplete: () async {
+              await provider.completeOnboarding();
+              if (!provider.hasData && _currentIndex != 0) {
+                await _navigateToPage(0);
+              }
+            },
+          );
         }
 
         final isSamsung = context.watch<ThemeProvider>().isSamsungTheme;
@@ -223,7 +236,7 @@ class _MainScreenState extends State<MainScreen> {
 
   double _getSamsungNavbarWidth(BuildContext context) {
     final availableWidth = MediaQuery.of(context).size.width - 4;
-    return availableWidth.clamp(0.0, 260).toDouble();
+    return availableWidth.clamp(0.0, 220).toDouble();
   }
 
   // Helper: Indicator left position - fixed thirds (centers at 1/6, 3/6, 5/6)
@@ -234,7 +247,7 @@ class _MainScreenState extends State<MainScreen> {
     return centerX - (indicatorWidth / 2);
   }
 
-  double _getIndicatorWidth(BuildContext context) => 68;
+  double _getIndicatorWidth(BuildContext context) => 64;
 
   // Nav icon: Each item takes 1/3 of navbar width, icon centered in that third
   // Press/highlight area matches the active indicator exactly: 68x52dp pill with 26dp radius
@@ -247,8 +260,8 @@ class _MainScreenState extends State<MainScreen> {
     final colorScheme = Theme.of(context).colorScheme;
     final isSelected = _currentIndex == index;
 
-    // Indicator dimensions: 68 wide, 52 tall (navbarHeight - 8), 26 radius
-    const double indicatorWidth = 68;
+    // Keep each tap target aligned with the slimmer active indicator.
+    const double indicatorWidth = 64;
     const double indicatorHeight = navbarHeight - 8; // 52
     const double indicatorRadius = indicatorHeight / 2; // 26
 
@@ -295,30 +308,37 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildAppBar(BuildContext context, AppProvider provider) {
-    final isSamsung = context.watch<ThemeProvider>().isSamsungTheme;
-    final title = provider.hasData ? 'Il tuo unfollower report' : 'Instalander';
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppTheme.getCardBg(context),
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant,
-            width: isSamsung ? 0.5 : 1,
-          ),
-        ),
-      ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max,
         children: [
           _buildInstagramLogo(),
           const SizedBox(width: 12),
-          Text(
-            title,
-            style: Theme.of(context)
-                .textTheme
-                .displayLarge
-                ?.copyWith(fontSize: 24),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text.rich(
+                TextSpan(
+                  children: provider.hasData
+                      ? const [
+                          TextSpan(text: 'Il tuo '),
+                          TextSpan(
+                            text: 'unfollower',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          TextSpan(text: ' report'),
+                        ]
+                      : const [TextSpan(text: 'Instalander')],
+                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .displayLarge
+                    ?.copyWith(fontSize: 34, fontWeight: FontWeight.w400),
+              ),
+            ),
           ),
         ],
       ),
@@ -326,37 +346,43 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildInstagramLogo() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final logoColor = isDark ? Colors.white : Colors.black;
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: logoColor, width: 2),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: logoColor, width: 2),
-            ),
+    return ShaderMask(
+      shaderCallback: AppTheme.instagramGradient.createShader,
+      blendMode: BlendMode.srcIn,
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: Colors.white, width: 3),
           ),
-          Positioned(
-            right: 2,
-            top: 2,
-            child: Container(
-              width: 4,
-              height: 4,
-              decoration:
-                  BoxDecoration(shape: BoxShape.circle, color: logoColor),
-            ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 19,
+                height: 19,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                ),
+              ),
+              Positioned(
+                right: 5,
+                top: 5,
+                child: Container(
+                  width: 5,
+                  height: 5,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -559,37 +585,178 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildControls(BuildContext context, AppProvider provider) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Expanded(
             flex: 2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: AppTheme.getCardBg(context),
-                border: Border.all(color: AppTheme.getBorderColor(context)),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<SortOption>(
-                  value: provider.currentSort,
-                  isExpanded: true,
-                  icon: Icon(Icons.keyboard_arrow_down,
-                      color: AppTheme.getSubTextColor(context)),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.getTextColor(context),
+            child: SizedBox(
+              height: 56,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.72),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: PopupMenuButton<SortOption>(
+                  onSelected: provider.setSortOption,
+                  position: PopupMenuPosition.under,
+                  offset: const Offset(0, 4),
+                  color: colorScheme.surfaceContainerHighest,
+                  elevation: 8,
+                  constraints: const BoxConstraints(
+                    minWidth: 240,
+                    maxWidth: 240,
+                  ),
+                  menuPadding: const EdgeInsets.all(8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    side: BorderSide(
+                      color: colorScheme.outline,
+                      width: 1.5,
+                    ),
+                  ),
+                  itemBuilder: (context) => SortOption.values.map((option) {
+                    final title = switch (option) {
+                      SortOption.dateDesc => 'Data decrescente',
+                      SortOption.dateAsc => 'Data crescente',
+                      SortOption.alphaAsc => 'Alfabetico (A-Z)',
+                      SortOption.alphaDesc => 'Alfabetico (Z-A)',
+                    };
+                    final subtitle = switch (option) {
+                      SortOption.dateDesc => '(Più recenti prima)',
+                      SortOption.dateAsc => '(Più vecchi prima)',
+                      SortOption.alphaAsc || SortOption.alphaDesc => '',
+                    };
+                    final directionIcon = switch (option) {
+                      SortOption.dateDesc ||
+                      SortOption.alphaAsc =>
+                        Icons.arrow_downward,
+                      SortOption.dateAsc ||
+                      SortOption.alphaDesc =>
+                        Icons.arrow_upward,
+                    };
+                    final isSelected = option == provider.currentSort;
+
+                    return PopupMenuItem(
+                      value: option,
+                      height: 56,
+                      padding: EdgeInsets.zero,
+                      child: SizedBox(
+                        height: 56,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? colorScheme.onSurface.withValues(alpha: 0.12)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              if (option == SortOption.dateDesc ||
+                                  option == SortOption.dateAsc)
+                                Icon(
+                                  Icons.calendar_month_outlined,
+                                  size: 26,
+                                  color: colorScheme.onSurfaceVariant,
+                                )
+                              else
+                                Text(
+                                  option == SortOption.alphaAsc
+                                      ? 'A\nZ'
+                                      : 'Z\nA',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    height: 0.85,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                directionIcon,
+                                size: 18,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      title,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: colorScheme.onSurface,
+                                          ),
+                                    ),
+                                    if (subtitle.isNotEmpty)
+                                      Text(
+                                        subtitle,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontSize: 12,
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              if (isSelected)
+                                const Icon(
+                                  Icons.check,
+                                  color: Color(0xFF4CAF50),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
-                  dropdownColor: AppTheme.getCardBg(context),
-                  borderRadius: BorderRadius.circular(8),
-                  items: SortOption.values.map((option) {
-                    return DropdownMenuItem(
-                        value: option, child: Text(option.label));
+                    );
                   }).toList(),
-                  onChanged: (value) {
-                    if (value != null) provider.setSortOption(value);
-                  },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          switch (provider.currentSort) {
+                            SortOption.dateDesc => 'Più recenti',
+                            SortOption.dateAsc => 'Più vecchi',
+                            SortOption.alphaAsc => 'Nome A-Z',
+                            SortOption.alphaDesc => 'Nome Z-A',
+                          },
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurface,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -598,11 +765,22 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () => _pickAndLoadFiles(provider),
-              icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+              icon: const Icon(Icons.cloud_upload_outlined, size: 22),
               label: const Text('JSON'),
               style: OutlinedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                minimumSize: const Size(0, 54),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                foregroundColor: colorScheme.onSurface,
+                side: BorderSide(color: colorScheme.outlineVariant),
+                backgroundColor:
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -610,11 +788,22 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: OutlinedButton.icon(
               onPressed: () => _pickAndLoadArchive(provider),
-              icon: const Icon(Icons.folder_zip_outlined, size: 18),
+              icon: const Icon(Icons.folder_zip_outlined, size: 22),
               label: const Text('ZIP'),
               style: OutlinedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+                minimumSize: const Size(0, 54),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                foregroundColor: colorScheme.onSurface,
+                side: BorderSide(color: colorScheme.outlineVariant),
+                backgroundColor:
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -661,7 +850,7 @@ class _MainScreenState extends State<MainScreen> {
               crossAxisCount: crossAxisCount,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.75,
+              childAspectRatio: 1.05,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/app_provider.dart';
 import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -124,11 +125,86 @@ class SettingsScreen extends StatelessWidget {
                 Icons.favorite_border,
                 () => Navigator.pushNamed(context, '/whitelist'),
               ),
+              const SizedBox(height: 24),
+              _buildClearDataTile(context),
             ],
           ),
         );
       },
     );
+  }
+
+  Widget _buildClearDataTile(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: colorScheme.error.withValues(alpha: 0.55),
+          width: 1.5,
+        ),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.delete_outline, color: colorScheme.error),
+        title: Text(
+          'Cancella tutti i dati',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        subtitle: const Text(
+          'Rimuove file importati, whitelist e preferenze salvate',
+        ),
+        onTap: () => _confirmAndClearData(context),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmAndClearData(BuildContext context) async {
+    final shouldClear = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancellare tutti i dati?'),
+        content: const Text(
+          'Verranno eliminati i file importati, la whitelist, i profili '
+          'controllati e le preferenze. L’operazione non può essere annullata.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('Cancella tutto'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldClear != true || !context.mounted) return;
+
+    final appProvider = context.read<AppProvider>();
+    final themeProvider = context.read<ThemeProvider>();
+    try {
+      await appProvider.clearAllData();
+      await themeProvider.resetToDefaults();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossibile cancellare i dati: $error')),
+      );
+    }
   }
 
   Widget _buildSectionHeader(

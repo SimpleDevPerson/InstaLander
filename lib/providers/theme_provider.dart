@@ -95,4 +95,15 @@ class ThemeProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_brightnessModeKey, mode.index);
   }
+
+  Future<void> resetToDefaults() async {
+    _themeStyle = AppThemeStyle.samsungOneUi;
+    _brightnessMode = AppBrightnessMode.system;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_themeStyleKey, _themeStyle.index);
+    await prefs.setInt(_brightnessModeKey, _brightnessMode.index);
+    await prefs.remove(_legacyThemeKey);
+  }
 }

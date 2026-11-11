@@ -15,6 +15,7 @@ class AppProvider extends ChangeNotifier {
   Set<String> _whitelist = {};
   Set<String> _viewedProfiles = {};
   List<InstagramUser> _nonFollowers = [];
+  List<InstagramUser> _sortedNonFollowers = [];
   Map<String, int> _stats = {};
 
   // UI State
@@ -42,9 +43,10 @@ class AppProvider extends ChangeNotifier {
       !_isLoading && !_hasData && !_hasCompletedOnboarding;
   String? get errorMessage => _errorMessage;
 
-  // Sorted non-followers based on current sort option
-  List<InstagramUser> get sortedNonFollowers {
-    final list = List<InstagramUser>.from(_nonFollowers);
+  List<InstagramUser> get sortedNonFollowers => _sortedNonFollowers;
+
+  void _updateSortedNonFollowers() {
+    final list = List<InstagramUser>.of(_nonFollowers);
     switch (_currentSort) {
       case SortOption.dateDesc:
         list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -61,7 +63,7 @@ class AppProvider extends ChangeNotifier {
             b.username.toLowerCase().compareTo(a.username.toLowerCase()));
         break;
     }
-    return list;
+    _sortedNonFollowers = list;
   }
 
   // Initialize app data
@@ -105,6 +107,36 @@ class AppProvider extends ChangeNotifier {
     await preferences.setBool(_onboardingCompletedKey, true);
     _hasCompletedOnboarding = true;
     notifyListeners();
+  }
+
+  Future<void> clearAllData() async {
+    _setLoading(true);
+
+    try {
+      await DataService.clearAppData();
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.clear();
+
+      _followers = {};
+      _following = {};
+      _whitelist = {};
+      _viewedProfiles = {};
+      _nonFollowers = [];
+      _sortedNonFollowers = [];
+      _stats = DataService.getStats(_followers, _following, _whitelist);
+      _currentSort = SortOption.dateDesc;
+      _hasData = false;
+      _hasFollowersFile = false;
+      _hasFollowingFile = false;
+      _hasCompletedOnboarding = false;
+      _errorMessage = null;
+      _isLoading = false;
+      notifyListeners();
+    } catch (error) {
+      _errorMessage = 'Errore durante l’eliminazione dei dati: $error';
+      _setLoading(false);
+      rethrow;
+    }
   }
 
   // Load and process new JSON files
@@ -168,6 +200,7 @@ class AppProvider extends ChangeNotifier {
   void _recomputeData() {
     _nonFollowers =
         DataService.computeNonFollowers(_followers, _following, _whitelist);
+    _updateSortedNonFollowers();
     _stats = DataService.getStats(_followers, _following, _whitelist);
     notifyListeners();
   }
@@ -175,6 +208,7 @@ class AppProvider extends ChangeNotifier {
   // Change sort option
   void setSortOption(SortOption option) {
     _currentSort = option;
+    _updateSortedNonFollowers();
     notifyListeners();
   }
 

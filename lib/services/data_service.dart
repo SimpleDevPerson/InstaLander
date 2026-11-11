@@ -42,6 +42,18 @@ Map<String, List<int>> _decodeInstagramArchive(List<int> bytes) {
 class DataService {
   static const String _whitelistFile = 'whitelist.txt';
 
+  static Future<void> clearAppData() async {
+    final directory = await getApplicationDocumentsDirectory();
+    await for (final entity in directory.list()) {
+      if (entity is! File) continue;
+
+      final name = entity.uri.pathSegments.last.toLowerCase();
+      if (name.endsWith('.json') || name == _whitelistFile) {
+        await entity.delete();
+      }
+    }
+  }
+
   // Load users from JSON files matching pattern
   static Future<Map<String, InstagramUser>> loadUsersFromFiles({
     required String prefix,

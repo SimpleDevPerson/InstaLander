@@ -168,6 +168,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   if (_currentStep > 0)
                     TextButton(
                       onPressed: _isCompleting ? null : _goBack,
+                      style: TextButton.styleFrom(
+                        foregroundColor: colorScheme.onSurface,
+                      ),
                       child: const Text('Indietro'),
                     )
                   else
@@ -175,6 +178,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   const Spacer(),
                   FilledButton(
                     onPressed: _isCompleting ? null : _advance,
+                    style: FilledButton.styleFrom(
+                      foregroundColor: Colors.black,
+                    ),
                     child: _isCompleting
                         ? const SizedBox(
                             width: 18,
