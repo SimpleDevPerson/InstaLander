@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
 
+List<Color> statsCounterGradientColors(BuildContext context, int count) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+  return count < 10
+      ? isDark
+          ? const [Color(0xFF1B5E20), Color(0xFF43A047)]
+          : const [Color(0xFF2E7D32), Color(0xFF66BB6A)]
+      : count <= 50
+          ? isDark
+              ? const [Color(0xFF0D47A1), Color(0xFF1976D2)]
+              : const [Color(0xFF1565C0), Color(0xFF42A5F5)]
+          : isDark
+              ? const [Color(0xFF542326), Color(0xFFAD3942)]
+              : const [Color(0xFFC62828), Color(0xFFEF5350)];
+}
+
 class StatsCounter extends StatelessWidget {
   final int count;
   final String label;
   final String semanticsLabel;
   final IconData? indicatorIcon;
+  final String? zeroCountLabel;
 
   const StatsCounter({
     super.key,
@@ -12,23 +28,15 @@ class StatsCounter extends StatelessWidget {
     this.label = 'Da controllare:',
     this.semanticsLabel = 'Profili da controllare',
     this.indicatorIcon,
+    this.zeroCountLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final gradientColors = count < 10
-        ? isDark
-            ? const [Color(0xFF1B5E20), Color(0xFF43A047)]
-            : const [Color(0xFF2E7D32), Color(0xFF66BB6A)]
-        : count <= 50
-            ? isDark
-                ? const [Color(0xFF0D47A1), Color(0xFF1976D2)]
-                : const [Color(0xFF1565C0), Color(0xFF42A5F5)]
-            : isDark
-                ? const [Color(0xFF542326), Color(0xFFAD3942)]
-                : const [Color(0xFFC62828), Color(0xFFEF5350)];
+    final gradientColors = statsCounterGradientColors(context, count);
     final accent = gradientColors.last;
+    final isComplete = count == 0 && zeroCountLabel != null;
 
     return Center(
       child: Container(
@@ -54,13 +62,34 @@ class StatsCounter extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: accent.withValues(alpha: isDark ? 0.12 : 0.08),
-                    blurRadius: 18,
-                    spreadRadius: 1,
+                    color: accent.withValues(alpha: isDark ? 0.32 : 0.24),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                  ),
+                  BoxShadow(
+                    color: gradientColors.first
+                        .withValues(alpha: isDark ? 0.18 : 0.12),
+                    blurRadius: 40,
+                    spreadRadius: 4,
                   ),
                 ],
               ),
-              child: Row(
+              child: isComplete
+                  ? SizedBox(
+                      height: 44,
+                      child: Center(
+                        child: Text(
+                          zeroCountLabel!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Flexible(
@@ -99,7 +128,7 @@ class StatsCounter extends StatelessWidget {
               top: 0,
               right: 0,
               child: Semantics(
-                label: semanticsLabel,
+                label: isComplete ? zeroCountLabel : semanticsLabel,
                 child: Container(
                   width: 44,
                   height: 44,
@@ -124,7 +153,7 @@ class StatsCounter extends StatelessWidget {
                       ),
                       child: Icon(
                         indicatorIcon ??
-                            (count < 10
+                            (count == 0
                                 ? Icons.check_rounded
                                 : Icons.priority_high_rounded),
                         color: accent,

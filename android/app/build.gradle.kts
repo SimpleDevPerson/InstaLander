@@ -7,6 +7,12 @@ plugins {
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
+val testAdMobAppId = "ca-app-pub-3940256099942544~3347511713"
+val adMobAppId = providers.gradleProperty("adMobAppId")
+    .orElse(providers.environmentVariable("ADMOB_APP_ID"))
+    .orElse(testAdMobAppId)
+    .get()
+
 val signingPropertiesFile = rootProject.file("key.properties")
 val signingProperties = Properties()
 if (signingPropertiesFile.isFile) {
@@ -30,6 +36,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+        manifestPlaceholders["adMobAppId"] = adMobAppId
     }
 
     signingConfigs {

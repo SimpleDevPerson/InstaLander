@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-
 class OnboardingScreen extends StatefulWidget {
   final Future<void> Function() onComplete;
 
@@ -111,16 +109,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.camera_alt_outlined,
-                      color: AppTheme.instagramGradientMid),
-                  const SizedBox(width: 10),
-                  Text(
-                    'InstaLander',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset(
+                      Theme.of(context).brightness == Brightness.dark
+                          ? 'assets/images/app_icon_dark.jpg'
+                          : 'assets/images/app_icon_original.png',
+                      width: 52,
+                      height: 52,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'InstaLander',
+                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Text(
                     '${_currentStep + 1}/${_steps.length}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -210,17 +224,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 24),
-                Container(
+                SizedBox(
                   width: 144,
                   height: 144,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: colorScheme.primaryContainer,
-                  ),
                   child: Icon(
                     step.icon,
                     size: 72,
-                    color: colorScheme.onPrimaryContainer,
+                    color: colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 32),

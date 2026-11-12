@@ -28,6 +28,14 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
   ];
 
   _WhitelistView _view = _WhitelistView.list;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Color _avatarColor(String username) {
     final usernameHash = username.codeUnits.fold<int>(
@@ -66,12 +74,50 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
     );
   }
 
+  Widget _buildFramedActionButton(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+    required String tooltip,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        color: color,
+        tooltip: tooltip,
+        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+        padding: const EdgeInsets.all(8),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(
       builder: (context, provider, child) {
         final whitelist = provider.whitelist.toList();
         _sortWhitelist(whitelist, provider.currentSort);
+        final normalizedQuery = _searchQuery
+            .trim()
+            .replaceFirst(
+              RegExp(r'^@'),
+              '',
+            )
+            .toLowerCase();
+        final filteredWhitelist = normalizedQuery.isEmpty
+            ? whitelist
+            : whitelist
+                .where((username) =>
+                    username.toLowerCase().contains(normalizedQuery))
+                .toList();
 
         return Scaffold(
           backgroundColor: AppTheme.getBgColor(context),
@@ -134,13 +180,18 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                       ],
                     ),
                   ),
+                  _buildSearchField(context),
                 ],
                 Expanded(
                   child: whitelist.isEmpty
                       ? _buildEmptyState(context)
-                      : _view == _WhitelistView.list
-                          ? _buildWhitelistContent(context, provider, whitelist)
-                          : _buildWhitelistGrid(context, provider, whitelist),
+                      : filteredWhitelist.isEmpty
+                          ? _buildNoSearchResults(context)
+                          : _view == _WhitelistView.list
+                              ? _buildWhitelistContent(
+                                  context, provider, filteredWhitelist)
+                              : _buildWhitelistGrid(
+                                  context, provider, filteredWhitelist),
                 ),
               ],
             ),
@@ -415,11 +466,67 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
+  Widget _buildSearchField(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
+        decoration: InputDecoration(
+          hintText: 'Cerca un profilo',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: _searchQuery.isEmpty
+              ? null
+              : IconButton(
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                  icon: const Icon(Icons.close),
+                  tooltip: 'Cancella ricerca',
+                ),
+          filled: true,
+          fillColor:
+              colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: colorScheme.outlineVariant),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: colorScheme.outlineVariant),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(20),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoSearchResults(BuildContext context) {
     return Center(
       child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          'Nessun profilo trovato',
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(48),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
@@ -524,14 +631,19 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      onPressed: () => _openInstagramProfile(username),
-                      icon: const Icon(Icons.open_in_new_rounded),
+                    _buildFramedActionButton(
+                      context,
+                      icon: Icons.open_in_new_rounded,
                       color: colorScheme.primary,
                       tooltip: 'Apri profilo',
-                      visualDensity: VisualDensity.compact,
+                      onPressed: () => _openInstagramProfile(username),
                     ),
-                    IconButton(
+                    const SizedBox(width: 8),
+                    _buildFramedActionButton(
+                      context,
+                      icon: Icons.delete_outline,
+                      color: colorScheme.onSurfaceVariant,
+                      tooltip: 'Rimuovi dalla whitelist',
                       onPressed: () async {
                         final confirmed =
                             await _showRemoveDialog(context, username);
@@ -539,10 +651,6 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                           provider.removeFromWhitelist(username);
                         }
                       },
-                      icon: const Icon(Icons.delete_outline),
-                      color: colorScheme.onSurfaceVariant,
-                      tooltip: 'Rimuovi dalla whitelist',
-                      visualDensity: VisualDensity.compact,
                     ),
                   ],
                 ),
@@ -556,20 +664,45 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
 
   Widget _buildWhitelistItem(
       BuildContext context, AppProvider provider, String username) {
+    final swipeGradient =
+        statsCounterGradientColors(context, provider.whitelist.length);
     return Dismissible(
       key: Key(username),
       direction: DismissDirection.endToStart,
       background: Container(
+        margin: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.errorContainer,
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: swipeGradient,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: swipeGradient.last),
+          boxShadow: [
+            BoxShadow(
+              color: swipeGradient.last.withValues(alpha: 0.4),
+              blurRadius: 16,
+              spreadRadius: 1,
+            ),
+          ],
         ),
-        child: Icon(
-          Icons.delete_outline,
-          color: Theme.of(context).colorScheme.onErrorContainer,
-          size: 28,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline, color: Colors.white, size: 20),
+            SizedBox(width: 6),
+            Text(
+              'Rimuovi',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
       confirmDismiss: (direction) async {
@@ -607,25 +740,24 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                icon: Icon(
-                  Icons.open_in_new,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              _buildFramedActionButton(
+                context,
+                icon: Icons.open_in_new,
+                color: Theme.of(context).colorScheme.primary,
                 onPressed: () => _openInstagramProfile(username),
                 tooltip: 'Apri profilo Instagram',
               ),
-              IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                onPressed: () =>
-                    _showRemoveDialog(context, username).then((confirmed) {
+              const SizedBox(width: 8),
+              _buildFramedActionButton(
+                context,
+                icon: Icons.delete_outline,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                onPressed: () async {
+                  final confirmed = await _showRemoveDialog(context, username);
                   if (confirmed == true) {
                     provider.removeFromWhitelist(username);
                   }
-                }),
+                },
                 tooltip: 'Rimuovi dalla whitelist',
               ),
             ],

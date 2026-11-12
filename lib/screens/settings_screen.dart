@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/ads_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/one_ui_brightness_selector.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -23,13 +26,27 @@ class SettingsScreen extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Center(
-                    child: Text(
-                      'Impostazioni',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 36,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.settings_outlined,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 32,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Impostazioni',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context)
+                              .textTheme
+                              .displayLarge
+                              ?.copyWith(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -69,11 +86,9 @@ class SettingsScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Luminosità',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader(
+                          context, 'Luminosità', Icons.brightness_6_outlined),
                       const SizedBox(height: 4),
                       Text(
                         'Scegli una luminosità fissa oppure segui il dispositivo.',
@@ -84,7 +99,13 @@ class SettingsScreen extends StatelessWidget {
                             ),
                       ),
                       const SizedBox(height: 8),
-                      SegmentedButton<AppBrightnessMode>(
+                      if (themeProvider.isSamsungTheme)
+                        OneUiBrightnessSelector(
+                          value: themeProvider.brightnessMode,
+                          onChanged: themeProvider.setBrightnessMode,
+                        )
+                      else
+                        SegmentedButton<AppBrightnessMode>(
                         segments: [
                           for (final mode in AppBrightnessMode.values)
                             ButtonSegment(
@@ -160,6 +181,85 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
+                      _buildSectionHeader(
+                          context, 'Pubblicità', Icons.campaign_outlined),
+                      const SizedBox(height: 8),
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ValueListenableBuilder<bool>(
+                          valueListenable: AdsService.instance.adsEnabled,
+                          builder: (context, enabled, child) {
+                            Future<void> changeAds(bool value) async {
+                              try {
+                                await AdsService.instance.setAdsEnabled(value);
+                              } catch (error) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Impossibile salvare la preferenza annunci',
+                                    ),
+                                  ),
+                                );
+                              }
+                            }
+
+                            final isSamsung = themeProvider.isSamsungTheme;
+                            return MergeSemantics(
+                              child: ListTile(
+                                title: Text(
+                                  'Mostra annunci',
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                subtitle: Text(
+                                  'Visualizza gli annunci nel report',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: Theme.of(context)
+                                          .colorScheme.onSurfaceVariant),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 4),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                onTap: () => changeAds(!enabled),
+                                trailing: SizedBox(
+                                  width: 52,
+                                  height: 48,
+                                  child: Center(
+                                    child: Transform.scale(
+                                      scale: isSamsung ? 0.85 : 1,
+                                      child: Switch(
+                                        value: enabled,
+                                        onChanged: changeAds,
+                                        thumbColor: isSamsung
+                                            ? const WidgetStatePropertyAll(Colors.white)
+                                            : null,
+                                        activeTrackColor: isSamsung
+                                            ? const Color(0xFF0381FE) : null,
+                                        inactiveTrackColor: isSamsung
+                                            ? (Theme.of(context).brightness == Brightness.dark
+                                                ? const Color(0xFF555558)
+                                                : const Color(0xFFB6B6BB))
+                                            : null,
+                                        trackOutlineColor: isSamsung
+                                            ? const WidgetStatePropertyAll(Colors.transparent)
+                                            : null,
+                                        // Keep the thumb the same size in both states.
+                                        thumbIcon: isSamsung
+                                            ? const WidgetStatePropertyAll(Icon(null))
+                                            : null,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       // About Section
                       _buildSectionHeader(
                           context, 'Informazioni', Icons.info_outline),
@@ -167,22 +267,29 @@ class SettingsScreen extends StatelessWidget {
                       _buildInfoTile(
                         context,
                         'Versione',
-                        '0.3',
+                        '0.4.0',
                         Icons.tag,
                       ),
-                      _buildInfoTile(
+                      _buildActionTile(
                         context,
                         'Progetto',
                         'InstaLander',
                         Icons.code,
+                        () => unawaited(_openProject(context)),
                       ),
-                      const SizedBox(height: 16),
-                      _buildActionTile(
-                        context,
-                        'Visualizza Whitelist',
-                        'Gestisci la lista dei profili ignorati',
-                        Icons.favorite_border,
-                        () => Navigator.pushNamed(context, '/whitelist'),
+                      ValueListenableBuilder<bool>(
+                        valueListenable:
+                            AdsService.instance.privacyOptionsRequired,
+                        builder: (context, isRequired, child) {
+                          if (!isRequired) return const SizedBox.shrink();
+                          return _buildActionTile(
+                            context,
+                            'Privacy pubblicitaria',
+                            'Gestisci le preferenze di consenso',
+                            Icons.privacy_tip_outlined,
+                            AdsService.instance.showPrivacyOptions,
+                          );
+                        },
                       ),
                       const SizedBox(height: 24),
                       _buildClearDataTile(context),
@@ -194,6 +301,22 @@ class SettingsScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _openProject(BuildContext context) async {
+    try {
+      final opened = await launchUrl(
+        Uri.parse('https://github.com/SimpleDevPerson/InstaLander'),
+        mode: LaunchMode.externalApplication,
+      );
+      if (opened) return;
+    } catch (_) {
+      // Report both launch failures and unavailable URL handlers below.
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Impossibile aprire la repository')),
     );
   }
 
@@ -341,6 +464,7 @@ class SettingsScreen extends StatelessWidget {
     try {
       await appProvider.clearAllData();
       await themeProvider.resetToDefaults();
+      await AdsService.instance.setAdsEnabled(true);
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -207,6 +207,7 @@ class AppProvider extends ChangeNotifier {
 
   // Change sort option
   void setSortOption(SortOption option) {
+    if (_currentSort == option) return;
     _currentSort = option;
     _updateSortedNonFollowers();
     notifyListeners();

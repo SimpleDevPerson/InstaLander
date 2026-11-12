@@ -9,6 +9,7 @@ build/
 **/build/
 **/.cxx/
 **/.gradle/
+**/.kotlin/
 
 # Android local configuration and signing credentials
 android/local.properties

@@ -11,6 +11,9 @@ Applicazione Flutter per Android che confronta i file JSON dell'esportazione Ins
 - Indicatore persistente dei profili già aperti.
 - Caricamento dei file JSON direttamente dal dispositivo.
 - Temi Samsung One UI e Material Design Expressive, ciascuno con luminosità chiara, scura o predefinita di sistema (configurabile dalle impostazioni).
+- Annunci nativi AdMob nella schermata del report, ogni 3 o 4 righe di schede; la richiesta è subordinata al consenso UMP. È possibile disattivarli nelle impostazioni.
+- Contatori con glow e stato «Tutto a posto!» quando non rimangono profili da controllare.
+- Selettore della luminosità e interruttore degli annunci in stile One UI, con collegamento alla repository nelle impostazioni.
 
 ## Esportazione Instagram
 
@@ -22,7 +25,7 @@ L'elaborazione avviene sul dispositivo. I file selezionati e la whitelist sono s
 
 ## Requisiti
 
-- Flutter 3.32 o successivo e Dart SDK compatibile con `pubspec.yaml`.
+- Flutter 3.38.1 o successivo e Dart SDK compatibile con `pubspec.yaml`.
 - Android SDK e un dispositivo o emulatore Android (minimo API 26).
 
 ## Sviluppo
@@ -34,6 +37,8 @@ flutter pub get
 flutter run
 ```
 
+Gli annunci usano gli ID di test Google in modalità debug. Per configurare gli annunci reali, imposta l'ID app AdMob nella proprietà Gradle `adMobAppId` (oppure nella variabile d'ambiente `ADMOB_APP_ID`) e passa l'ID unità annunci nativi con `--dart-define=ADMOB_NATIVE_AD_UNIT_ID=...`. Configura inoltre in AdMob i messaggi di consenso UMP e verifica le opzioni privacy prima della distribuzione. `webview_flutter_android` e `shared_preferences_android` sono bloccati alle ultime versioni compatibili con gli script Gradle del progetto: le release più recenti usano script Kotlin che non risolvono l'estensione Flutter iniettata dalla configurazione Android corrente. Le richieste pubblicitarie e i dati tecnici/di consenso necessari sono gestiti da Google solo dopo la verifica del consenso UMP.
+
 Controlli:
 
 ```shell
@@ -41,13 +46,13 @@ flutter analyze
 flutter test
 ```
 
-Build APK release ARM64:
+Build APK release per ARMv7, ARM64 e x86_64:
 
 ```shell
-flutter build apk --release --target-platform android-arm64 --split-per-abi
+flutter build apk --release --split-per-abi
 ```
 
-L'APK viene generato in `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`.
+Gli APK vengono generati in `build/app/outputs/flutter-apk/`, uno per architettura. Per un APK universale, usa `flutter build apk --release` senza `--split-per-abi`. La versione release non richiede annunci se non viene fornito `ADMOB_NATIVE_AD_UNIT_ID`.
 
 Per creare un Android App Bundle:
 

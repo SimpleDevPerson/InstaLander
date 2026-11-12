@@ -1,7 +1,12 @@
+import 'dart:collection';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+// ignore: implementation_imports
+import 'package:google_mobile_ads/src/ad_instance_manager.dart';
 import 'package:instalander/main.dart';
 import 'package:instalander/models/user.dart';
 import 'package:instalander/providers/app_provider.dart';
@@ -10,7 +15,10 @@ import 'package:instalander/screens/main_screen.dart';
 import 'package:instalander/screens/onboarding_screen.dart';
 import 'package:instalander/screens/settings_screen.dart';
 import 'package:instalander/screens/whitelist_screen.dart';
+import 'package:instalander/services/ads_service.dart';
 import 'package:instalander/theme/app_theme.dart';
+import 'package:instalander/widgets/native_ad_card.dart';
+import 'package:instalander/widgets/one_ui_brightness_selector.dart';
 import 'package:instalander/widgets/stats_counter.dart';
 import 'package:instalander/widgets/user_card.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +27,37 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('One UI brightness selector saves all three modes', (tester) async {
+    final themeProvider = ThemeProvider();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+          ChangeNotifierProvider(create: (_) => AppProvider()),
+        ],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(OneUiBrightnessSelector), findsOneWidget);
+    expect(find.byType(SegmentedButton<AppBrightnessMode>), findsNothing);
+    for (final mode in [AppBrightnessMode.dark, AppBrightnessMode.light,
+        AppBrightnessMode.system]) {
+      final button = find.byKey(ValueKey('brightness-mode-${mode.name}'));
+      await tester.ensureVisible(button);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(themeProvider.brightnessMode, mode);
+      expect(tester.widget<OneUiBrightnessSelector>(
+          find.byType(OneUiBrightnessSelector)).value, mode);
+      expect((await SharedPreferences.getInstance())
+          .getInt('app_brightness_mode'), mode.index);
+      expect(tester.takeException(), isNull);
+    }
+    await tester.pumpWidget(const SizedBox.shrink());
+    themeProvider.dispose();
   });
 
   test('App icon choice is persisted', () async {
@@ -52,9 +91,7 @@ void main() {
     var completed = false;
     await tester.pumpWidget(
       MaterialApp(
-        home: OnboardingScreen(
-          onComplete: () async => completed = true,
-        ),
+        home: OnboardingScreen(onComplete: () async => completed = true),
       ),
     );
 
@@ -62,6 +99,11 @@ void main() {
       find.text('Apri il Centro gestione account').hitTestable(),
       findsOneWidget,
     );
+    final title = tester.widget<Text>(find.text('InstaLander'));
+    expect(title.style?.fontSize, 32);
+    expect(title.style?.fontWeight, FontWeight.w800);
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.byIcon(Icons.camera_alt_outlined), findsNothing);
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
     expect(
@@ -71,10 +113,7 @@ void main() {
 
     await tester.tap(find.text('Avanti').hitTestable());
     await tester.pumpAndSettle();
-    expect(
-      find.text('Scegli il formato JSON').hitTestable(),
-      findsOneWidget,
-    );
+    expect(find.text('Scegli il formato JSON').hitTestable(), findsOneWidget);
 
     await tester.tap(find.text('Avanti').hitTestable());
     await tester.pumpAndSettle();
@@ -88,8 +127,9 @@ void main() {
     expect(completed, isTrue);
   });
 
-  testWidgets('Onboarding button labels meet contrast on every theme',
-      (tester) async {
+  testWidgets('Onboarding button labels meet contrast on every theme', (
+    tester,
+  ) async {
     for (final theme in [
       AppTheme.lightTheme,
       AppTheme.darkTheme,
@@ -128,8 +168,9 @@ void main() {
     }
   });
 
-  testWidgets('Setup hides the report count before files are loaded',
-      (tester) async {
+  testWidgets('Setup hides the report count before files are loaded', (
+    tester,
+  ) async {
     await tester.pumpWidget(_mainScreen(_TestAppProvider()));
     await tester.pump();
 
@@ -139,19 +180,20 @@ void main() {
       matching: find.byType(Container),
     );
     expect(tester.widget<Container>(header.first).decoration, isNull);
-    expect(find.descendant(of: header.first, matching: find.byType(Image)),
-        findsOneWidget);
     expect(
-      tester.widget<Text>(find.text('Instalander')).style?.fontSize,
-      34,
+      find.descendant(of: header.first, matching: find.byType(Image)),
+      findsOneWidget,
     );
+    expect(tester.widget<Text>(find.text('Instalander')).style?.fontSize, 34);
+    final iconRect = tester.getRect(
+      find.descendant(of: header.first, matching: find.byType(Image)));
+    final titleRect = tester.getRect(find.text('Instalander'));
+    expect((iconRect.left + titleRect.right) / 2,
+        closeTo(tester.getCenter(header.first).dx, 0.01));
     expect(find.byType(StatsCounter), findsNothing);
     expect(find.text('Da controllare: '), findsNothing);
     expect(find.textContaining('Puoi scaricarli da Instagram'), findsNothing);
-    expect(
-      find.text('Come scaricare i file da Instagram'),
-      findsOneWidget,
-    );
+    expect(find.text('Come scaricare i file da Instagram'), findsOneWidget);
     expect(find.text('followers_*.json'), findsOneWidget);
     expect(find.text('following_*.json'), findsOneWidget);
   });
@@ -169,22 +211,17 @@ void main() {
     expect(find.byType(StatsCounter), findsNothing);
   });
 
-  testWidgets('Back from a secondary tab returns to the report',
-      (tester) async {
+  testWidgets('Back from a secondary tab returns to the report', (
+    tester,
+  ) async {
     await tester.pumpWidget(_mainScreen(_TestAppProvider()));
     await tester.pump();
 
     final pageSwipeDistance =
         tester.view.physicalSize.width / tester.view.devicePixelRatio * 0.8;
-    await tester.drag(
-      find.byType(PageView),
-      Offset(-pageSwipeDistance, 0),
-    );
+    await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
     await tester.pumpAndSettle();
-    await tester.drag(
-      find.byType(PageView),
-      Offset(-pageSwipeDistance, 0),
-    );
+    await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
     await tester.pumpAndSettle();
     expect(find.text('Impostazioni'), findsWidgets);
 
@@ -194,8 +231,9 @@ void main() {
     expect(find.text('Instalander'), findsOneWidget);
   });
 
-  testWidgets('Navigation skips the middle page when switching endpoints',
-      (tester) async {
+  testWidgets('Navigation skips the middle page when switching endpoints', (
+    tester,
+  ) async {
     await tester.pumpWidget(_mainScreen(_TestAppProvider()));
     await tester.pump();
 
@@ -210,8 +248,9 @@ void main() {
     expect(find.text('Whitelist').hitTestable(), findsNothing);
   });
 
-  testWidgets('Theme changes preserve the selected page and navbar index',
-      (tester) async {
+  testWidgets('Theme changes preserve the selected page and navbar index', (
+    tester,
+  ) async {
     final themeProvider = ThemeProvider();
     expect(themeProvider.isSamsungTheme, isTrue);
     expect(themeProvider.brightnessMode, AppBrightnessMode.system);
@@ -232,15 +271,9 @@ void main() {
 
     final pageSwipeDistance =
         tester.view.physicalSize.width / tester.view.devicePixelRatio * 0.8;
-    await tester.drag(
-      find.byType(PageView),
-      Offset(-pageSwipeDistance, 0),
-    );
+    await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
     await tester.pumpAndSettle();
-    await tester.drag(
-      find.byType(PageView),
-      Offset(-pageSwipeDistance, 0),
-    );
+    await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
     await tester.pumpAndSettle();
     expect(find.text('Impostazioni'), findsWidgets);
 
@@ -259,8 +292,9 @@ void main() {
     final segmentedButton = tester.widget<SegmentedButton<AppBrightnessMode>>(
       find.byType(SegmentedButton<AppBrightnessMode>),
     );
-    final selectedBackground =
-        segmentedButton.style!.backgroundColor!.resolve({WidgetState.selected});
+    final selectedBackground = segmentedButton.style!.backgroundColor!.resolve({
+      WidgetState.selected,
+    });
     expect(
       selectedBackground,
       Theme.of(tester.element(find.byType(MainScreen))).colorScheme.primary,
@@ -342,8 +376,123 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Report counter color reflects profile count thresholds',
-      (tester) async {
+  testWidgets('Scrolling a large report only reads nearby profiles', (tester) async {
+    final users = _CountingUserList(List.generate(10000,
+        (index) => InstagramUser(username: 'profile_$index', timestamp: index)));
+    await tester.pumpWidget(_mainScreen(_TestReportAppProvider(users)));
+    await tester.pump();
+    users.reads = 0;
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1000));
+    await tester.pumpAndSettle();
+    expect(users.reads, greaterThan(0));
+    expect(users.reads, lessThan(1000));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Loaded report with ad slots builds valid slivers', (
+    tester,
+  ) async {
+    final users = List.generate(
+      1200,
+      (index) => InstagramUser(username: 'profile_$index', timestamp: index),
+    );
+    await tester.pumpWidget(_mainScreen(_TestReportAppProvider(users)));
+    await tester.pump();
+
+    expect(find.byType(CustomScrollView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('feed-native-ad-0')),
+      200,
+      scrollable: find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      ).first,
+    );
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 200));
+    await tester.pumpAndSettle();
+    expect(find.byType(NativeAdCard), findsAtLeastNWidgets(1));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Ad has equal visible gaps to the surrounding profile cards', (
+    tester,
+  ) async {
+    final ads = AdsService.instance;
+    final previousConsent = ads.canRequestAds.value;
+    ads.canRequestAds.value = true;
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(instanceManager.channel, (call) async =>
+        call.method == 'MobileAds#initialize' ? InitializationStatus({}) : null);
+    addTearDown(() {
+      ads.canRequestAds.value = previousConsent;
+      messenger.setMockMethodCallHandler(instanceManager.channel, null);
+    });
+    final users = List.generate(
+      100,
+      (index) => InstagramUser(username: 'profile_$index', timestamp: index),
+    );
+    await tester.pumpWidget(_mainScreen(_TestReportAppProvider(users)));
+    await tester.pump();
+    final scrollable = find.descendant(
+      of: find.byType(CustomScrollView),
+      matching: find.byType(Scrollable),
+    ).first;
+    await tester.scrollUntilVisible(find.byKey(const ValueKey('feed-native-ad-0')), 200,
+        scrollable: scrollable);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 200));
+    await tester.pump();
+
+    final adFrame = find.descendant(
+      of: find.byType(NativeAdCard).first,
+      matching: find.byWidgetPredicate((widget) =>
+          widget is Container && widget.constraints?.minHeight == 112),
+    );
+    final adRect = tester.getRect(adFrame);
+    final profileRects = find
+        .descendant(of: find.byType(UserCard), matching: find.byType(Material))
+        .evaluate()
+        .where((element) => (element.widget as Material).type == MaterialType.card)
+        .map((element) => tester.getRect(find.byWidget(element.widget)))
+        .toList();
+    final above = profileRects
+        .where((rect) => rect.bottom <= adRect.top)
+        .map((rect) => rect.bottom)
+        .reduce((a, b) => a > b ? a : b);
+    final below = profileRects
+        .where((rect) => rect.top >= adRect.bottom)
+        .map((rect) => rect.top)
+        .reduce((a, b) => a < b ? a : b);
+    expect(adRect.top - above, closeTo(below - adRect.bottom, 0.01));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('Report counter changes to completed state only at zero', (tester) async {
+    for (final count in [1, 0, 2]) {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(body: StatsCounter(
+          count: count, zeroCountLabel: 'Tutto a posto!')),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.text('Tutto a posto!'), count == 0 ? findsOneWidget : findsNothing);
+      expect(find.text('Da controllare:'), count == 0 ? findsNothing : findsOneWidget);
+      expect(find.text('$count'), count == 0 ? findsNothing : findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+    await tester.pumpWidget(const MaterialApp(
+      home: Scaffold(body: StatsCounter(count: 0,
+        label: 'Profili in whitelist:', indicatorIcon: Icons.favorite)),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.text('Profili in whitelist:'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('Tutto a posto!'), findsNothing);
+  });
+
+  testWidgets('Report counter color reflects profile count thresholds', (
+    tester,
+  ) async {
     const colorCases = {
       9: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
       10: [Color(0xFF1565C0), Color(0xFF42A5F5)],
@@ -367,33 +516,32 @@ void main() {
               (widget.decoration! as BoxDecoration).gradient is LinearGradient,
         ),
       );
-      final gradient = (gradientBox.decoration! as BoxDecoration).gradient!
-          as LinearGradient;
+      final gradient =
+          (gradientBox.decoration! as BoxDecoration).gradient!
+              as LinearGradient;
       expect(gradient.begin, Alignment.centerLeft);
       expect(gradient.end, Alignment.centerRight);
       expect(gradient.colors, entry.value, reason: 'count ${entry.key}');
     }
   });
 
-  testWidgets('Report counter shows a check when the count is green',
-      (tester) async {
+  testWidgets('Report counter shows a check only when the count is zero', (
+    tester,
+  ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: StatsCounter(count: 9)),
-      ),
+      const MaterialApp(home: Scaffold(body: StatsCounter(count: 0))),
     );
 
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
     expect(find.byIcon(Icons.priority_high_rounded), findsNothing);
 
-    await tester.pumpWidget(
-      const MaterialApp(
-        home: Scaffold(body: StatsCounter(count: 10)),
-      ),
-    );
-
-    expect(find.byIcon(Icons.priority_high_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
+    for (final count in [1, 9, 10, 51]) {
+      await tester.pumpWidget(
+        MaterialApp(home: Scaffold(body: StatsCounter(count: count))),
+      );
+      expect(find.byIcon(Icons.priority_high_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.check_rounded), findsNothing);
+    }
     final badgeCircles = find.byWidgetPredicate(
       (widget) =>
           widget is Container &&
@@ -407,8 +555,9 @@ void main() {
     expect(icon.size, 18);
   });
 
-  testWidgets('Profile cards have raised styling and blue glowing avatars',
-      (tester) async {
+  testWidgets('Profile cards have raised styling and blue glowing avatars', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.samsungLightTheme,
@@ -446,15 +595,13 @@ void main() {
       (widget) =>
           widget is AnimatedContainer &&
           widget.decoration is BoxDecoration &&
-          avatarBlues.contains(
-            (widget.decoration! as BoxDecoration).color,
-          ),
+          avatarBlues.contains((widget.decoration! as BoxDecoration).color),
     );
     expect(blueAvatar, findsOneWidget);
-    final avatarColor = (tester
-            .widget<AnimatedContainer>(blueAvatar)
-            .decoration! as BoxDecoration)
-        .color!;
+    final avatarColor =
+        (tester.widget<AnimatedContainer>(blueAvatar).decoration!
+                as BoxDecoration)
+            .color!;
 
     final avatarGlow = tester.widget<Container>(
       find.byWidgetPredicate(
@@ -473,8 +620,9 @@ void main() {
     expect(glowDecoration.boxShadow!.first.blurRadius, 12);
   });
 
-  testWidgets('Legacy default theme migrates to Samsung One UI',
-      (tester) async {
+  testWidgets('Legacy default theme migrates to Samsung One UI', (
+    tester,
+  ) async {
     SharedPreferences.setMockInitialValues({'app_theme_mode': 0});
     final themeProvider = ThemeProvider();
 
@@ -487,8 +635,9 @@ void main() {
     expect(themeProvider.brightnessMode, AppBrightnessMode.system);
   });
 
-  testWidgets('Viewed profile avatar has a ring matching its button',
-      (tester) async {
+  testWidgets('Viewed profile avatar has a ring matching its button', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.samsungLightTheme,
@@ -548,8 +697,9 @@ void main() {
     expect(glowShadows.first.blurRadius, 12);
   });
 
-  testWidgets('Profile card lays out avatar, details, and full-width actions',
-      (tester) async {
+  testWidgets('Profile card lays out avatar, details, and full-width actions', (
+    tester,
+  ) async {
     var opened = false;
     var whitelisted = false;
     await tester.pumpWidget(
@@ -603,9 +753,7 @@ void main() {
           matching: find.byType(AnimatedContainer),
         )
         .first;
-    final openButton = tester.widget<AnimatedContainer>(
-      openButtonFinder,
-    );
+    final openButton = tester.widget<AnimatedContainer>(openButtonFinder);
     final openDecoration = openButton.decoration! as BoxDecoration;
     expect(openDecoration.gradient, AppTheme.instagramGradient);
     expect(openDecoration.border!.top.color, const Color(0xFF666666));
@@ -621,10 +769,14 @@ void main() {
           )
           .first,
     );
-    expect(whitelistButton.style!.backgroundColor!.resolve({}),
-        const Color(0xFF2B2B2B));
-    expect(whitelistButton.style!.side!.resolve({})!.color,
-        const Color(0xFF666666));
+    expect(
+      whitelistButton.style!.backgroundColor!.resolve({}),
+      const Color(0xFF2B2B2B),
+    );
+    expect(
+      whitelistButton.style!.side!.resolve({})!.color,
+      const Color(0xFF666666),
+    );
     expect(
       tester.getSize(find.byType(OutlinedButton)).height,
       greaterThanOrEqualTo(50),
@@ -642,8 +794,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Profile avatar and username open the Instagram profile',
-      (tester) async {
+  testWidgets('Profile avatar and username open the Instagram profile', (
+    tester,
+  ) async {
     var openCount = 0;
     await tester.pumpWidget(
       MaterialApp(
@@ -681,10 +834,12 @@ void main() {
     expect(openCount, 2);
   });
 
-  testWidgets('Main title icon follows app brightness, not icon preference',
-      (tester) async {
-    const appIconChannel =
-        MethodChannel('com.simpledevperson.instalander/app_icon');
+  testWidgets('Main title icon follows app brightness, not icon preference', (
+    tester,
+  ) async {
+    const appIconChannel = MethodChannel(
+      'com.simpledevperson.instalander/app_icon',
+    );
     final messenger =
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
     messenger.setMockMethodCallHandler(appIconChannel, (_) async => null);
@@ -693,17 +848,17 @@ void main() {
     final appProvider = _TestAppProvider();
 
     Widget buildApp(ThemeMode mode) => MultiProvider(
-          providers: [
-            ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
-            ChangeNotifierProvider<AppProvider>.value(value: appProvider),
-          ],
-          child: MaterialApp(
-            theme: AppTheme.samsungLightTheme,
-            darkTheme: AppTheme.samsungDarkTheme,
-            themeMode: mode,
-            home: const MainScreen(),
-          ),
-        );
+      providers: [
+        ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+        ChangeNotifierProvider<AppProvider>.value(value: appProvider),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.samsungLightTheme,
+        darkTheme: AppTheme.samsungDarkTheme,
+        themeMode: mode,
+        home: const MainScreen(),
+      ),
+    );
 
     await themeProvider.setAppIconStyle(AppIconStyle.dark);
     await tester.pumpWidget(buildApp(ThemeMode.light));
@@ -771,8 +926,9 @@ void main() {
         )
         .first;
     expect(tester.getSize(actionButton).height, greaterThanOrEqualTo(52));
-    final expandedPositions =
-        tester.widgetList<AnimatedPositioned>(find.byType(AnimatedPositioned));
+    final expandedPositions = tester.widgetList<AnimatedPositioned>(
+      find.byType(AnimatedPositioned),
+    );
     expect(expandedPositions.map((position) => position.height), contains(420));
     expect(expandedPositions.map((position) => position.height), contains(68));
     final expandedCard = tester.widget<Material>(
@@ -793,8 +949,9 @@ void main() {
     expect(find.text('Dettagli del profilo'), findsNothing);
   });
 
-  testWidgets('Dragging from a held profile selects an action below it',
-      (tester) async {
+  testWidgets('Dragging from a held profile selects an action below it', (
+    tester,
+  ) async {
     var opened = false;
     await tester.pumpWidget(
       MaterialApp(
@@ -861,6 +1018,7 @@ void main() {
     expect(settingsTitle.textAlign, TextAlign.center);
     expect(settingsTitle.style?.fontSize, 36);
     expect(settingsTitle.style?.fontWeight, FontWeight.w700);
+    expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
 
     expect(find.text('Icona scura'), findsOneWidget);
     expect(find.text('Icona originale con sfondo chiaro'), findsOneWidget);
@@ -878,8 +1036,9 @@ void main() {
         'assets/images/app_icon_dark.jpg',
       }),
     );
-    final previewClips =
-        tester.widgetList<ClipRRect>(find.byType(ClipRRect)).toList();
+    final previewClips = tester
+        .widgetList<ClipRRect>(find.byType(ClipRRect))
+        .toList();
     expect(previewClips, hasLength(2));
     expect(
       previewClips.map((clip) => clip.borderRadius),
@@ -906,8 +1065,9 @@ void main() {
     );
   });
 
-  testWidgets('Whitelist switches between list and bordered profile grid',
-      (tester) async {
+  testWidgets('Whitelist switches between list and bordered profile grid', (
+    tester,
+  ) async {
     final provider = _TestWhitelistAppProvider({'first_profile', 'second'});
     await tester.pumpWidget(
       ChangeNotifierProvider<AppProvider>.value(
@@ -926,6 +1086,15 @@ void main() {
     expect(find.text('Profili in whitelist:'), findsOneWidget);
     expect(find.text('Più recenti'), findsOneWidget);
     expect(find.byType(ListView), findsOneWidget);
+    final searchField = find.byType(TextField);
+    expect(searchField, findsOneWidget);
+    await tester.enterText(searchField, '@second');
+    await tester.pumpAndSettle();
+    expect(find.text('second'), findsOneWidget);
+    expect(find.text('first_profile'), findsNothing);
+    await tester.tap(find.byTooltip('Cancella ricerca'));
+    await tester.pumpAndSettle();
+    expect(find.text('first_profile'), findsOneWidget);
     _expectWhitelistAvatarGlow(tester, 'first_profile');
     final theme = Theme.of(tester.element(find.byType(WhitelistScreen)));
     final listCard = tester.widget<Card>(
@@ -940,16 +1109,17 @@ void main() {
     );
     final clearButtonBorder =
         (clearButtonFrame.decoration! as BoxDecoration).border! as Border;
-    final errorColor = Theme.of(tester.element(find.byType(WhitelistScreen)))
-        .colorScheme
-        .error;
+    final errorColor = Theme.of(
+      tester.element(find.byType(WhitelistScreen)),
+    ).colorScheme.error;
     expect(clearButtonBorder.top.color, errorColor);
     expect(
       tester
           .getTopLeft(find.byKey(const Key('clear-whitelist-button-frame')))
           .dx,
       greaterThan(
-          tester.getTopLeft(find.byType(PopupMenuButton<SortOption>)).dx),
+        tester.getTopLeft(find.byType(PopupMenuButton<SortOption>)).dx,
+      ),
     );
 
     await tester.tap(find.text('Griglia'));
@@ -966,10 +1136,11 @@ void main() {
       final shape = card.shape! as RoundedRectangleBorder;
       expect(shape.side.width, 1.5);
       expect(
-          shape.side.color,
-          Theme.of(tester.element(find.byType(WhitelistScreen)))
-              .colorScheme
-              .outlineVariant);
+        shape.side.color,
+        Theme.of(
+          tester.element(find.byType(WhitelistScreen)),
+        ).colorScheme.outlineVariant,
+      );
     }
 
     await tester.tap(find.text('Lista'));
@@ -994,12 +1165,12 @@ void main() {
     expect(find.text('Svuota whitelist'), findsOneWidget);
     expect(
       _contrastRatio(
-        Theme.of(tester.element(find.text('Svuota whitelist')))
-            .colorScheme
-            .onSurface,
-        Theme.of(tester.element(find.text('Svuota whitelist')))
-            .colorScheme
-            .surfaceContainerHigh,
+        Theme.of(
+          tester.element(find.text('Svuota whitelist')),
+        ).colorScheme.onSurface,
+        Theme.of(
+          tester.element(find.text('Svuota whitelist')),
+        ).colorScheme.surfaceContainerHigh,
       ),
       greaterThanOrEqualTo(4.5),
     );
@@ -1049,14 +1220,12 @@ void main() {
           ChangeNotifierProvider<AppProvider>.value(value: appProvider),
           ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
         ],
-        child: const MaterialApp(
-          home: Scaffold(body: SettingsScreen()),
-        ),
+        child: const MaterialApp(home: Scaffold(body: SettingsScreen())),
       ),
     );
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(ListView), const Offset(0, -900));
+    await tester.scrollUntilVisible(find.text('Cancella tutti i dati'), 250);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cancella tutti i dati'));
     await tester.pumpAndSettle();
@@ -1072,17 +1241,14 @@ void main() {
     final resetBorder = resetCard.shape! as RoundedRectangleBorder;
     expect(
       resetBorder.side.color,
-      Theme.of(tester.element(find.byType(SettingsScreen)))
-          .colorScheme
-          .error
-          .withValues(alpha: 0.55),
+      Theme.of(
+        tester.element(find.byType(SettingsScreen)),
+      ).colorScheme.error.withValues(alpha: 0.55),
     );
     final confirmButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Cancella tutto'));
-    expect(
-      confirmButton.style!.foregroundColor!.resolve({}),
-      Colors.black,
+      find.widgetWithText(FilledButton, 'Cancella tutto'),
     );
+    expect(confirmButton.style!.foregroundColor!.resolve({}), Colors.black);
 
     await tester.tap(find.text('Annulla'));
     await tester.pumpAndSettle();
@@ -1131,6 +1297,24 @@ Widget _mainScreen(
   );
 }
 
+class _CountingUserList extends ListBase<InstagramUser> {
+  _CountingUserList(this.data);
+  final List<InstagramUser> data;
+  int reads = 0;
+
+  @override
+  int get length => data.length;
+  @override
+  set length(int value) => throw UnsupportedError('Fixed length');
+  @override
+  InstagramUser operator [](int index) {
+    reads++;
+    return data[index];
+  }
+  @override
+  void operator []=(int index, InstagramUser value) => data[index] = value;
+}
+
 class _TestAppProvider extends AppProvider {
   final bool _hasFollowersFile;
   final bool _hasFollowingFile;
@@ -1140,9 +1324,9 @@ class _TestAppProvider extends AppProvider {
     bool hasFollowersFile = false,
     bool hasFollowingFile = false,
     bool hasData = false,
-  })  : _hasFollowersFile = hasFollowersFile,
-        _hasFollowingFile = hasFollowingFile,
-        _hasData = hasData;
+  }) : _hasFollowersFile = hasFollowersFile,
+       _hasFollowingFile = hasFollowingFile,
+       _hasData = hasData;
 
   @override
   bool get isLoading => false;
@@ -1176,6 +1360,16 @@ class _ClearableTestAppProvider extends _TestAppProvider {
   Future<void> clearAllData() async {
     clearCount++;
   }
+}
+
+class _TestReportAppProvider extends _TestAppProvider {
+  final List<InstagramUser> users;
+
+  _TestReportAppProvider(this.users)
+    : super(hasData: true, hasFollowersFile: true, hasFollowingFile: true);
+
+  @override
+  List<InstagramUser> get sortedNonFollowers => users;
 }
 
 class _TestWhitelistAppProvider extends _TestAppProvider {

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
@@ -9,8 +11,11 @@ import '../providers/theme_provider.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/whitelist_screen.dart';
+import '../services/ads_service.dart';
 import '../services/data_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ad_placement.dart';
+import '../widgets/native_ad_card.dart';
 import '../widgets/setup_panel.dart';
 import '../widgets/stats_counter.dart';
 import '../widgets/user_card.dart';
@@ -25,6 +30,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   late final PageController _pageController;
+  final Random _adRandom = Random();
+  List<InstagramUser>? _scheduledAdUsers;
+  List<int> _scheduledAdOffsets = const [];
+  List<int> _scheduledFeedItems = const [];
+  int _scheduledAdColumnCount = 0;
 
   // Navbar constants
   static const double navbarHeight = 60;
@@ -36,6 +46,7 @@ class _MainScreenState extends State<MainScreen> {
     _pageController = PageController(initialPage: 0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AppProvider>().initialize();
+      unawaited(AdsService.instance.initialize());
     });
   }
 
@@ -100,14 +111,12 @@ class _MainScreenState extends State<MainScreen> {
               children: [
                 _buildPageView(context, provider),
                 if (isSamsung)
-                  _buildSamsungBottomNavBar(
-                    context,
-                    bottomSafePadding,
-                  ),
+                  _buildSamsungBottomNavBar(context, bottomSafePadding),
               ],
             ),
-            bottomNavigationBar:
-                isSamsung ? null : _buildMaterialNavigationBar(),
+            bottomNavigationBar: isSamsung
+                ? null
+                : _buildMaterialNavigationBar(),
           ),
         );
       },
@@ -197,8 +206,9 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ],
                       border: Border.all(
-                        color:
-                            colorScheme.outlineVariant.withValues(alpha: 0.4),
+                        color: colorScheme.outlineVariant.withValues(
+                          alpha: 0.4,
+                        ),
                         width: 0.5,
                       ),
                     ),
@@ -213,21 +223,35 @@ class _MainScreenState extends State<MainScreen> {
                           width: _getIndicatorWidth(context),
                           child: Container(
                             decoration: BoxDecoration(
-                              color:
-                                  colorScheme.primary.withValues(alpha: 0.15),
-                              borderRadius:
-                                  BorderRadius.circular((navbarHeight - 8) / 2),
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.15,
+                              ),
+                              borderRadius: BorderRadius.circular(
+                                (navbarHeight - 8) / 2,
+                              ),
                             ),
                           ),
                         ),
                         Row(
                           children: [
-                            _buildNavIcon(context, 0, Icons.analytics_outlined,
-                                Icons.analytics),
-                            _buildNavIcon(context, 1, Icons.favorite_outline,
-                                Icons.favorite),
-                            _buildNavIcon(context, 2, Icons.settings_outlined,
-                                Icons.settings),
+                            _buildNavIcon(
+                              context,
+                              0,
+                              Icons.analytics_outlined,
+                              Icons.analytics,
+                            ),
+                            _buildNavIcon(
+                              context,
+                              1,
+                              Icons.favorite_outline,
+                              Icons.favorite,
+                            ),
+                            _buildNavIcon(
+                              context,
+                              2,
+                              Icons.settings_outlined,
+                              Icons.settings,
+                            ),
                           ],
                         ),
                       ],
@@ -324,13 +348,15 @@ class _MainScreenState extends State<MainScreen> {
       padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
       child: Row(
         mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment:
+            provider.hasData ? MainAxisAlignment.start : MainAxisAlignment.center,
         children: [
           _buildAppIcon(context),
           const SizedBox(width: 12),
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
+              alignment: provider.hasData ? Alignment.centerLeft : Alignment.center,
               child: Text.rich(
                 TextSpan(
                   children: provider.hasData
@@ -344,10 +370,10 @@ class _MainScreenState extends State<MainScreen> {
                         ]
                       : const [TextSpan(text: 'Instalander')],
                 ),
-                style: Theme.of(context)
-                    .textTheme
-                    .displayLarge
-                    ?.copyWith(fontSize: 34, fontWeight: FontWeight.w400),
+                style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                  fontSize: 34,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ),
           ),
@@ -394,22 +420,26 @@ class _MainScreenState extends State<MainScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline,
-                size: 64, color: AppTheme.instagramRed),
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: AppTheme.instagramRed,
+            ),
             const SizedBox(height: 16),
             Text('Errore', style: Theme.of(context).textTheme.displayMedium),
             const SizedBox(height: 8),
             Text(
               provider.errorMessage!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.getSubTextColor(context),
-                  ),
+                color: AppTheme.getSubTextColor(context),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-                onPressed: () => provider.initialize(),
-                child: const Text('Riprova')),
+              onPressed: () => provider.initialize(),
+              child: const Text('Riprova'),
+            ),
           ],
         ),
       ),
@@ -432,14 +462,12 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildMissingFileState(
-    BuildContext context,
-    AppProvider provider,
-  ) {
+  Widget _buildMissingFileState(BuildContext context, AppProvider provider) {
     final missingFollowers = !provider.hasFollowersFile;
     final missingLabel = missingFollowers ? 'dei follower' : 'dei seguiti';
-    final missingFileName =
-        missingFollowers ? 'followers_*.json' : 'following_*.json';
+    final missingFileName = missingFollowers
+        ? 'followers_*.json'
+        : 'following_*.json';
     final icon = missingFollowers
         ? Icons.people_alt_outlined
         : Icons.person_add_alt_1_outlined;
@@ -454,9 +482,9 @@ class _MainScreenState extends State<MainScreen> {
             const SizedBox(height: 16),
             Text(
               'Manca un file',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -465,9 +493,9 @@ class _MainScreenState extends State<MainScreen> {
               'Per creare il report, carica anche il file $missingLabel '
               '($missingFileName).',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppTheme.getSubTextColor(context),
-                    height: 1.5,
-                  ),
+                color: AppTheme.getSubTextColor(context),
+                height: 1.5,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -490,9 +518,9 @@ class _MainScreenState extends State<MainScreen> {
                     Text(
                       'Carica file\n$missingLabel',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -533,10 +561,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Future<void> _openOnboarding(
-    BuildContext context,
-    AppProvider provider,
-  ) {
+  Future<void> _openOnboarding(BuildContext context, AppProvider provider) {
     return Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => OnboardingScreen(
@@ -556,7 +581,10 @@ class _MainScreenState extends State<MainScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(
-          child: StatsCounter(count: provider.stats['visibleCount'] ?? 0),
+          child: StatsCounter(
+            count: provider.stats['visibleCount'] ?? 0,
+            zeroCountLabel: 'Tutto a posto!',
+          ),
         ),
         SliverToBoxAdapter(child: _buildControls(context, provider)),
         if (users.isNotEmpty)
@@ -581,8 +609,9 @@ class _MainScreenState extends State<MainScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.72),
+                  color: colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.72,
+                  ),
                   border: Border.all(color: colorScheme.outlineVariant),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -599,10 +628,7 @@ class _MainScreenState extends State<MainScreen> {
                   menuPadding: const EdgeInsets.all(8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
-                    side: BorderSide(
-                      color: colorScheme.outline,
-                      width: 1.5,
-                    ),
+                    side: BorderSide(color: colorScheme.outline, width: 1.5),
                   ),
                   itemBuilder: (context) => SortOption.values.map((option) {
                     final title = switch (option) {
@@ -618,11 +644,9 @@ class _MainScreenState extends State<MainScreen> {
                     };
                     final directionIcon = switch (option) {
                       SortOption.dateDesc ||
-                      SortOption.alphaAsc =>
-                        Icons.arrow_downward,
+                      SortOption.alphaAsc => Icons.arrow_downward,
                       SortOption.dateAsc ||
-                      SortOption.alphaDesc =>
-                        Icons.arrow_upward,
+                      SortOption.alphaDesc => Icons.arrow_upward,
                     };
                     final isSelected = option == provider.currentSort;
 
@@ -727,12 +751,12 @@ class _MainScreenState extends State<MainScreen> {
                           },
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onSurface,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
                         ),
                       ),
                       Icon(
@@ -756,8 +780,9 @@ class _MainScreenState extends State<MainScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 foregroundColor: colorScheme.onSurface,
                 side: BorderSide(color: colorScheme.outlineVariant),
-                backgroundColor:
-                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+                backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.72,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(40),
                 ),
@@ -779,8 +804,9 @@ class _MainScreenState extends State<MainScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 foregroundColor: colorScheme.onSurface,
                 side: BorderSide(color: colorScheme.outlineVariant),
-                backgroundColor:
-                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+                backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+                  alpha: 0.72,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(40),
                 ),
@@ -825,32 +851,99 @@ class _MainScreenState extends State<MainScreen> {
   ) {
     return SliverLayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount =
-            (constraints.crossAxisExtent / 180).floor().clamp(2, 4);
+        final crossAxisCount = (constraints.crossAxisExtent / 180)
+            .floor()
+            .clamp(2, 4);
+        final horizontalPadding = 32.0;
+        const crossAxisSpacing = 12.0;
+        const childAspectRatio = 1.05;
+        final profileCellWidth =
+            (constraints.crossAxisExtent -
+                horizontalPadding -
+                crossAxisSpacing * (crossAxisCount - 1)) /
+            crossAxisCount;
+        final profileCellHeight = profileCellWidth / childAspectRatio;
+        // AppProvider replaces this snapshot when the report or sorting changes.
+        // SliverLayoutBuilder also runs while scrolling: reuse its feed layout.
+        if (_scheduledAdColumnCount != crossAxisCount ||
+            !identical(_scheduledAdUsers, users)) {
+          _scheduledAdUsers = users;
+          _scheduledAdColumnCount = crossAxisCount;
+          _scheduledAdOffsets = calculateAdInsertionOffsets(
+            userCount: users.length,
+            crossAxisCount: crossAxisCount,
+            random: _adRandom,
+          );
+
+          final adRows = {
+            for (var index = 0; index < _scheduledAdOffsets.length; index++)
+              _scheduledAdOffsets[index] ~/ crossAxisCount: index,
+          };
+          final profileRowCount =
+            (users.length + crossAxisCount - 1) ~/ crossAxisCount;
+          final feedItems = <int>[];
+          for (var row = 0; row < profileRowCount; row++) {
+            final adIndex = adRows[row];
+            if (adIndex != null) feedItems.add(-(adIndex + 1));
+            feedItems.add(row);
+          }
+          _scheduledFeedItems = feedItems;
+        }
+        final feedItems = _scheduledFeedItems;
+
         return SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.05,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final user = users[index];
-                return UserCard(
-                  user: user,
-                  isViewed: provider.isProfileViewed(user.username),
-                  onTap: () async {
-                    await provider.markProfileViewed(user.username);
-                    await _openInstagramProfile(user.username);
-                  },
-                  onWhitelist: () => provider.addToWhitelist(user.username),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate((context, itemIndex) {
+              final item = feedItems[itemIndex];
+              if (item < 0) {
+                final adIndex = -item - 1;
+                return ValueListenableBuilder<bool>(
+                  key: ValueKey('feed-native-ad-$adIndex'),
+                  valueListenable: AdsService.instance.adsEnabled,
+                  builder: (context, enabled, child) => enabled
+                      ? const NativeAdCard()
+                      : const SizedBox.shrink(),
                 );
-              },
-              childCount: users.length,
-            ),
+              }
+
+              final start = item * crossAxisCount;
+              final end = min(start + crossAxisCount, users.length);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (
+                      var userIndex = start;
+                      userIndex < end;
+                      userIndex++
+                    ) ...[
+                      if (userIndex > start)
+                        const SizedBox(width: crossAxisSpacing),
+                      SizedBox(
+                        width: profileCellWidth,
+                        height: profileCellHeight,
+                        child: UserCard(
+                          user: users[userIndex],
+                          isViewed: provider.isProfileViewed(
+                            users[userIndex].username,
+                          ),
+                          onTap: () async {
+                            final username = users[userIndex].username;
+                            await provider.markProfileViewed(username);
+                            await _openInstagramProfile(username);
+                          },
+                          onWhitelist: () => provider.addToWhitelist(
+                            users[userIndex].username,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }, childCount: feedItems.length),
           ),
         );
       },
@@ -863,22 +956,25 @@ class _MainScreenState extends State<MainScreen> {
         padding: const EdgeInsets.all(48),
         child: Column(
           children: [
-            Icon(Icons.check_circle_outline,
-                size: 80, color: AppTheme.getSubTextColor(context)),
+            Icon(
+              Icons.check_circle_outline,
+              size: 80,
+              color: AppTheme.getSubTextColor(context),
+            ),
             const SizedBox(height: 16),
             Text(
               'Tutti ricambiano il follow! 🎉',
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    color: AppTheme.getSubTextColor(context),
-                  ),
+                color: AppTheme.getSubTextColor(context),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'Non ci sono profili da controllare.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.getSubTextColor(context),
-                  ),
+                color: AppTheme.getSubTextColor(context),
+              ),
               textAlign: TextAlign.center,
             ),
           ],
