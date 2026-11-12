@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:instalander/main.dart';
 import 'package:instalander/models/user.dart';
@@ -7,6 +9,7 @@ import 'package:instalander/providers/theme_provider.dart';
 import 'package:instalander/screens/main_screen.dart';
 import 'package:instalander/screens/onboarding_screen.dart';
 import 'package:instalander/screens/settings_screen.dart';
+import 'package:instalander/screens/whitelist_screen.dart';
 import 'package:instalander/theme/app_theme.dart';
 import 'package:instalander/widgets/stats_counter.dart';
 import 'package:instalander/widgets/user_card.dart';
@@ -16,6 +19,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+  });
+
+  test('App icon choice is persisted', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final themeProvider = ThemeProvider();
+    await themeProvider.setAppIconStyle(AppIconStyle.dark);
+
+    final restoredProvider = ThemeProvider();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(restoredProvider.appIconStyle, AppIconStyle.dark);
   });
 
   testWidgets('App builds without crashing', (tester) async {
@@ -124,7 +139,7 @@ void main() {
       matching: find.byType(Container),
     );
     expect(tester.widget<Container>(header.first).decoration, isNull);
-    expect(find.descendant(of: header.first, matching: find.byType(Stack)),
+    expect(find.descendant(of: header.first, matching: find.byType(Image)),
         findsOneWidget);
     expect(
       tester.widget<Text>(find.text('Instalander')).style?.fontSize,
@@ -271,6 +286,7 @@ void main() {
     );
     expect(samsungNavbar, findsOneWidget);
     expect(tester.getSize(samsungNavbar).width, 220);
+    expect(find.byType(BackdropFilter), findsOneWidget);
 
     await themeProvider.setBrightnessMode(AppBrightnessMode.system);
     await tester.pumpAndSettle();
@@ -665,6 +681,56 @@ void main() {
     expect(openCount, 2);
   });
 
+  testWidgets('Main title icon follows app brightness, not icon preference',
+      (tester) async {
+    const appIconChannel =
+        MethodChannel('com.simpledevperson.instalander/app_icon');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(appIconChannel, (_) async => null);
+    addTearDown(() => messenger.setMockMethodCallHandler(appIconChannel, null));
+    final themeProvider = ThemeProvider();
+    final appProvider = _TestAppProvider();
+
+    Widget buildApp(ThemeMode mode) => MultiProvider(
+          providers: [
+            ChangeNotifierProvider<ThemeProvider>.value(value: themeProvider),
+            ChangeNotifierProvider<AppProvider>.value(value: appProvider),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.samsungLightTheme,
+            darkTheme: AppTheme.samsungDarkTheme,
+            themeMode: mode,
+            home: const MainScreen(),
+          ),
+        );
+
+    await themeProvider.setAppIconStyle(AppIconStyle.dark);
+    await tester.pumpWidget(buildApp(ThemeMode.light));
+    await tester.pumpAndSettle();
+
+    Image appIcon = tester.widget<Image>(find.byType(Image).first);
+    expect(
+      (appIcon.image as AssetImage).assetName,
+      'assets/images/app_icon_original.png',
+    );
+    expect(appIcon.width, 44);
+    expect(appIcon.height, 44);
+    final header = tester.widget<Container>(
+      find.byKey(const Key('main-title-header')),
+    );
+    expect((header.padding as EdgeInsets).top, 28);
+
+    await tester.pumpWidget(buildApp(ThemeMode.dark));
+    await tester.pumpAndSettle();
+
+    appIcon = tester.widget<Image>(find.byType(Image).first);
+    expect(
+      (appIcon.image as AssetImage).assetName,
+      'assets/images/app_icon_dark.jpg',
+    );
+  });
+
   testWidgets('Holding a profile card expands its details', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -698,6 +764,13 @@ void main() {
     expect(find.textContaining('01/01/2024 •'), findsOneWidget);
     expect(find.text('Non ti segue'), findsOneWidget);
     expect(find.byType(BackdropFilter), findsOneWidget);
+    final actionButton = find
+        .ancestor(
+          of: find.text('Instagram'),
+          matching: find.byType(AnimatedContainer),
+        )
+        .first;
+    expect(tester.getSize(actionButton).height, greaterThanOrEqualTo(52));
     final expandedPositions =
         tester.widgetList<AnimatedPositioned>(find.byType(AnimatedPositioned));
     expect(expandedPositions.map((position) => position.height), contains(420));
@@ -760,6 +833,213 @@ void main() {
     expect(find.text('Dettagli del profilo'), findsNothing);
   });
 
+  testWidgets('Settings show both app icon previews', (tester) async {
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => AppProvider()),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.ensureVisible(find.text('Icona chiara'));
+    await tester.pumpAndSettle();
+
+    final settingsScaffold = tester.widget<Scaffold>(
+      find.ancestor(
+        of: find.text('Impostazioni'),
+        matching: find.byType(Scaffold),
+      ),
+    );
+    expect(settingsScaffold.appBar, isNull);
+    expect(
+      settingsScaffold.backgroundColor,
+      AppTheme.getBgColor(tester.element(find.text('Impostazioni'))),
+    );
+    final settingsTitle = tester.widget<Text>(find.text('Impostazioni'));
+    expect(settingsTitle.textAlign, TextAlign.center);
+    expect(settingsTitle.style?.fontSize, 36);
+    expect(settingsTitle.style?.fontWeight, FontWeight.w700);
+
+    expect(find.text('Icona scura'), findsOneWidget);
+    expect(find.text('Icona originale con sfondo chiaro'), findsOneWidget);
+    expect(find.text('Variante con sfondo scuro'), findsOneWidget);
+    final previewAssets = tester
+        .widgetList<Image>(find.byType(Image))
+        .map((image) => image.image)
+        .whereType<AssetImage>()
+        .map((image) => image.assetName)
+        .toSet();
+    expect(
+      previewAssets,
+      containsAll({
+        'assets/images/app_icon_original.png',
+        'assets/images/app_icon_dark.jpg',
+      }),
+    );
+    final previewClips =
+        tester.widgetList<ClipRRect>(find.byType(ClipRRect)).toList();
+    expect(previewClips, hasLength(2));
+    expect(
+      previewClips.map((clip) => clip.borderRadius),
+      everyElement(BorderRadius.circular(14)),
+    );
+    final previewImages = tester.widgetList<Image>(find.byType(Image)).toList();
+    expect(previewImages, hasLength(2));
+    expect(previewImages.map((image) => image.width), everyElement(53));
+    expect(previewImages.map((image) => image.height), everyElement(53));
+    final previewContainers = tester
+        .widgetList<Container>(find.byType(Container))
+        .where(
+          (container) =>
+              container.constraints?.maxWidth == 56 &&
+              container.constraints?.maxHeight == 56,
+        )
+        .toList();
+    expect(previewContainers, hasLength(2));
+    expect(
+      previewContainers.map(
+        (container) => (container.decoration! as BoxDecoration).border,
+      ),
+      everyElement(isNotNull),
+    );
+  });
+
+  testWidgets('Whitelist switches between list and bordered profile grid',
+      (tester) async {
+    final provider = _TestWhitelistAppProvider({'first_profile', 'second'});
+    await tester.pumpWidget(
+      ChangeNotifierProvider<AppProvider>.value(
+        value: provider,
+        child: const MaterialApp(home: WhitelistScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Whitelist'), findsOneWidget);
+    final title = tester.widget<Text>(find.text('Whitelist'));
+    expect(title.textAlign, TextAlign.center);
+    expect(title.style?.fontSize, 36);
+    expect(title.style?.fontWeight, FontWeight.w700);
+    expect(find.byIcon(Icons.favorite), findsAtLeastNWidgets(2));
+    expect(find.text('Profili in whitelist:'), findsOneWidget);
+    expect(find.text('Più recenti'), findsOneWidget);
+    expect(find.byType(ListView), findsOneWidget);
+    _expectWhitelistAvatarGlow(tester, 'first_profile');
+    final theme = Theme.of(tester.element(find.byType(WhitelistScreen)));
+    final listCard = tester.widget<Card>(
+      find.ancestor(
+        of: find.byKey(const ValueKey('whitelist-avatar-first_profile')),
+        matching: find.byType(Card),
+      ),
+    );
+    expect(listCard.color, theme.cardTheme.color);
+    final clearButtonFrame = tester.widget<Container>(
+      find.byKey(const Key('clear-whitelist-button-frame')),
+    );
+    final clearButtonBorder =
+        (clearButtonFrame.decoration! as BoxDecoration).border! as Border;
+    final errorColor = Theme.of(tester.element(find.byType(WhitelistScreen)))
+        .colorScheme
+        .error;
+    expect(clearButtonBorder.top.color, errorColor);
+    expect(
+      tester
+          .getTopLeft(find.byKey(const Key('clear-whitelist-button-frame')))
+          .dx,
+      greaterThan(
+          tester.getTopLeft(find.byType(PopupMenuButton<SortOption>)).dx),
+    );
+
+    await tester.tap(find.text('Griglia'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.text('@first_profile'), findsOneWidget);
+    expect(find.text('@second'), findsOneWidget);
+    _expectWhitelistAvatarGlow(tester, 'first_profile');
+    final profileCards = tester.widgetList<Card>(find.byType(Card)).toList();
+    expect(profileCards, hasLength(2));
+    for (final card in profileCards) {
+      expect(card.color, theme.cardTheme.color);
+      final shape = card.shape! as RoundedRectangleBorder;
+      expect(shape.side.width, 1.5);
+      expect(
+          shape.side.color,
+          Theme.of(tester.element(find.byType(WhitelistScreen)))
+              .colorScheme
+              .outlineVariant);
+    }
+
+    await tester.tap(find.text('Lista'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ListView), findsOneWidget);
+
+    await tester.tap(find.text('Più recenti'));
+    await tester.pumpAndSettle();
+    expect(find.text('Data decrescente'), findsOneWidget);
+    expect(find.text('(Più recenti prima)'), findsOneWidget);
+    expect(find.byIcon(Icons.calendar_month_outlined), findsNWidgets(2));
+    expect(find.byIcon(Icons.arrow_downward), findsNWidgets(2));
+    expect(find.text('A\nZ'), findsOneWidget);
+    expect(find.byIcon(Icons.check), findsOneWidget);
+    await tester.tap(find.text('Alfabetico (A-Z)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nome A-Z'), findsOneWidget);
+    expect(find.text('Profili in whitelist:'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Svuota whitelist'));
+    await tester.pumpAndSettle();
+    expect(find.text('Svuota whitelist'), findsOneWidget);
+    expect(
+      _contrastRatio(
+        Theme.of(tester.element(find.text('Svuota whitelist')))
+            .colorScheme
+            .onSurface,
+        Theme.of(tester.element(find.text('Svuota whitelist')))
+            .colorScheme
+            .surfaceContainerHigh,
+      ),
+      greaterThanOrEqualTo(4.5),
+    );
+    final clearDialog = tester.widget<AlertDialog>(find.byType(AlertDialog));
+    expect(
+      _contrastRatio(
+        clearDialog.titleTextStyle!.color!,
+        clearDialog.backgroundColor!,
+      ),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(
+      _contrastRatio(
+        clearDialog.contentTextStyle!.color!,
+        clearDialog.backgroundColor!,
+      ),
+      greaterThanOrEqualTo(4.5),
+    );
+    final cancelButton = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Annulla'),
+    );
+    final submitButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Svuota tutto'),
+    );
+    expect(
+      _contrastRatio(
+        cancelButton.style!.foregroundColor!.resolve({})!,
+        clearDialog.backgroundColor!,
+      ),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(
+      _contrastRatio(
+        submitButton.style!.foregroundColor!.resolve({})!,
+        submitButton.style!.backgroundColor!.resolve({})!,
+      ),
+      greaterThanOrEqualTo(4.5),
+    );
+  });
+
   testWidgets('Settings confirms before clearing all app data', (tester) async {
     final appProvider = _ClearableTestAppProvider();
     final themeProvider = ThemeProvider();
@@ -817,6 +1097,23 @@ void main() {
     expect(themeProvider.themeStyle, AppThemeStyle.samsungOneUi);
     expect(themeProvider.brightnessMode, AppBrightnessMode.system);
   });
+}
+
+void _expectWhitelistAvatarGlow(WidgetTester tester, String username) {
+  final avatarContainer = tester.widget<Container>(
+    find.byKey(ValueKey('whitelist-avatar-$username')),
+  );
+  final decoration = avatarContainer.decoration! as BoxDecoration;
+  expect(decoration.shape, BoxShape.circle);
+  expect(decoration.boxShadow, hasLength(1));
+  expect(decoration.boxShadow!.single.blurRadius, 12);
+  expect(decoration.boxShadow!.single.spreadRadius, 1);
+
+  final avatar = avatarContainer.child! as CircleAvatar;
+  expect(
+    decoration.boxShadow!.single.color,
+    avatar.backgroundColor!.withValues(alpha: 0.32),
+  );
 }
 
 Widget _mainScreen(
@@ -878,6 +1175,21 @@ class _ClearableTestAppProvider extends _TestAppProvider {
   @override
   Future<void> clearAllData() async {
     clearCount++;
+  }
+}
+
+class _TestWhitelistAppProvider extends _TestAppProvider {
+  final Set<String> entries;
+
+  _TestWhitelistAppProvider(this.entries);
+
+  @override
+  Set<String> get whitelist => entries;
+
+  @override
+  void removeFromWhitelist(String username) {
+    entries.remove(username);
+    notifyListeners();
   }
 }
 

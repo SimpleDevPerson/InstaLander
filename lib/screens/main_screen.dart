@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -172,57 +174,65 @@ class _MainScreenState extends State<MainScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Container(
-                height: navbarHeight,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(navbarHeight / 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colorScheme.shadow.withValues(alpha: 0.2),
-                      blurRadius: 30,
-                      offset: const Offset(0, 8),
-                      spreadRadius: -4,
-                    ),
-                    BoxShadow(
-                      color: colorScheme.shadow.withValues(alpha: 0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
-                    width: 0.5,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeInOutCubic,
-                      left: _getSamsungIndicatorLeft(context),
-                      top: 4,
-                      bottom: 4,
-                      width: _getIndicatorWidth(context),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary.withValues(alpha: 0.15),
-                          borderRadius:
-                              BorderRadius.circular((navbarHeight - 8) / 2),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(navbarHeight / 2),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Container(
+                    height: navbarHeight,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface.withValues(alpha: 0.78),
+                      borderRadius: BorderRadius.circular(navbarHeight / 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.shadow.withValues(alpha: 0.2),
+                          blurRadius: 30,
+                          offset: const Offset(0, 8),
+                          spreadRadius: -4,
                         ),
+                        BoxShadow(
+                          color: colorScheme.shadow.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                      border: Border.all(
+                        color:
+                            colorScheme.outlineVariant.withValues(alpha: 0.4),
+                        width: 0.5,
                       ),
                     ),
-                    Row(
+                    child: Stack(
                       children: [
-                        _buildNavIcon(context, 0, Icons.analytics_outlined,
-                            Icons.analytics),
-                        _buildNavIcon(
-                            context, 1, Icons.favorite_outline, Icons.favorite),
-                        _buildNavIcon(context, 2, Icons.settings_outlined,
-                            Icons.settings),
+                        AnimatedPositioned(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOutCubic,
+                          left: _getSamsungIndicatorLeft(context),
+                          top: 4,
+                          bottom: 4,
+                          width: _getIndicatorWidth(context),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color:
+                                  colorScheme.primary.withValues(alpha: 0.15),
+                              borderRadius:
+                                  BorderRadius.circular((navbarHeight - 8) / 2),
+                            ),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            _buildNavIcon(context, 0, Icons.analytics_outlined,
+                                Icons.analytics),
+                            _buildNavIcon(context, 1, Icons.favorite_outline,
+                                Icons.favorite),
+                            _buildNavIcon(context, 2, Icons.settings_outlined,
+                                Icons.settings),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: navbarBottomMargin),
@@ -309,12 +319,13 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildAppBar(BuildContext context, AppProvider provider) {
     return Container(
+      key: const Key('main-title-header'),
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
       child: Row(
         mainAxisSize: MainAxisSize.max,
         children: [
-          _buildInstagramLogo(),
+          _buildAppIcon(context),
           const SizedBox(width: 12),
           Flexible(
             child: FittedBox(
@@ -345,44 +356,17 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildInstagramLogo() {
-    return ShaderMask(
-      shaderCallback: AppTheme.instagramGradient.createShader,
-      blendMode: BlendMode.srcIn,
-      child: SizedBox(
+  Widget _buildAppIcon(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(11),
+      child: Image.asset(
+        isDark
+            ? 'assets/images/app_icon_dark.jpg'
+            : 'assets/images/app_icon_original.png',
         width: 44,
         height: 44,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(11),
-            border: Border.all(color: Colors.white, width: 3),
-          ),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 19,
-                height: 19,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                ),
-              ),
-              Positioned(
-                right: 5,
-                top: 5,
-                child: Container(
-                  width: 5,
-                  height: 5,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        fit: BoxFit.cover,
       ),
     );
   }

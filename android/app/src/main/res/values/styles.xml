@@ -2,9 +2,20 @@
 <resources>
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">@android:color/white</item>
+    </style>
+
+    <style name="LaunchThemeDark" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background_dark</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_dark_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_dark_splash</item>
     </style>
 
     <style name="NormalTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@android:color/white</item>
+    </style>
+
+    <style name="NormalThemeDark" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/launcher_dark_background</item>
     </style>
 </resources>

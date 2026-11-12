@@ -393,7 +393,8 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
       duration: const Duration(milliseconds: 100),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 100),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        constraints: const BoxConstraints(minHeight: 52),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
         decoration: BoxDecoration(
           color: isHovered
               ? colorScheme.primaryContainer

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
@@ -12,122 +14,183 @@ class SettingsScreen extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Impostazioni'),
-            centerTitle: true,
-          ),
-          body: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              // Theme Section
-              _buildSectionHeader(context, 'Aspetto', Icons.palette_outlined),
-              const SizedBox(height: 8),
-              RadioGroup<AppThemeStyle>(
-                groupValue: themeProvider.themeStyle,
-                onChanged: (value) {
-                  if (value != null) {
-                    themeProvider.setThemeStyle(value);
-                  }
-                },
-                child: Column(
-                  children: [
-                    _buildThemeOption(
-                      context,
-                      themeProvider,
-                      AppThemeStyle.materialExpressive,
-                      AppThemeStyle.materialExpressive.label,
-                      'Layout e componenti Material 3',
-                      Icons.widgets_outlined,
+          backgroundColor: AppTheme.getBgColor(context),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Center(
+                    child: Text(
+                      'Impostazioni',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
-                    _buildThemeOption(
-                      context,
-                      themeProvider,
-                      AppThemeStyle.samsungOneUi,
-                      AppThemeStyle.samsungOneUi.label,
-                      'Interfaccia One UI con navigazione a pillola',
-                      Icons.branding_watermark,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Luminosità',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Scegli una luminosità fissa oppure segui il dispositivo.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<AppBrightnessMode>(
-                segments: [
-                  for (final mode in AppBrightnessMode.values)
-                    ButtonSegment(
-                      value: mode,
-                      icon: Icon(mode.icon),
-                      label: Text(switch (mode) {
-                        AppBrightnessMode.system => 'Sistema',
-                        AppBrightnessMode.light => 'Chiaro',
-                        AppBrightnessMode.dark => 'Scuro',
-                      }),
-                    ),
-                ],
-                selected: {themeProvider.brightnessMode},
-                onSelectionChanged: (selection) {
-                  themeProvider.setBrightnessMode(selection.first);
-                },
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.resolveWith((states) {
-                    return states.contains(WidgetState.selected)
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.onSurfaceVariant;
-                  }),
-                  backgroundColor: WidgetStateProperty.resolveWith((states) {
-                    return states.contains(WidgetState.selected)
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.transparent;
-                  }),
-                  side: WidgetStateProperty.resolveWith((states) {
-                    return BorderSide(
-                      color: states.contains(WidgetState.selected)
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline,
-                    );
-                  }),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      // Theme Section
+                      _buildSectionHeader(
+                          context, 'Aspetto', Icons.palette_outlined),
+                      const SizedBox(height: 8),
+                      RadioGroup<AppThemeStyle>(
+                        groupValue: themeProvider.themeStyle,
+                        onChanged: (value) {
+                          if (value != null) {
+                            themeProvider.setThemeStyle(value);
+                          }
+                        },
+                        child: Column(
+                          children: [
+                            _buildThemeOption(
+                              context,
+                              themeProvider,
+                              AppThemeStyle.materialExpressive,
+                              AppThemeStyle.materialExpressive.label,
+                              'Layout e componenti Material 3',
+                              Icons.widgets_outlined,
+                            ),
+                            _buildThemeOption(
+                              context,
+                              themeProvider,
+                              AppThemeStyle.samsungOneUi,
+                              AppThemeStyle.samsungOneUi.label,
+                              'Interfaccia One UI con navigazione a pillola',
+                              Icons.branding_watermark,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Luminosità',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Scegli una luminosità fissa oppure segui il dispositivo.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      SegmentedButton<AppBrightnessMode>(
+                        segments: [
+                          for (final mode in AppBrightnessMode.values)
+                            ButtonSegment(
+                              value: mode,
+                              icon: Icon(mode.icon),
+                              label: Text(switch (mode) {
+                                AppBrightnessMode.system => 'Sistema',
+                                AppBrightnessMode.light => 'Chiaro',
+                                AppBrightnessMode.dark => 'Scuro',
+                              }),
+                            ),
+                        ],
+                        selected: {themeProvider.brightnessMode},
+                        onSelectionChanged: (selection) {
+                          themeProvider.setBrightnessMode(selection.first);
+                        },
+                        style: ButtonStyle(
+                          foregroundColor:
+                              WidgetStateProperty.resolveWith((states) {
+                            return states.contains(WidgetState.selected)
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant;
+                          }),
+                          backgroundColor:
+                              WidgetStateProperty.resolveWith((states) {
+                            return states.contains(WidgetState.selected)
+                                ? Theme.of(context).colorScheme.primary
+                                : Colors.transparent;
+                          }),
+                          side: WidgetStateProperty.resolveWith((states) {
+                            return BorderSide(
+                              color: states.contains(WidgetState.selected)
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.outline,
+                            );
+                          }),
+                        ),
+                        showSelectedIcon: false,
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader(
+                          context, 'Icona dell’app', Icons.image_outlined),
+                      const SizedBox(height: 8),
+                      RadioGroup<AppIconStyle>(
+                        groupValue: themeProvider.appIconStyle,
+                        onChanged: (value) {
+                          if (value != null) {
+                            unawaited(
+                                _changeAppIcon(context, themeProvider, value));
+                          }
+                        },
+                        child: Column(
+                          children: [
+                            _buildAppIconOption(
+                              context,
+                              themeProvider,
+                              AppIconStyle.original,
+                              'Icona chiara',
+                              'Icona originale con sfondo chiaro',
+                              'assets/images/app_icon_original.png',
+                            ),
+                            _buildAppIconOption(
+                              context,
+                              themeProvider,
+                              AppIconStyle.dark,
+                              'Icona scura',
+                              'Variante con sfondo scuro',
+                              'assets/images/app_icon_dark.jpg',
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // About Section
+                      _buildSectionHeader(
+                          context, 'Informazioni', Icons.info_outline),
+                      const SizedBox(height: 8),
+                      _buildInfoTile(
+                        context,
+                        'Versione',
+                        '0.3',
+                        Icons.tag,
+                      ),
+                      _buildInfoTile(
+                        context,
+                        'Progetto',
+                        'InstaLander',
+                        Icons.code,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildActionTile(
+                        context,
+                        'Visualizza Whitelist',
+                        'Gestisci la lista dei profili ignorati',
+                        Icons.favorite_border,
+                        () => Navigator.pushNamed(context, '/whitelist'),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildClearDataTile(context),
+                    ],
+                  ),
                 ),
-                showSelectedIcon: false,
-              ),
-              const SizedBox(height: 32),
-              // About Section
-              _buildSectionHeader(context, 'Informazioni', Icons.info_outline),
-              const SizedBox(height: 8),
-              _buildInfoTile(
-                context,
-                'Versione',
-                '1.0.0',
-                Icons.tag,
-              ),
-              _buildInfoTile(
-                context,
-                'Progetto',
-                'InstaLander',
-                Icons.code,
-              ),
-              const SizedBox(height: 16),
-              _buildActionTile(
-                context,
-                'Visualizza Whitelist',
-                'Gestisci la lista dei profili ignorati',
-                Icons.favorite_border,
-                () => Navigator.pushNamed(context, '/whitelist'),
-              ),
-              const SizedBox(height: 24),
-              _buildClearDataTile(context),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -158,6 +221,85 @@ class SettingsScreen extends StatelessWidget {
           'Rimuove file importati, whitelist e preferenze salvate',
         ),
         onTap: () => _confirmAndClearData(context),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _changeAppIcon(
+    BuildContext context,
+    ThemeProvider provider,
+    AppIconStyle style,
+  ) async {
+    try {
+      await provider.setAppIconStyle(style);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Impossibile cambiare icona: $error')),
+      );
+    }
+  }
+
+  Widget _buildAppIconOption(
+    BuildContext context,
+    ThemeProvider provider,
+    AppIconStyle style,
+    String title,
+    String subtitle,
+    String iconAsset,
+  ) {
+    final isSelected = provider.appIconStyle == style;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: RadioListTile<AppIconStyle>(
+        value: style,
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: isSelected ? colorScheme.primary : null,
+              ),
+        ),
+        subtitle: Text(subtitle),
+        secondary: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: colorScheme.outlineVariant,
+              width: 1.5,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(1.5),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              clipBehavior: Clip.antiAlias,
+              child: Image.asset(
+                iconAsset,
+                width: 53,
+                height: 53,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    Icons.broken_image_outlined,
+                    size: 40,
+                    color: colorScheme.error,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        activeColor: colorScheme.primary,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

@@ -5,6 +5,13 @@ plugins {
 }
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val signingPropertiesFile = rootProject.file("key.properties")
+val signingProperties = Properties()
+if (signingPropertiesFile.isFile) {
+    signingPropertiesFile.inputStream().use(signingProperties::load)
+}
 
 android {
     namespace = "com.simpledevperson.instalander"
@@ -25,9 +32,26 @@ android {
         multiDexEnabled = true
     }
 
+    signingConfigs {
+        create("release") {
+            signingProperties.getProperty("storeFile")?.let {
+                storeFile = rootProject.file(it)
+            }
+            signingProperties.getProperty("storePassword")?.let {
+                storePassword = it
+            }
+            signingProperties.getProperty("keyAlias")?.let {
+                keyAlias = it
+            }
+            signingProperties.getProperty("keyPassword")?.let {
+                keyPassword = it
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = false
             isShrinkResources = false
         }
@@ -35,6 +59,29 @@ android {
 
     packaging {
         resources.excludes.add("META-INF/**")
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val isReleaseBuild = allTasks.any {
+        it.name == "assembleRelease" || it.name == "bundleRelease"
+    }
+    if (isReleaseBuild) {
+        val requiredProperties =
+            listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+        val missingProperties = requiredProperties.filter {
+            signingProperties.getProperty(it).isNullOrBlank()
+        }
+        check(missingProperties.isEmpty()) {
+            "Release signing is not configured. Copy android/key.properties.example " +
+                "to android/key.properties and fill in the local keystore details."
+        }
+
+        val keystore = rootProject.file(signingProperties.getProperty("storeFile"))
+        check(keystore.isFile) {
+            "Release keystore not found at ${keystore.absolutePath}. " +
+                "Check the storeFile value in android/key.properties."
+        }
     }
 }
 

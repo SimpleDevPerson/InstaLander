@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 
 class StatsCounter extends StatelessWidget {
   final int count;
+  final String label;
+  final String semanticsLabel;
+  final IconData? indicatorIcon;
 
-  const StatsCounter({super.key, required this.count});
+  const StatsCounter({
+    super.key,
+    required this.count,
+    this.label = 'Da controllare:',
+    this.semanticsLabel = 'Profili da controllare',
+    this.indicatorIcon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -54,12 +63,12 @@ class StatsCounter extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Flexible(
+                  Flexible(
                     child: Text(
-                      'Da controllare:',
+                      label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w500,
                         color: Colors.white,
@@ -90,7 +99,7 @@ class StatsCounter extends StatelessWidget {
               top: 0,
               right: 0,
               child: Semantics(
-                label: 'Profili da controllare',
+                label: semanticsLabel,
                 child: Container(
                   width: 44,
                   height: 44,
@@ -114,9 +123,10 @@ class StatsCounter extends StatelessWidget {
                         color: accent.withValues(alpha: isDark ? 0.24 : 0.16),
                       ),
                       child: Icon(
-                        count < 10
-                            ? Icons.check_rounded
-                            : Icons.priority_high_rounded,
+                        indicatorIcon ??
+                            (count < 10
+                                ? Icons.check_rounded
+                                : Icons.priority_high_rounded),
                         color: accent,
                         size: 18,
                       ),
