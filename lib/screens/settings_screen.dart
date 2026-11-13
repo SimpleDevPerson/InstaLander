@@ -201,43 +201,6 @@ class SettingsScreen extends StatelessWidget {
                       const SizedBox(height: 24),
                       _buildSectionHeader(
                         context,
-                        'Pubblicità',
-                        Icons.campaign_outlined,
-                      ),
-                      const SizedBox(height: 8),
-                      Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ValueListenableBuilder<bool>(
-                          valueListenable: AdsService.instance.adsEnabled,
-                          builder: (context, enabled, child) {
-                            Future<void> changeAds(bool value) async {
-                              try {
-                                await AdsService.instance.setAdsEnabled(value);
-                              } catch (error) {
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Impossibile salvare la preferenza annunci',
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-
-                            return SettingsToggleTile(
-                              title: 'Mostra annunci',
-                              subtitle: 'Visualizza gli annunci nel report',
-                              value: enabled,
-                              isSamsung: themeProvider.isSamsungTheme,
-                              onChanged: changeAds,
-                            );
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildSectionHeader(
-                        context,
                         'Promemoria',
                         Icons.notifications_outlined,
                       ),

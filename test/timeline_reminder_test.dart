@@ -71,8 +71,6 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text('Mostra annunci'), 250);
-      await tester.pumpAndSettle();
       Switch switchFor(String title) => tester.widget<Switch>(
         find.descendant(
           of: find.ancestor(
@@ -82,7 +80,6 @@ void main() {
           matching: find.byType(Switch),
         ),
       );
-      final adsSwitch = switchFor('Mostra annunci');
       await tester.scrollUntilVisible(find.text('Promemoria'), 250);
       await tester.pumpAndSettle();
       expect(find.text('Promemoria'), findsOneWidget);
@@ -100,16 +97,10 @@ void main() {
       expect(cardRect.left, listRect.left + 16);
       expect(cardRect.right, listRect.right - 16);
       final reminderSwitch = switchFor('Promemoria Instagram');
-      expect(
-        reminderSwitch.thumbColor?.resolve({}),
-        adsSwitch.thumbColor?.resolve({}),
-      );
-      expect(reminderSwitch.activeTrackColor, adsSwitch.activeTrackColor);
-      expect(reminderSwitch.inactiveTrackColor, adsSwitch.inactiveTrackColor);
-      expect(
-        reminderSwitch.trackOutlineColor?.resolve({}),
-        adsSwitch.trackOutlineColor?.resolve({}),
-      );
+      expect(reminderSwitch.thumbColor?.resolve({}), Colors.white);
+      expect(reminderSwitch.activeTrackColor, const Color(0xFF0381FE));
+      expect(reminderSwitch.inactiveTrackColor, const Color(0xFFB6B6BB));
+      expect(reminderSwitch.trackOutlineColor?.resolve({}), Colors.transparent);
       for (final interval in [3, 6, 1]) {
         final selector = find.byType(ReminderIntervalSelector);
         await tester.ensureVisible(selector);

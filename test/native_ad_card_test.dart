@@ -34,55 +34,37 @@ void main() {
     },
   );
 
-  testWidgets('Settings persist and restore the ads switch', (tester) async {
-    final ads = AdsService.instance;
-    addTearDown(() => ads.adsEnabled.value = true);
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => ThemeProvider()),
-          ChangeNotifierProvider(create: (_) => AppProvider()),
-        ],
-        child: const MaterialApp(home: SettingsScreen()),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Mostra annunci'), 250);
-    await tester.pumpAndSettle();
-    final adsCard = find.ancestor(
-      of: find.text('Mostra annunci'),
-      matching: find.byType(Card),
-    );
-    final listRect = tester.getRect(find.byType(ListView));
-    final cardRect = tester.getRect(adsCard);
-    expect(cardRect.left, listRect.left + 16);
-    expect(cardRect.right, listRect.right - 16);
-    await tester.tap(find.text('Mostra annunci'));
-    await tester.pumpAndSettle();
-    expect(ads.adsEnabled.value, isFalse);
-    expect(
-      tester
-          .widget<Switch>(
-            find.descendant(of: adsCard, matching: find.byType(Switch)),
-          )
-          .value,
-      isFalse,
-    );
-
-    ads.adsEnabled.value = true;
-    await ads.initialize();
-    await tester.pumpAndSettle();
-    expect(ads.adsEnabled.value, isFalse);
-
-    await tester.tap(find.text('Mostra annunci'));
-    await tester.pumpAndSettle();
-    expect(ads.adsEnabled.value, isTrue);
-    expect(
-      (await SharedPreferences.getInstance()).getBool('ads_enabled'),
-      isTrue,
-    );
-    await tester.pumpWidget(const SizedBox.shrink());
-  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+  testWidgets(
+    'Advertising settings are hidden without changing saved preferences',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({'ads_enabled': true});
+      final ads = AdsService.instance;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+            ChangeNotifierProvider(create: (_) => AppProvider()),
+          ],
+          child: const MaterialApp(home: SettingsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (var i = 0; i < 12; i++) {
+        expect(find.text('Pubblicità'), findsNothing);
+        expect(find.text('Mostra annunci'), findsNothing);
+        await tester.drag(find.byType(ListView), const Offset(0, -200));
+        await tester.pumpAndSettle();
+      }
+      expect(ads.adsEnabled.value, isTrue);
+      expect(
+        (await SharedPreferences.getInstance()).getBool('ads_enabled'),
+        isTrue,
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.linux),
+  );
 
   for (final consentInitiallyAvailable in [true, false]) {
     testWidgets('Native ad loads once with consent available '

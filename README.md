@@ -1,6 +1,6 @@
 # InstaLander
 
-![Anteprima di InstaLander: Report, Timeline, Whitelist e Promemoria](docs/images/instalander-banner.png)
+![InstaLander: Il tuo report, privato.](docs/images/instalander-banner.png)
 
 Applicazione Flutter per Android che confronta i file JSON dell'esportazione Instagram e individua i profili seguiti che non ricambiano il follow. Non richiede l'accesso a Instagram e non usa API o servizi backend.
 
@@ -22,9 +22,9 @@ Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/
 - Indicatore persistente dei profili già aperti.
 - Caricamento dei file JSON direttamente dal dispositivo.
 - Temi Samsung One UI e Material Design Expressive, ciascuno con luminosità chiara, scura o predefinita di sistema (configurabile dalle impostazioni).
-- Annunci nativi AdMob facoltativi nella schermata del report, ogni 3 o 4 righe di schede; sono disattivati per impostazione predefinita e attivabili nelle impostazioni, subordinatamente al consenso UMP.
+- Annunci nativi AdMob nella schermata del report, subordinati al consenso UMP e disattivati per impostazione predefinita. La sezione Pubblicità delle impostazioni è nascosta.
 - Contatori con glow e stato «Tutto a posto!» quando non rimangono profili da controllare.
-- Selettore della luminosità e interruttore degli annunci in stile One UI, con collegamento alla repository nelle impostazioni.
+- Selettori di luminosità e frequenza dei promemoria in stile One UI, con collegamento alla repository nelle impostazioni.
 
 ## Esportazione Instagram
 

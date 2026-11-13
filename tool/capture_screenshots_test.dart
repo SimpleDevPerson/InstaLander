@@ -171,7 +171,7 @@ void main() {
   testWidgets('capture public screenshots using synthetic data', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(412, 892);
+    tester.view.physicalSize = const Size(412, 932);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -190,15 +190,25 @@ void main() {
     await tester.pumpWidget(
       RepaintBoundary(
         key: boundaryKey,
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<AppProvider>.value(value: data),
-            ChangeNotifierProvider<ThemeProvider>.value(value: theme),
-          ],
-          child: MaterialApp(
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.samsungDarkTheme,
-            home: const MainScreen(),
+        child: ColoredBox(
+          color: const Color(0xFF111111),
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              Expanded(
+                child: MultiProvider(
+                  providers: [
+                    ChangeNotifierProvider<AppProvider>.value(value: data),
+                    ChangeNotifierProvider<ThemeProvider>.value(value: theme),
+                  ],
+                  child: MaterialApp(
+                    debugShowCheckedModeBanner: false,
+                    theme: AppTheme.samsungDarkTheme,
+                    home: const MainScreen(),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -269,7 +279,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.settings_outlined).hitTestable());
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Promemoria'),
+      find.text('Icona dell’app'),
       200,
       scrollable: find
           .descendant(
@@ -278,15 +288,13 @@ void main() {
           )
           .first,
     );
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('reminder-frequency')),
-    );
-    // Include appearance controls above the reminders; keep Debug off screen.
-    await tester.drag(
-      find.byType(ListView).hitTestable(),
-      const Offset(0, 180),
-    );
+    // Begin at a complete section heading, without a cropped row above it.
+    final iconSection = tester.element(find.text('Icona dell’app'));
+    await Scrollable.of(
+      iconSection,
+    ).position.ensureVisible(iconSection.findRenderObject()!, alignment: 0.03);
     await tester.pumpAndSettle();
+    expect(find.text('Impostazioni').hitTestable(), findsOneWidget);
     await capture('reminders');
     await tester.pumpWidget(const SizedBox.shrink());
     data.dispose();
