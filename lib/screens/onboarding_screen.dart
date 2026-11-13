@@ -259,7 +259,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   FilledButton(
                     onPressed: _isCompleting ? null : _advance,
                     style: FilledButton.styleFrom(
-                      foregroundColor: Colors.black,
+                      foregroundColor: colorScheme.onPrimary,
                     ),
                     child: _isCompleting
                         ? const SizedBox(

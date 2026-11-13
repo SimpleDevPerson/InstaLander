@@ -797,6 +797,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             child: const Text('Rimuovi'),
           ),
@@ -817,7 +818,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
               color: colorScheme.onSurface,
             ),
         contentTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+              color: colorScheme.onSurface,
             ),
         title: Row(
           children: [
@@ -837,7 +838,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             style: TextButton.styleFrom(
-              foregroundColor: colorScheme.onSurfaceVariant,
+              foregroundColor: colorScheme.onSurface,
             ),
             child: const Text('Annulla'),
           ),

@@ -184,6 +184,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      // Compare the axis after bringing profile rows into the viewport.
+      await tester.drag(find.byType(ListView), const Offset(0, -200));
+      await tester.pumpAndSettle();
       final nodes = find.byKey(const ValueKey('timeline-node'));
       expect(nodes, findsAtLeastNWidgets(2));
       final centers = nodes

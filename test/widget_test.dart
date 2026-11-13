@@ -1426,7 +1426,13 @@ void main() {
     final confirmButton = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Cancella tutto'),
     );
-    expect(confirmButton.style!.foregroundColor!.resolve({}), Colors.black);
+    expect(
+      _contrastRatio(
+        confirmButton.style!.foregroundColor!.resolve({})!,
+        confirmButton.style!.backgroundColor!.resolve({})!,
+      ),
+      greaterThanOrEqualTo(4.5),
+    );
 
     await tester.tap(find.text('Annulla'));
     await tester.pumpAndSettle();

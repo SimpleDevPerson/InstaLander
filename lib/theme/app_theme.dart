@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
+  static Color readableForeground(Color background, Color preferred) {
+    final backgroundLuminance = background.computeLuminance();
+    final foregroundLuminance = preferred.computeLuminance();
+    final contrast = foregroundLuminance > backgroundLuminance
+        ? (foregroundLuminance + 0.05) / (backgroundLuminance + 0.05)
+        : (backgroundLuminance + 0.05) / (foregroundLuminance + 0.05);
+    if (contrast >= 4.5) return preferred;
+    final blackContrast = (backgroundLuminance + 0.05) / 0.05;
+    final whiteContrast = 1.05 / (backgroundLuminance + 0.05);
+    return blackContrast >= whiteContrast ? Colors.black : Colors.white;
+  }
+
   // Instagram brand colors
   static const Color instagramBlue = Color(0xFF0095F6);
   static const Color instagramGradientStart = Color(0xFF833AB4);
@@ -115,11 +127,19 @@ class AppTheme {
     required EdgeInsets appBarPadding,
   }) {
     final isDark = brightness == Brightness.dark;
+    final accessibleColors = colorScheme.copyWith(
+      onPrimary: readableForeground(primary, colorScheme.onPrimary),
+      onError: readableForeground(colorScheme.error, colorScheme.onError),
+      onSurfaceVariant: readableForeground(
+        colorScheme.surfaceContainerHighest,
+        colorScheme.onSurfaceVariant,
+      ),
+    );
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
-      colorScheme: colorScheme,
+      colorScheme: accessibleColors,
       scaffoldBackgroundColor: bg,
       fontFamily: 'Roboto',
       textTheme: textTheme,
@@ -175,12 +195,12 @@ class AppTheme {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         hintStyle: TextStyle(
-          color: subText,
+          color: readableForeground(cardBg, subText),
           fontSize: 14,
           fontFamily: 'Roboto',
         ),
         labelStyle: TextStyle(
-          color: subText,
+          color: readableForeground(cardBg, subText),
           fontSize: 14,
           fontFamily: 'Roboto',
         ),
@@ -188,7 +208,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primary,
-          foregroundColor: Colors.white,
+          foregroundColor: accessibleColors.onPrimary,
           elevation: 0,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonBorderRadius)),
@@ -205,7 +225,7 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: primary,
-          foregroundColor: Colors.white,
+          foregroundColor: accessibleColors.onPrimary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonBorderRadius)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
           minimumSize: const Size(64, 40),
@@ -234,7 +254,7 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: primary,
+          foregroundColor: text,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(buttonBorderRadius)),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           minimumSize: const Size(48, 40),

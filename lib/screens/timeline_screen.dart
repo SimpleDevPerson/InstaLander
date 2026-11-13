@@ -31,7 +31,8 @@ class TimelineScreen extends StatelessWidget {
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            height: 66,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,

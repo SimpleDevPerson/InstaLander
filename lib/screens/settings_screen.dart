@@ -63,10 +63,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  height: 66,
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -561,7 +559,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.pop(dialogContext, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(dialogContext).colorScheme.error,
-              foregroundColor: Colors.black,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
             ),
             child: const Text('Cancella tutto'),
           ),
