@@ -2,8 +2,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/import_snapshot.dart';
 import '../models/user.dart';
+import '../models/username_change.dart';
 import '../services/data_service.dart';
+import '../services/debug_data_service.dart';
+import '../services/reminder_service.dart';
 
 class AppProvider extends ChangeNotifier {
   static const String _viewedProfilesKey = 'viewed_profiles';
@@ -17,6 +21,68 @@ class AppProvider extends ChangeNotifier {
   List<InstagramUser> _nonFollowers = [];
   List<InstagramUser> _sortedNonFollowers = [];
   Map<String, int> _stats = {};
+  List<ImportSnapshot> _history = [];
+  Map<String, InstagramUser> _debugFollowers = {};
+  Map<String, InstagramUser> _debugFollowing = {};
+  Set<String> _debugWhitelist = {};
+  final Set<String> _debugViewedProfiles = {};
+  List<UnfollowInterval> _debugTimeline = [];
+
+  void populateDebugTimeline() {
+    _debugTimeline = DebugDataService().timeline();
+    notifyListeners();
+  }
+
+  void populateDebugWhitelist() {
+    _debugWhitelist.addAll(DebugDataService().profiles('whitelist', 15).keys);
+    _recomputeData();
+  }
+
+  void populateDebugReport() {
+    final (followers, following) = DebugDataService().report();
+    _debugWhitelist.removeAll(_debugFollowing.keys);
+    _debugFollowers = followers;
+    _debugFollowing = following;
+    _errorMessage = null;
+    _recomputeData();
+  }
+
+  void _clearDebugData() {
+    _debugFollowers = {};
+    _debugFollowing = {};
+    _debugWhitelist = {};
+    _debugTimeline = [];
+    _debugViewedProfiles.clear();
+  }
+
+  bool _monthlyReminder = false;
+  int _reminderIntervalMonths = 1;
+  int get reminderIntervalMonths => _reminderIntervalMonths;
+  Future<void> setReminderIntervalMonths(int months) async {
+    await ReminderService.setIntervalMonths(months);
+    _reminderIntervalMonths = months;
+    notifyListeners();
+  }
+
+  bool get monthlyReminder => _monthlyReminder;
+  List<UnfollowInterval> get timeline {
+    final snapshots = _history.where((s) => s.followersImported).toList();
+    return [
+      ..._debugTimeline,
+      for (var i = snapshots.length - 1; i > 0; i--)
+        UnfollowInterval(snapshots[i - 1], snapshots[i]),
+    ];
+  }
+
+  int get followerSnapshotCount =>
+      _history.where((s) => s.followersImported).length;
+
+  Future<bool> setMonthlyReminder(bool enabled) async {
+    final result = await ReminderService.setEnabled(enabled);
+    _monthlyReminder = result;
+    notifyListeners();
+    return result == enabled;
+  }
 
   // UI State
   SortOption _currentSort = SortOption.dateDesc;
@@ -28,19 +94,25 @@ class AppProvider extends ChangeNotifier {
   String? _errorMessage;
 
   // Getters
-  Map<String, InstagramUser> get followers => _followers;
-  Map<String, InstagramUser> get following => _following;
-  Set<String> get whitelist => _whitelist;
+  Map<String, InstagramUser> get followers => _debugFollowers.isEmpty
+      ? _followers
+      : {..._followers, ..._debugFollowers};
+  Map<String, InstagramUser> get following => _debugFollowing.isEmpty
+      ? _following
+      : {..._following, ..._debugFollowing};
+  Set<String> get whitelist => _debugWhitelist.isEmpty
+      ? _whitelist
+      : {..._whitelist, ..._debugWhitelist};
   List<InstagramUser> get nonFollowers => _nonFollowers;
   Map<String, int> get stats => _stats;
   SortOption get currentSort => _currentSort;
   bool get isLoading => _isLoading;
-  bool get hasData => _hasData;
-  bool get hasFollowersFile => _hasFollowersFile;
-  bool get hasFollowingFile => _hasFollowingFile;
-  bool get hasPartialData => _hasFollowersFile != _hasFollowingFile;
+  bool get hasData => _hasData || _debugFollowing.isNotEmpty;
+  bool get hasFollowersFile => _hasFollowersFile || _debugFollowing.isNotEmpty;
+  bool get hasFollowingFile => _hasFollowingFile || _debugFollowing.isNotEmpty;
+  bool get hasPartialData => hasFollowersFile != hasFollowingFile;
   bool get shouldShowOnboarding =>
-      !_isLoading && !_hasData && !_hasCompletedOnboarding;
+      !_isLoading && !hasData && !_hasCompletedOnboarding;
   String? get errorMessage => _errorMessage;
 
   List<InstagramUser> get sortedNonFollowers => _sortedNonFollowers;
@@ -55,12 +127,16 @@ class AppProvider extends ChangeNotifier {
         list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
         break;
       case SortOption.alphaAsc:
-        list.sort((a, b) =>
-            a.username.toLowerCase().compareTo(b.username.toLowerCase()));
+        list.sort(
+          (a, b) =>
+              a.username.toLowerCase().compareTo(b.username.toLowerCase()),
+        );
         break;
       case SortOption.alphaDesc:
-        list.sort((a, b) =>
-            b.username.toLowerCase().compareTo(a.username.toLowerCase()));
+        list.sort(
+          (a, b) =>
+              b.username.toLowerCase().compareTo(a.username.toLowerCase()),
+        );
         break;
     }
     _sortedNonFollowers = list;
@@ -72,27 +148,19 @@ class AppProvider extends ChangeNotifier {
     _errorMessage = null;
 
     try {
-      _followers = await DataService.loadUsersFromFiles(
-        prefix: 'followers',
-        label: 'FOLLOWER (Chi ti segue)',
-      );
-      _following = await DataService.loadUsersFromFiles(
-        prefix: 'following',
-        label: 'SEGUITI (Chi segui tu)',
-      );
-      _hasFollowersFile =
-          await DataService.countFilesWithPrefix('followers') > 0;
-      _hasFollowingFile =
-          await DataService.countFilesWithPrefix('following') > 0;
-      _whitelist = await DataService.loadWhitelist();
+      await _loadSavedFiles();
+      try {
+        _monthlyReminder = await ReminderService.isEnabled();
+        _reminderIntervalMonths = await ReminderService.getIntervalMonths();
+      } on Exception {
+        _monthlyReminder = false;
+      }
       final preferences = await SharedPreferences.getInstance();
       _viewedProfiles =
           preferences.getStringList(_viewedProfilesKey)?.toSet() ?? {};
       _hasCompletedOnboarding =
           preferences.getBool(_onboardingCompletedKey) ?? false;
 
-      _recomputeData();
-      _hasData = _hasFollowersFile && _hasFollowingFile;
       // Note: Non impostiamo _errorMessage se non ci sono file al primo avvio.
       // Lo stato _hasData = false farà vedere la schermata di setup con il pulsante "Carica JSON".
     } catch (e) {
@@ -113,6 +181,10 @@ class AppProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      if (ReminderService.supported) {
+        await ReminderService.setEnabled(false);
+        await ReminderService.setIntervalMonths(1);
+      }
       await DataService.clearAppData();
       final preferences = await SharedPreferences.getInstance();
       await preferences.clear();
@@ -124,6 +196,10 @@ class AppProvider extends ChangeNotifier {
       _nonFollowers = [];
       _sortedNonFollowers = [];
       _stats = DataService.getStats(_followers, _following, _whitelist);
+      _history = [];
+      _clearDebugData();
+      _monthlyReminder = false;
+      _reminderIntervalMonths = 1;
       _currentSort = SortOption.dateDesc;
       _hasData = false;
       _hasFollowersFile = false;
@@ -140,12 +216,20 @@ class AppProvider extends ChangeNotifier {
   }
 
   // Load and process new JSON files
-  Future<void> loadJsonFiles(List<dynamic> files) async {
+  Future<void> loadJsonFiles(
+    List<dynamic> files, {
+    DateTime? exportDate,
+    ResolveUsernameChanges? resolveUsernameChanges,
+  }) async {
     _setLoading(true);
     _errorMessage = null;
 
     try {
-      await DataService.saveJsonFiles(files.cast<PlatformFile>());
+      await DataService.saveJsonFiles(
+        files.cast<PlatformFile>(),
+        exportDate: exportDate,
+        resolveUsernameChanges: resolveUsernameChanges,
+      );
 
       await _loadSavedFiles();
     } catch (e) {
@@ -155,12 +239,20 @@ class AppProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> loadInstagramArchive(PlatformFile archiveFile) async {
+  Future<void> loadInstagramArchive(
+    PlatformFile archiveFile, {
+    DateTime? exportDate,
+    ResolveUsernameChanges? resolveUsernameChanges,
+  }) async {
     _setLoading(true);
     _errorMessage = null;
 
     try {
-      await DataService.saveInstagramArchive(archiveFile);
+      await DataService.saveInstagramArchive(
+        archiveFile,
+        exportDate: exportDate,
+        resolveUsernameChanges: resolveUsernameChanges,
+      );
     } catch (e) {
       _errorMessage = 'Errore durante il caricamento dell’archivio ZIP: $e';
       _setLoading(false);
@@ -171,37 +263,29 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> _loadSavedFiles() async {
-    final followersFileCount =
-        await DataService.countFilesWithPrefix('followers');
-    final followingFileCount =
-        await DataService.countFilesWithPrefix('following');
-
-    _hasFollowersFile = followersFileCount > 0;
-    _hasFollowingFile = followingFileCount > 0;
-    _followers = await DataService.loadUsersFromFiles(
-      prefix: 'followers',
-      label: 'FOLLOWER (Chi ti segue)',
-    );
-    _following = await DataService.loadUsersFromFiles(
-      prefix: 'following',
-      label: 'SEGUITI (Chi segui tu)',
-    );
-
-    if (!_hasFollowersFile && !_hasFollowingFile) {
-      _errorMessage =
-          'Nessun file JSON valido trovato. Seleziona file followers_*.json e following_*.json';
-    }
-
-    _recomputeData();
+    final snapshot = await DataService.loadAppData(sort: _currentSort);
+    _clearDebugData();
+    _hasFollowersFile = snapshot.hasFollowersFile;
+    _hasFollowingFile = snapshot.hasFollowingFile;
+    _followers = snapshot.followers;
+    _following = snapshot.following;
+    _whitelist = Set.of(snapshot.whitelist);
+    _history = snapshot.history;
+    _nonFollowers = snapshot.nonFollowers;
+    _sortedNonFollowers = snapshot.sortedNonFollowers;
+    _stats = snapshot.stats;
     _hasData = _hasFollowersFile && _hasFollowingFile;
   }
 
   // Recompute derived data
   void _recomputeData() {
-    _nonFollowers =
-        DataService.computeNonFollowers(_followers, _following, _whitelist);
+    _nonFollowers = DataService.computeNonFollowers(
+      followers,
+      following,
+      whitelist,
+    );
     _updateSortedNonFollowers();
-    _stats = DataService.getStats(_followers, _following, _whitelist);
+    _stats = DataService.getStats(followers, following, whitelist);
     notifyListeners();
   }
 
@@ -215,31 +299,57 @@ class AppProvider extends ChangeNotifier {
 
   // Add user to whitelist
   void addToWhitelist(String username) {
+    if (_debugFollowing.containsKey(username)) {
+      _debugWhitelist.add(username);
+      _recomputeData();
+      return;
+    }
     _whitelist.add(username);
-    DataService.saveWhitelist(_whitelist);
+    _saveWhitelist();
     _recomputeData();
   }
 
   // Remove user from whitelist
   void removeFromWhitelist(String username) {
+    if (_debugWhitelist.remove(username)) {
+      _recomputeData();
+      return;
+    }
     _whitelist.remove(username);
-    DataService.saveWhitelist(_whitelist);
+    _saveWhitelist();
     _recomputeData();
   }
 
   // Clear entire whitelist
   void clearWhitelist() {
+    _debugWhitelist.clear();
     _whitelist.clear();
-    DataService.saveWhitelist(_whitelist);
+    _saveWhitelist();
     _recomputeData();
   }
 
-  // Check if user is in whitelist
-  bool isInWhitelist(String username) => _whitelist.contains(username);
+  Future<void> _saveWhitelist() async {
+    try {
+      await DataService.saveWhitelist(_whitelist);
+    } catch (error) {
+      setError('Impossibile salvare la whitelist: $error');
+    }
+  }
 
-  bool isProfileViewed(String username) => _viewedProfiles.contains(username);
+  // Check if user is in whitelist
+  bool isInWhitelist(String username) => whitelist.contains(username);
+
+  bool isProfileViewed(String username) =>
+      _viewedProfiles.contains(username) ||
+      _debugViewedProfiles.contains(username);
 
   Future<void> markProfileViewed(String username) async {
+    if (_debugFollowing.containsKey(username) ||
+        _debugWhitelist.contains(username)) {
+      _debugViewedProfiles.add(username);
+      notifyListeners();
+      return;
+    }
     if (!_viewedProfiles.add(username)) return;
 
     notifyListeners();

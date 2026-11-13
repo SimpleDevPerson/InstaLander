@@ -221,6 +221,10 @@ void main() {
         tester.view.physicalSize.width / tester.view.devicePixelRatio * 0.8;
     await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
     await tester.pumpAndSettle();
+    expect(find.text('Timeline').hitTestable(), findsOneWidget);
+    await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Whitelist').hitTestable(), findsOneWidget);
     await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
     await tester.pumpAndSettle();
     expect(find.text('Impostazioni'), findsWidgets);
@@ -275,6 +279,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
     await tester.pumpAndSettle();
+    await tester.drag(find.byType(PageView), Offset(-pageSwipeDistance, 0));
+    await tester.pumpAndSettle();
     expect(find.text('Impostazioni'), findsWidgets);
 
     await themeProvider.setThemeStyle(AppThemeStyle.materialExpressive);
@@ -282,7 +288,7 @@ void main() {
 
     final navigationBar = find.byType(NavigationBar);
     expect(navigationBar, findsOneWidget);
-    expect(tester.widget<NavigationBar>(navigationBar).selectedIndex, 2);
+    expect(tester.widget<NavigationBar>(navigationBar).selectedIndex, 3);
     expect(find.text('Impostazioni'), findsWidgets);
     expect(
       tester.getSize(navigationBar).width,
@@ -304,7 +310,7 @@ void main() {
     await tester.tap(find.text('Scuro').hitTestable());
     await tester.pumpAndSettle();
     expect(themeProvider.brightnessMode, AppBrightnessMode.dark);
-    expect(tester.widget<NavigationBar>(navigationBar).selectedIndex, 2);
+    expect(tester.widget<NavigationBar>(navigationBar).selectedIndex, 3);
     expect(find.text('Impostazioni'), findsWidgets);
 
     await themeProvider.setThemeStyle(AppThemeStyle.samsungOneUi);
@@ -319,7 +325,7 @@ void main() {
           (widget.decoration! as BoxDecoration).boxShadow?.length == 2,
     );
     expect(samsungNavbar, findsOneWidget);
-    expect(tester.getSize(samsungNavbar).width, 220);
+    expect(tester.getSize(samsungNavbar).width, 288);
     expect(find.byType(BackdropFilter), findsOneWidget);
 
     await themeProvider.setBrightnessMode(AppBrightnessMode.system);
@@ -376,6 +382,33 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Scrolling reuses already built profile cards', (tester) async {
+    final users = List.generate(1000,
+        (index) => InstagramUser(username: 'profile_$index', timestamp: index));
+    await tester.pumpWidget(_mainScreen(_TestReportAppProvider(users)));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    final originalElements = find.byType(UserCard).evaluate().toSet();
+    expect(originalElements, isNotEmpty);
+    final rebuiltProfiles = <String>{};
+    final previousCallback = debugOnRebuildDirtyWidget;
+    debugOnRebuildDirtyWidget = (element, builtOnce) {
+      previousCallback?.call(element, builtOnce);
+      if (builtOnce && originalElements.contains(element)) {
+        rebuiltProfiles.add((element.widget as UserCard).user.username);
+      }
+    };
+    try {
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -60));
+      await tester.pumpAndSettle();
+      expect(rebuiltProfiles, isEmpty);
+      expect(tester.takeException(), isNull);
+    } finally {
+      debugOnRebuildDirtyWidget = previousCallback;
+    }
+  });
+
   testWidgets('Scrolling a large report only reads nearby profiles', (tester) async {
     final users = _CountingUserList(List.generate(10000,
         (index) => InstagramUser(username: 'profile_$index', timestamp: index)));
@@ -392,6 +425,8 @@ void main() {
   testWidgets('Loaded report with ad slots builds valid slivers', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({'ads_enabled': true});
+    AdsService.instance.adsEnabled.value = true;
     final users = List.generate(
       1200,
       (index) => InstagramUser(username: 'profile_$index', timestamp: index),
@@ -418,6 +453,8 @@ void main() {
   testWidgets('Ad has equal visible gaps to the surrounding profile cards', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({'ads_enabled': true});
+    AdsService.instance.adsEnabled.value = true;
     final ads = AdsService.instance;
     final previousConsent = ads.canRequestAds.value;
     ads.canRequestAds.value = true;

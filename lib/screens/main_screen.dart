@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/user.dart';
+import '../models/username_change.dart';
 import '../providers/app_provider.dart';
 import '../providers/theme_provider.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/settings_screen.dart';
+import '../screens/timeline_screen.dart';
 import '../screens/whitelist_screen.dart';
 import '../services/ads_service.dart';
 import '../services/data_service.dart';
@@ -19,6 +21,7 @@ import '../widgets/native_ad_card.dart';
 import '../widgets/setup_panel.dart';
 import '../widgets/stats_counter.dart';
 import '../widgets/user_card.dart';
+import '../widgets/username_changes_dialog.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -133,6 +136,7 @@ class _MainScreenState extends State<MainScreen> {
       },
       children: [
         _buildReportScreen(context, provider),
+        const TimelineScreen(),
         const WhitelistScreen(),
         const SettingsScreen(),
       ],
@@ -149,6 +153,11 @@ class _MainScreenState extends State<MainScreen> {
           icon: Icon(Icons.analytics_outlined),
           selectedIcon: Icon(Icons.analytics),
           label: 'Report',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.timeline_outlined),
+          selectedIcon: Icon(Icons.timeline),
+          label: 'Timeline',
         ),
         NavigationDestination(
           icon: Icon(Icons.favorite_outline),
@@ -243,12 +252,18 @@ class _MainScreenState extends State<MainScreen> {
                             _buildNavIcon(
                               context,
                               1,
+                              Icons.timeline_outlined,
+                              Icons.timeline,
+                            ),
+                            _buildNavIcon(
+                              context,
+                              2,
                               Icons.favorite_outline,
                               Icons.favorite,
                             ),
                             _buildNavIcon(
                               context,
-                              2,
+                              3,
                               Icons.settings_outlined,
                               Icons.settings,
                             ),
@@ -270,20 +285,20 @@ class _MainScreenState extends State<MainScreen> {
 
   double _getSamsungNavbarWidth(BuildContext context) {
     final availableWidth = MediaQuery.of(context).size.width - 4;
-    return availableWidth.clamp(0.0, 220).toDouble();
+    return availableWidth.clamp(0.0, 288).toDouble();
   }
 
-  // Helper: Indicator left position - fixed thirds (centers at 1/6, 3/6, 5/6)
+  // Center the indicator in one of the four destinations.
   double _getSamsungIndicatorLeft(BuildContext context) {
     final navbarWidth = _getSamsungNavbarWidth(context);
     final indicatorWidth = _getIndicatorWidth(context);
-    final centerX = (2 * _currentIndex + 1) * navbarWidth / 6;
+    final centerX = (2 * _currentIndex + 1) * navbarWidth / 8;
     return centerX - (indicatorWidth / 2);
   }
 
   double _getIndicatorWidth(BuildContext context) => 64;
 
-  // Nav icon: Each item takes 1/3 of navbar width, icon centered in that third
+  // Each item takes one quarter of the navbar width.
   // Press/highlight area matches the active indicator exactly: 68x52dp pill with 26dp radius
   Widget _buildNavIcon(
     BuildContext context,
@@ -348,15 +363,18 @@ class _MainScreenState extends State<MainScreen> {
       padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
       child: Row(
         mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment:
-            provider.hasData ? MainAxisAlignment.start : MainAxisAlignment.center,
+        mainAxisAlignment: provider.hasData
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.center,
         children: [
           _buildAppIcon(context),
           const SizedBox(width: 12),
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: provider.hasData ? Alignment.centerLeft : Alignment.center,
+              alignment: provider.hasData
+                  ? Alignment.centerLeft
+                  : Alignment.center,
               child: Text.rich(
                 TextSpan(
                   children: provider.hasData
@@ -825,8 +843,15 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _pickAndLoadFiles(AppProvider provider) async {
     try {
       final files = await DataService.pickJsonFiles();
-      if (files != null && files.isNotEmpty) {
-        await provider.loadJsonFiles(files);
+      if (files != null && files.isNotEmpty && mounted) {
+        final date = await _pickExportDate();
+        if (date != null) {
+          await provider.loadJsonFiles(
+            files,
+            exportDate: date,
+            resolveUsernameChanges: _resolveUsernameChanges,
+          );
+        }
       }
     } catch (e) {
       provider.setError('Errore selezione file: $e');
@@ -836,12 +861,41 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _pickAndLoadArchive(AppProvider provider) async {
     try {
       final archive = await DataService.pickInstagramArchive();
-      if (archive != null) {
-        await provider.loadInstagramArchive(archive);
+      if (archive != null && mounted) {
+        final date = await _pickExportDate();
+        if (date != null) {
+          await provider.loadInstagramArchive(
+            archive,
+            exportDate: date,
+            resolveUsernameChanges: _resolveUsernameChanges,
+          );
+        }
       }
     } catch (e) {
       provider.setError('Errore selezione archivio ZIP: $e');
     }
+  }
+
+  Future<DateTime?> _pickExportDate() => showDatePicker(
+    context: context,
+    initialDate: DateTime.now(),
+    firstDate: DateTime(2010),
+    lastDate: DateTime.now(),
+    helpText:
+        'Data dell’esportazione Instagram (non la data dei singoli follow)',
+    cancelText: 'Annulla',
+    confirmText: 'Importa',
+  );
+
+  Future<Map<String, String>?> _resolveUsernameChanges(
+    List<UsernameChangeCandidate> candidates,
+  ) async {
+    if (!mounted) return null;
+    return showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => UsernameChangesDialog(candidates: candidates),
+    );
   }
 
   Widget _buildUserList(
@@ -880,7 +934,7 @@ class _MainScreenState extends State<MainScreen> {
               _scheduledAdOffsets[index] ~/ crossAxisCount: index,
           };
           final profileRowCount =
-            (users.length + crossAxisCount - 1) ~/ crossAxisCount;
+              (users.length + crossAxisCount - 1) ~/ crossAxisCount;
           final feedItems = <int>[];
           for (var row = 0; row < profileRowCount; row++) {
             final adIndex = adRows[row];
@@ -901,9 +955,8 @@ class _MainScreenState extends State<MainScreen> {
                 return ValueListenableBuilder<bool>(
                   key: ValueKey('feed-native-ad-$adIndex'),
                   valueListenable: AdsService.instance.adsEnabled,
-                  builder: (context, enabled, child) => enabled
-                      ? const NativeAdCard()
-                      : const SizedBox.shrink(),
+                  builder: (context, enabled, child) =>
+                      enabled ? const NativeAdCard() : const SizedBox.shrink(),
                 );
               }
 

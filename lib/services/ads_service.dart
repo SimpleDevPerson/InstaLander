@@ -15,7 +15,7 @@ class AdsService {
   static final AdsService instance = AdsService._();
   static const _adsEnabledKey = 'ads_enabled';
 
-  final ValueNotifier<bool> adsEnabled = ValueNotifier(true);
+  final ValueNotifier<bool> adsEnabled = ValueNotifier(false);
   final ValueNotifier<bool> canRequestAds = ValueNotifier(false);
   final ValueNotifier<bool> privacyOptionsRequired = ValueNotifier(false);
   Future<void>? _initialization;
@@ -34,7 +34,7 @@ class AdsService {
 
   Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
-    adsEnabled.value = preferences.getBool(_adsEnabledKey) ?? true;
+    adsEnabled.value = preferences.getBool(_adsEnabledKey) ?? false;
     if (adsEnabled.value) await _initializeSdk();
   }
 
@@ -75,7 +75,8 @@ class AdsService {
       await _refreshConsentStatus();
     } catch (error, stackTrace) {
       debugPrint(
-          'Caricamento consenso AdMob non riuscito: $error\n$stackTrace');
+        'Caricamento consenso AdMob non riuscito: $error\n$stackTrace',
+      );
     }
   }
 
@@ -89,7 +90,8 @@ class AdsService {
           privacyStatus == PrivacyOptionsRequirementStatus.required;
     } catch (error, stackTrace) {
       debugPrint(
-          'Lettura del consenso AdMob non riuscita: $error\n$stackTrace');
+        'Lettura del consenso AdMob non riuscita: $error\n$stackTrace',
+      );
     }
   }
 
@@ -104,8 +106,10 @@ class AdsService {
       });
       await _refreshConsentStatus();
     } catch (error, stackTrace) {
-      debugPrint('Apertura opzioni privacy AdMob non riuscita: '
-          '$error\n$stackTrace');
+      debugPrint(
+        'Apertura opzioni privacy AdMob non riuscita: '
+        '$error\n$stackTrace',
+      );
     }
   }
 }

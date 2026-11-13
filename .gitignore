@@ -16,6 +16,13 @@ android/local.properties
 android/key.properties
 *.jks
 *.keystore
+*.pem
+*.key
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
 
 # Local workspace configuration
 .claude/
@@ -35,3 +42,9 @@ Thumbs.db
 followers*.json
 following*.json
 whitelist.txt
+import_history.json
+import_history.json.tmp
+*.zip
+*.apk
+*.aab
+*.apks
