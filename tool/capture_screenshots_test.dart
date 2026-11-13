@@ -171,7 +171,7 @@ void main() {
   testWidgets('capture public screenshots using synthetic data', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(412, 932);
+    tester.view.physicalSize = const Size(412, 912);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -194,7 +194,7 @@ void main() {
           color: const Color(0xFF111111),
           child: Column(
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
               Expanded(
                 child: MultiProvider(
                   providers: [

@@ -1,6 +1,6 @@
 # InstaLander
 
-![InstaLander: Il tuo report, privato.](docs/images/instalander-banner.png)
+![InstaLander: Il tuo report, privato. Nessun rischio.](docs/images/instalander-banner.png)
 
 Applicazione Flutter per Android che confronta i file JSON dell'esportazione Instagram e individua i profili seguiti che non ricambiano il follow. Non richiede l'accesso a Instagram e non usa API o servizi backend.
 
