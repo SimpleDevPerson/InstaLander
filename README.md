@@ -4,9 +4,9 @@
 
 Applicazione Flutter per Android che confronta i file JSON dell'esportazione Instagram e individua i profili seguiti che non ricambiano il follow. Non richiede l'accesso a Instagram e non usa API o servizi backend.
 
-Screenshot originali con dati dimostrativi: [Report](docs/screenshots/report.png), [Timeline](docs/screenshots/timeline.png), [Whitelist](docs/screenshots/whitelist.png), [Promemoria](docs/screenshots/reminders.png). [Rigenera le anteprime](docs/screenshots/README.md).
+## Installazione
 
-Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/InstaLander/releases/latest).
+Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/InstaLander/releases/latest) e installala sul tuo dispositivo Android.
 
 ## Funzionalità
 
@@ -28,7 +28,7 @@ Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/
 
 ## Esportazione Instagram
 
-Al primo avvio, InstaLander mostra una guida a schede per l'esportazione. In Instagram, apri il Centro gestione account e vai in **Le tue informazioni e autorizzazioni** → **Esporta le tue informazioni**. Crea un'esportazione per il tuo account, scegli **Esporta sul dispositivo** e imposta il formato **JSON**. I nomi delle voci possono variare leggermente in base alla versione di Instagram.
+In Instagram, apri il Centro gestione account e vai in **Le tue informazioni e autorizzazioni** → **Esporta le tue informazioni**. Crea un'esportazione per il tuo account, scegli **Esporta sul dispositivo** e imposta il formato **JSON**. I nomi delle voci possono variare leggermente in base alla versione di Instagram.
 
 Quando l'archivio ZIP è pronto, scaricalo e caricalo direttamente in InstaLander con **Carica archivio ZIP**: l'app legge dall'archivio solo i file `followers*.json` e `following*.json` necessari. In alternativa, estrai lo ZIP e seleziona manualmente i JSON (di solito nella cartella `followers_and_following`). Puoi riaprire la guida dalla schermata di setup se ti serve.
 
