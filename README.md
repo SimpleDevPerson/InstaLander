@@ -1,6 +1,10 @@
 # InstaLander
 
+![Anteprima di InstaLander: Report, Timeline, Whitelist e Promemoria](docs/images/instalander-banner.png)
+
 Applicazione Flutter per Android che confronta i file JSON dell'esportazione Instagram e individua i profili seguiti che non ricambiano il follow. Non richiede l'accesso a Instagram e non usa API o servizi backend.
+
+Screenshot originali con dati dimostrativi: [Report](docs/screenshots/report.png), [Timeline](docs/screenshots/timeline.png), [Whitelist](docs/screenshots/whitelist.png), [Promemoria](docs/screenshots/reminders.png). [Rigenera le anteprime](docs/screenshots/README.md).
 
 Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/InstaLander/releases/latest).
 
