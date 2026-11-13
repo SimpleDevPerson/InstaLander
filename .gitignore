@@ -25,6 +25,7 @@ android/key.properties
 !.env.example
 
 # Local workspace configuration
+SECURITY_REVIEW.md
 .claude/
 flutter-wrapper.bat
 .idea/

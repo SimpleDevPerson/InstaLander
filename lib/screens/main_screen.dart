@@ -474,11 +474,11 @@ class _MainScreenState extends State<MainScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         children: [
-          SetupPanel(onShowGuide: () => _openExportGuide(context)),
-          const SizedBox(height: 24),
-          _buildUploadButton(context, provider),
-          const SizedBox(height: 10),
-          _buildArchiveUploadButton(provider),
+          SetupPanel(
+            onShowGuide: () => _openExportGuide(context),
+            onLoadJson: () => _pickAndLoadFiles(provider),
+            onLoadArchive: () => _pickAndLoadArchive(provider),
+          ),
           const SizedBox(height: 40),
         ],
       ),
@@ -558,28 +558,6 @@ class _MainScreenState extends State<MainScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildUploadButton(BuildContext context, AppProvider provider) {
-    return OutlinedButton.icon(
-      onPressed: () => _pickAndLoadFiles(provider),
-      icon: const Icon(Icons.cloud_upload_outlined, size: 20),
-      label: const Text('Carica JSON'),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-      ),
-    );
-  }
-
-  Widget _buildArchiveUploadButton(AppProvider provider) {
-    return OutlinedButton.icon(
-      onPressed: () => _pickAndLoadArchive(provider),
-      icon: const Icon(Icons.folder_zip_outlined, size: 20),
-      label: const Text('Carica archivio ZIP'),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       ),
     );
   }
