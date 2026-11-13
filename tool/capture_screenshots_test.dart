@@ -171,6 +171,9 @@ void main() {
   testWidgets('capture public screenshots using synthetic data', (
     tester,
   ) async {
+    final previousShadows = debugDisableShadows;
+    debugDisableShadows = false;
+    addTearDown(() => debugDisableShadows = previousShadows);
     tester.view.physicalSize = const Size(412, 912);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -299,5 +302,6 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     data.dispose();
     theme.dispose();
+    debugDisableShadows = previousShadows;
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
