@@ -12,6 +12,17 @@ import '../services/reminder_service.dart';
 class AppProvider extends ChangeNotifier {
   static const String _viewedProfilesKey = 'viewed_profiles';
   static const String _onboardingCompletedKey = 'onboarding_completed_v2';
+  static const String _debugToolsEnabledKey = 'debug_tools_enabled';
+
+  bool _debugToolsEnabled = false;
+  bool get debugToolsEnabled => _debugToolsEnabled;
+
+  Future<void> enableDebugTools() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_debugToolsEnabledKey, true);
+    _debugToolsEnabled = true;
+    notifyListeners();
+  }
 
   // Data
   Map<String, InstagramUser> _followers = {};
@@ -160,6 +171,7 @@ class AppProvider extends ChangeNotifier {
           preferences.getStringList(_viewedProfilesKey)?.toSet() ?? {};
       _hasCompletedOnboarding =
           preferences.getBool(_onboardingCompletedKey) ?? false;
+      _debugToolsEnabled = preferences.getBool(_debugToolsEnabledKey) ?? false;
 
       // Note: Non impostiamo _errorMessage se non ci sono file al primo avvio.
       // Lo stato _hasData = false farà vedere la schermata di setup con il pulsante "Carica JSON".
@@ -205,6 +217,7 @@ class AppProvider extends ChangeNotifier {
       _hasFollowersFile = false;
       _hasFollowingFile = false;
       _hasCompletedOnboarding = false;
+      _debugToolsEnabled = false;
       _errorMessage = null;
       _isLoading = false;
       notifyListeners();

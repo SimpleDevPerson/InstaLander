@@ -29,7 +29,9 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('One UI brightness selector saves all three modes', (tester) async {
+  testWidgets('One UI brightness selector saves all three modes', (
+    tester,
+  ) async {
     final themeProvider = ThemeProvider();
     await tester.pumpWidget(
       MultiProvider(
@@ -43,17 +45,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(OneUiBrightnessSelector), findsOneWidget);
     expect(find.byType(SegmentedButton<AppBrightnessMode>), findsNothing);
-    for (final mode in [AppBrightnessMode.dark, AppBrightnessMode.light,
-        AppBrightnessMode.system]) {
+    for (final mode in [
+      AppBrightnessMode.dark,
+      AppBrightnessMode.light,
+      AppBrightnessMode.system,
+    ]) {
       final button = find.byKey(ValueKey('brightness-mode-${mode.name}'));
       await tester.ensureVisible(button);
       await tester.tap(button);
       await tester.pumpAndSettle();
       expect(themeProvider.brightnessMode, mode);
-      expect(tester.widget<OneUiBrightnessSelector>(
-          find.byType(OneUiBrightnessSelector)).value, mode);
-      expect((await SharedPreferences.getInstance())
-          .getInt('app_brightness_mode'), mode.index);
+      expect(
+        tester
+            .widget<OneUiBrightnessSelector>(
+              find.byType(OneUiBrightnessSelector),
+            )
+            .value,
+        mode,
+      );
+      expect(
+        (await SharedPreferences.getInstance()).getInt('app_brightness_mode'),
+        mode.index,
+      );
       expect(tester.takeException(), isNull);
     }
     await tester.pumpWidget(const SizedBox.shrink());
@@ -95,10 +108,7 @@ void main() {
       ),
     );
 
-    expect(
-      find.text('Apri il Centro gestione account').hitTestable(),
-      findsOneWidget,
-    );
+    expect(find.text('Il tuo report, privato.').hitTestable(), findsOneWidget);
     final title = tester.widget<Text>(find.text('InstaLander'));
     expect(title.style?.fontSize, 32);
     expect(title.style?.fontWeight, FontWeight.w800);
@@ -107,18 +117,28 @@ void main() {
     await tester.drag(find.byType(PageView), const Offset(-400, 0));
     await tester.pumpAndSettle();
     expect(
-      find.text('Richiedi una copia dei dati').hitTestable(),
+      find.text('Carica e consulta il report').hitTestable(),
       findsOneWidget,
     );
 
     await tester.tap(find.text('Avanti').hitTestable());
     await tester.pumpAndSettle();
-    expect(find.text('Scegli il formato JSON').hitTestable(), findsOneWidget);
+    expect(
+      find.text('Scegli chi tenere nella whitelist').hitTestable(),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Avanti').hitTestable());
     await tester.pumpAndSettle();
     expect(
-      find.text('Scarica ed estrai l’archivio').hitTestable(),
+      find.text('Segui i cambiamenti nella timeline').hitTestable(),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Avanti').hitTestable());
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Ricordati di aggiornare i dati').hitTestable(),
       findsOneWidget,
     );
 
@@ -174,9 +194,9 @@ void main() {
     await tester.pumpWidget(_mainScreen(_TestAppProvider()));
     await tester.pump();
 
-    expect(find.text('Instalander'), findsOneWidget);
+    expect(find.text('InstaLander'), findsOneWidget);
     final header = find.ancestor(
-      of: find.text('Instalander'),
+      of: find.text('InstaLander'),
       matching: find.byType(Container),
     );
     expect(tester.widget<Container>(header.first).decoration, isNull);
@@ -184,18 +204,96 @@ void main() {
       find.descendant(of: header.first, matching: find.byType(Image)),
       findsOneWidget,
     );
-    expect(tester.widget<Text>(find.text('Instalander')).style?.fontSize, 34);
+    expect(tester.widget<Text>(find.text('InstaLander')).style?.fontSize, 34);
     final iconRect = tester.getRect(
-      find.descendant(of: header.first, matching: find.byType(Image)));
-    final titleRect = tester.getRect(find.text('Instalander'));
-    expect((iconRect.left + titleRect.right) / 2,
-        closeTo(tester.getCenter(header.first).dx, 0.01));
+      find.descendant(of: header.first, matching: find.byType(Image)),
+    );
+    final titleRect = tester.getRect(find.text('InstaLander'));
+    expect(
+      (iconRect.left + titleRect.right) / 2,
+      closeTo(tester.getCenter(header.first).dx, 0.01),
+    );
     expect(find.byType(StatsCounter), findsNothing);
     expect(find.text('Da controllare: '), findsNothing);
     expect(find.textContaining('Puoi scaricarli da Instagram'), findsNothing);
-    expect(find.text('Come scaricare i file da Instagram'), findsOneWidget);
+    expect(
+      find.text('Come esportare le informazioni da Instagram'),
+      findsOneWidget,
+    );
     expect(find.text('followers_*.json'), findsOneWidget);
     expect(find.text('following_*.json'), findsOneWidget);
+  });
+
+  testWidgets('Export instructions open only from the setup guide button', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_mainScreen(_TestAppProvider()));
+    await tester.pumpAndSettle();
+    expect(find.text('Apri il Centro gestione account'), findsNothing);
+
+    final guideButton = find.text(
+      'Come esportare le informazioni da Instagram',
+    );
+    await tester.ensureVisible(guideButton);
+    await tester.tap(guideButton);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Apri il Centro gestione account').hitTestable(),
+      findsOneWidget,
+    );
+    expect(find.text('1/4'), findsOneWidget);
+    for (final title in [
+      'Richiedi una copia dei dati',
+      'Scegli il formato JSON',
+      'Scarica ed estrai l’archivio',
+    ]) {
+      await tester.tap(find.text('Avanti').hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.text(title).hitTestable(), findsOneWidget);
+    }
+
+    await tester.tap(find.text('Torna al report'));
+    await tester.pumpAndSettle();
+    expect(find.byType(OnboardingScreen), findsNothing);
+    expect(find.text('Configura il report'), findsOneWidget);
+    expect(
+      (await SharedPreferences.getInstance()).getBool(
+        'onboarding_completed_v2',
+      ),
+      isNull,
+    );
+  });
+
+  testWidgets('Finishing onboarding after a settings reset opens the report', (
+    tester,
+  ) async {
+    final provider = _RestartableOnboardingProvider();
+    await tester.pumpWidget(_mainScreen(provider));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.settings_outlined).hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.text('Impostazioni').hitTestable(), findsOneWidget);
+
+    await provider.clearAllData();
+    await tester.pumpAndSettle();
+    expect(find.byType(OnboardingScreen), findsOneWidget);
+    for (var step = 0; step < 4; step++) {
+      await tester.tap(find.text('Avanti').hitTestable());
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.text("Procedi nell'app"));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OnboardingScreen), findsNothing);
+    expect(find.text('Configura il report').hitTestable(), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+    expect(tester.takeException(), isNull);
+    expect(
+      (await SharedPreferences.getInstance()).getBool(
+        'onboarding_completed_v2',
+      ),
+      isTrue,
+    );
   });
 
   testWidgets('A single JSON file asks for the missing file', (tester) async {
@@ -232,7 +330,7 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
-    expect(find.text('Instalander'), findsOneWidget);
+    expect(find.text('InstaLander'), findsOneWidget);
   });
 
   testWidgets('Navigation skips the middle page when switching endpoints', (
@@ -248,7 +346,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.analytics_outlined).hitTestable());
     await tester.pump();
-    expect(find.text('Instalander').hitTestable(), findsOneWidget);
+    expect(find.text('InstaLander').hitTestable(), findsOneWidget);
     expect(find.text('Whitelist').hitTestable(), findsNothing);
   });
 
@@ -332,7 +430,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    expect(find.text('Instalander'), findsOneWidget);
+    expect(find.text('InstaLander'), findsOneWidget);
   });
 
   testWidgets('Loaded report shows its descriptive title', (tester) async {
@@ -348,7 +446,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Il tuo unfollower report'), findsOneWidget);
-    expect(find.text('Instalander'), findsNothing);
+    expect(find.text('InstaLander'), findsNothing);
     expect(find.byType(StatsCounter), findsOneWidget);
     final statusIcon = tester.widget<Icon>(find.byIcon(Icons.check_rounded));
     expect(statusIcon.size, 18);
@@ -383,8 +481,10 @@ void main() {
   });
 
   testWidgets('Scrolling reuses already built profile cards', (tester) async {
-    final users = List.generate(1000,
-        (index) => InstagramUser(username: 'profile_$index', timestamp: index));
+    final users = List.generate(
+      1000,
+      (index) => InstagramUser(username: 'profile_$index', timestamp: index),
+    );
     await tester.pumpWidget(_mainScreen(_TestReportAppProvider(users)));
     await tester.pumpAndSettle();
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
@@ -409,9 +509,15 @@ void main() {
     }
   });
 
-  testWidgets('Scrolling a large report only reads nearby profiles', (tester) async {
-    final users = _CountingUserList(List.generate(10000,
-        (index) => InstagramUser(username: 'profile_$index', timestamp: index)));
+  testWidgets('Scrolling a large report only reads nearby profiles', (
+    tester,
+  ) async {
+    final users = _CountingUserList(
+      List.generate(
+        10000,
+        (index) => InstagramUser(username: 'profile_$index', timestamp: index),
+      ),
+    );
     await tester.pumpWidget(_mainScreen(_TestReportAppProvider(users)));
     await tester.pump();
     users.reads = 0;
@@ -439,10 +545,12 @@ void main() {
     await tester.scrollUntilVisible(
       find.byKey(const ValueKey('feed-native-ad-0')),
       200,
-      scrollable: find.descendant(
-        of: find.byType(CustomScrollView),
-        matching: find.byType(Scrollable),
-      ).first,
+      scrollable: find
+          .descendant(
+            of: find.byType(CustomScrollView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     await tester.drag(find.byType(CustomScrollView), const Offset(0, 200));
     await tester.pumpAndSettle();
@@ -459,8 +567,12 @@ void main() {
     final previousConsent = ads.canRequestAds.value;
     ads.canRequestAds.value = true;
     final messenger = tester.binding.defaultBinaryMessenger;
-    messenger.setMockMethodCallHandler(instanceManager.channel, (call) async =>
-        call.method == 'MobileAds#initialize' ? InitializationStatus({}) : null);
+    messenger.setMockMethodCallHandler(
+      instanceManager.channel,
+      (call) async => call.method == 'MobileAds#initialize'
+          ? InitializationStatus({})
+          : null,
+    );
     addTearDown(() {
       ads.canRequestAds.value = previousConsent;
       messenger.setMockMethodCallHandler(instanceManager.channel, null);
@@ -471,25 +583,33 @@ void main() {
     );
     await tester.pumpWidget(_mainScreen(_TestReportAppProvider(users)));
     await tester.pump();
-    final scrollable = find.descendant(
-      of: find.byType(CustomScrollView),
-      matching: find.byType(Scrollable),
-    ).first;
-    await tester.scrollUntilVisible(find.byKey(const ValueKey('feed-native-ad-0')), 200,
-        scrollable: scrollable);
+    final scrollable = find
+        .descendant(
+          of: find.byType(CustomScrollView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('feed-native-ad-0')),
+      200,
+      scrollable: scrollable,
+    );
     await tester.drag(find.byType(CustomScrollView), const Offset(0, 200));
     await tester.pump();
 
     final adFrame = find.descendant(
       of: find.byType(NativeAdCard).first,
-      matching: find.byWidgetPredicate((widget) =>
-          widget is Container && widget.constraints?.minHeight == 112),
+      matching: find.byWidgetPredicate(
+        (widget) => widget is Container && widget.constraints?.minHeight == 112,
+      ),
     );
     final adRect = tester.getRect(adFrame);
     final profileRects = find
         .descendant(of: find.byType(UserCard), matching: find.byType(Material))
         .evaluate()
-        .where((element) => (element.widget as Material).type == MaterialType.card)
+        .where(
+          (element) => (element.widget as Material).type == MaterialType.card,
+        )
         .map((element) => tester.getRect(find.byWidget(element.widget)))
         .toList();
     final above = profileRects
@@ -505,22 +625,40 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
-  testWidgets('Report counter changes to completed state only at zero', (tester) async {
+  testWidgets('Report counter changes to completed state only at zero', (
+    tester,
+  ) async {
     for (final count in [1, 0, 2]) {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(body: StatsCounter(
-          count: count, zeroCountLabel: 'Tutto a posto!')),
-      ));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatsCounter(count: count, zeroCountLabel: 'Tutto a posto!'),
+          ),
+        ),
+      );
       await tester.pumpAndSettle();
-      expect(find.text('Tutto a posto!'), count == 0 ? findsOneWidget : findsNothing);
-      expect(find.text('Da controllare:'), count == 0 ? findsNothing : findsOneWidget);
+      expect(
+        find.text('Tutto a posto!'),
+        count == 0 ? findsOneWidget : findsNothing,
+      );
+      expect(
+        find.text('Da controllare:'),
+        count == 0 ? findsNothing : findsOneWidget,
+      );
       expect(find.text('$count'), count == 0 ? findsNothing : findsOneWidget);
       expect(tester.takeException(), isNull);
     }
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: StatsCounter(count: 0,
-        label: 'Profili in whitelist:', indicatorIcon: Icons.favorite)),
-    ));
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: StatsCounter(
+            count: 0,
+            label: 'Profili in whitelist:',
+            indicatorIcon: Icons.favorite,
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Profili in whitelist:'), findsOneWidget);
     expect(find.text('0'), findsOneWidget);
@@ -574,7 +712,9 @@ void main() {
 
     for (final count in [1, 9, 10, 51]) {
       await tester.pumpWidget(
-        MaterialApp(home: Scaffold(body: StatsCounter(count: count))),
+        MaterialApp(
+          home: Scaffold(body: StatsCounter(count: count)),
+        ),
       );
       expect(find.byIcon(Icons.priority_high_rounded), findsOneWidget);
       expect(find.byIcon(Icons.check_rounded), findsNothing);
@@ -1250,6 +1390,7 @@ void main() {
 
   testWidgets('Settings confirms before clearing all app data', (tester) async {
     final appProvider = _ClearableTestAppProvider();
+    await appProvider.enableDebugTools();
     final themeProvider = ThemeProvider();
     await tester.pumpWidget(
       MultiProvider(
@@ -1348,6 +1489,7 @@ class _CountingUserList extends ListBase<InstagramUser> {
     reads++;
     return data[index];
   }
+
   @override
   void operator []=(int index, InstagramUser value) => data[index] = value;
 }
@@ -1388,6 +1530,26 @@ class _TestAppProvider extends AppProvider {
 
   @override
   Future<void> initialize() async {}
+}
+
+class _RestartableOnboardingProvider extends _TestAppProvider {
+  bool _showOnboarding = false;
+
+  @override
+  bool get shouldShowOnboarding => _showOnboarding;
+
+  @override
+  Future<void> clearAllData() async {
+    _showOnboarding = true;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> completeOnboarding() async {
+    await super.completeOnboarding();
+    _showOnboarding = false;
+    notifyListeners();
+  }
 }
 
 class _ClearableTestAppProvider extends _TestAppProvider {

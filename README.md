@@ -17,7 +17,9 @@ Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/
 - Timeline verticale degli unfollow rilevati tra due esportazioni, visibile anche per i profili in whitelist.
 - Promemoria facoltativo ogni mese, ogni 3 mesi o ogni 6 mesi per richiedere una nuova esportazione Instagram.
 - Selettore della frequenza dei promemoria nello stesso stile di quello della luminosità.
-- Sezione Debug con pulsanti per generare timeline, whitelist e report casuali, e cancellazione dei dati in fondo alla sezione.
+- Onboarding iniziale sul funzionamento dell’app e guida separata all’esportazione, accessibile dal pulsante dedicato.
+- Avviso sui possibili profili «fantasma» presenti nei dati Instagram dopo la prima importazione completa.
+- Sezione Debug sbloccabile con 10 tocchi su **Impostazioni → Versione**, con pulsanti per generare timeline, whitelist e report casuali e cancellazione dei dati in fondo alla sezione.
 - Apertura dei profili nell'app Instagram o nel browser.
 - Indicatore persistente dei profili già aperti.
 - Caricamento dei file JSON direttamente dal dispositivo.

@@ -12,8 +12,45 @@ import '../widgets/one_ui_brightness_selector.dart';
 import '../widgets/reminder_interval_selector.dart';
 import '../widgets/settings_toggle_tile.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  int _versionTapCount = 0;
+  bool _unlockingDebug = false;
+
+  Future<void> _onVersionTap() async {
+    final app = context.read<AppProvider>();
+    if (app.debugToolsEnabled || _unlockingDebug) return;
+    _versionTapCount++;
+    final remaining = 10 - _versionTapCount;
+    String message;
+    if (remaining > 0) {
+      if (remaining > 5) return;
+      message = remaining == 1
+          ? 'Ancora un tocco per attivare la modalità sviluppatore'
+          : 'Ancora $remaining tocchi per attivare la modalità sviluppatore';
+    } else {
+      _unlockingDebug = true;
+      try {
+        await app.enableDebugTools();
+        message = 'Modalità sviluppatore attivata';
+      } catch (_) {
+        _versionTapCount = 9;
+        message = 'Impossibile attivare la modalità sviluppatore. Riprova.';
+      } finally {
+        _unlockingDebug = false;
+      }
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -293,7 +330,13 @@ class SettingsScreen extends StatelessWidget {
                         Icons.info_outline,
                       ),
                       const SizedBox(height: 8),
-                      _buildInfoTile(context, 'Versione', '0.5.0', Icons.tag),
+                      _buildInfoTile(
+                        context,
+                        'Versione',
+                        '0.6.0',
+                        Icons.tag,
+                        onTap: _onVersionTap,
+                      ),
                       _buildActionTile(
                         context,
                         'Progetto',
@@ -315,8 +358,10 @@ class SettingsScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      const SizedBox(height: 24),
-                      _buildDebugSection(context),
+                      if (context.watch<AppProvider>().debugToolsEnabled) ...[
+                        const SizedBox(height: 24),
+                        _buildDebugSection(context),
+                      ],
                     ],
                   ),
                 ),
@@ -629,11 +674,13 @@ class SettingsScreen extends StatelessWidget {
     BuildContext context,
     String title,
     String subtitle,
-    IconData icon,
-  ) {
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
+        onTap: onTap,
         leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
         title: Text(
           title,

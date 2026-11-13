@@ -17,6 +17,7 @@ import '../services/ads_service.dart';
 import '../services/data_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ad_placement.dart';
+import '../widgets/instagram_export_notice.dart';
 import '../widgets/native_ad_card.dart';
 import '../widgets/setup_panel.dart';
 import '../widgets/stats_counter.dart';
@@ -91,6 +92,10 @@ class _MainScreenState extends State<MainScreen> {
           return OnboardingScreen(
             onComplete: () async {
               await provider.completeOnboarding();
+              // Completing onboarding rebuilds the screen. Wait for the main
+              // PageView to attach before navigating away from the old tab.
+              await WidgetsBinding.instance.endOfFrame;
+              if (!mounted) return;
               if (!provider.hasData && _currentIndex != 0) {
                 await _navigateToPage(0);
               }
@@ -386,7 +391,7 @@ class _MainScreenState extends State<MainScreen> {
                           ),
                           TextSpan(text: ' report'),
                         ]
-                      : const [TextSpan(text: 'Instalander')],
+                      : const [TextSpan(text: 'InstaLander')],
                 ),
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
                   fontSize: 34,
@@ -469,7 +474,7 @@ class _MainScreenState extends State<MainScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         children: [
-          SetupPanel(onShowGuide: () => _openOnboarding(context, provider)),
+          SetupPanel(onShowGuide: () => _openExportGuide(context)),
           const SizedBox(height: 24),
           _buildUploadButton(context, provider),
           const SizedBox(height: 10),
@@ -579,12 +584,12 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Future<void> _openOnboarding(BuildContext context, AppProvider provider) {
+  Future<void> _openExportGuide(BuildContext context) {
     return Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => OnboardingScreen(
+          mode: OnboardingMode.instagramExport,
           onComplete: () async {
-            await provider.completeOnboarding();
             if (context.mounted) Navigator.of(context).pop();
           },
         ),
@@ -851,6 +856,7 @@ class _MainScreenState extends State<MainScreen> {
             exportDate: date,
             resolveUsernameChanges: _resolveUsernameChanges,
           );
+          await _showExportNoticeAfterImport(provider);
         }
       }
     } catch (e) {
@@ -869,11 +875,17 @@ class _MainScreenState extends State<MainScreen> {
             exportDate: date,
             resolveUsernameChanges: _resolveUsernameChanges,
           );
+          await _showExportNoticeAfterImport(provider);
         }
       }
     } catch (e) {
       provider.setError('Errore selezione archivio ZIP: $e');
     }
+  }
+
+  Future<void> _showExportNoticeAfterImport(AppProvider provider) async {
+    if (!mounted || provider.errorMessage != null || !provider.hasData) return;
+    await showInstagramExportNoticeIfNeeded(context);
   }
 
   Future<DateTime?> _pickExportDate() => showDatePicker(

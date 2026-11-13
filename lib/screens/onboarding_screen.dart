@@ -1,16 +1,77 @@
 import 'package:flutter/material.dart';
 
+enum OnboardingMode { app, instagramExport }
+
 class OnboardingScreen extends StatefulWidget {
   final Future<void> Function() onComplete;
+  final OnboardingMode mode;
 
-  const OnboardingScreen({super.key, required this.onComplete});
+  const OnboardingScreen({
+    super.key,
+    required this.onComplete,
+    this.mode = OnboardingMode.app,
+  });
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _steps = [
+  static const _appSteps = [
+    _OnboardingStep(
+      icon: Icons.lock_outline_rounded,
+      eyebrow: 'PASSAGGIO 1 DI 5',
+      title: 'Il tuo report, privato.',
+      description:
+          'InstaLander confronta i tuoi follower con i profili che segui '
+          'per mostrarti chi non ricambia il follow. Il confronto avviene '
+          'sul dispositivo: non serve accedere al tuo account Instagram '
+          'né fornire la password.',
+    ),
+    _OnboardingStep(
+      icon: Icons.analytics_outlined,
+      eyebrow: 'PASSAGGIO 2 DI 5',
+      title: 'Carica e consulta il report',
+      description:
+          'Carica i JSON di followers e following, oppure lo ZIP che li '
+          'contiene, e indica la data dell’esportazione. Nel Report trovi '
+          'i profili che non ti seguono: puoi ordinarli e aprirli su Instagram. '
+          'Se ti servono i file, trovi una guida nel pulsante '
+          '“Come esportare le informazioni da Instagram”.',
+    ),
+    _OnboardingStep(
+      icon: Icons.favorite_outline_rounded,
+      eyebrow: 'PASSAGGIO 3 DI 5',
+      title: 'Scegli chi tenere nella whitelist',
+      description:
+          'Vuoi continuare a seguire un profilo anche se non ti segue? '
+          'Aggiungilo alla whitelist per escluderlo dal Report. '
+          'Nella scheda Whitelist puoi cercare i profili salvati e '
+          'rimuoverli quando vuoi.',
+    ),
+    _OnboardingStep(
+      icon: Icons.timeline_rounded,
+      eyebrow: 'PASSAGGIO 4 DI 5',
+      title: 'Segui i cambiamenti nella timeline',
+      description:
+          'Quando carichi una nuova lista dei follower, l’app conserva '
+          'quella precedente e le confronta. La Timeline mostra chi '
+          'non compare più tra i follower nell’intervallo tra le due '
+          'esportazioni, senza indicare il giorno esatto dell’unfollow.',
+    ),
+    _OnboardingStep(
+      icon: Icons.notifications_none_rounded,
+      eyebrow: 'PASSAGGIO 5 DI 5',
+      title: 'Ricordati di aggiornare i dati',
+      description:
+          'Il report si aggiorna quando importi nuovi file. Nelle '
+          'Impostazioni puoi attivare un promemoria ogni mese, ogni '
+          '3 mesi o ogni 6 mesi per richiedere una nuova esportazione. '
+          'La notifica è locale e non richiede di mantenere l’app attiva.',
+    ),
+  ];
+
+  static const _exportSteps = [
     _OnboardingStep(
       icon: Icons.account_circle_outlined,
       eyebrow: 'PASSAGGIO 1 DI 4',
@@ -49,6 +110,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
+  List<_OnboardingStep> get _steps =>
+      widget.mode == OnboardingMode.instagramExport ? _exportSteps : _appSteps;
+
   late final PageController _pageController;
   int _currentStep = 0;
   bool _isCompleting = false;
@@ -74,7 +138,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text('Impossibile salvare il completamento: $error')),
+              content: Text('Impossibile salvare il completamento: $error'),
+            ),
           );
         }
       } finally {
@@ -127,10 +192,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'InstaLander',
-                        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                        ),
+                        style: Theme.of(context).textTheme.headlineLarge
+                            ?.copyWith(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ),
                   ),
@@ -138,8 +204,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   Text(
                     '${_currentStep + 1}/${_steps.length}',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -201,7 +267,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(isLastStep ? "Procedi nell'app" : 'Avanti'),
+                        : Text(
+                            isLastStep
+                                ? widget.mode == OnboardingMode.instagramExport
+                                      ? 'Torna al report'
+                                      : "Procedi nell'app"
+                                : 'Avanti',
+                          ),
                   ),
                 ],
               ),
@@ -227,36 +299,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 SizedBox(
                   width: 144,
                   height: 144,
-                  child: Icon(
-                    step.icon,
-                    size: 72,
-                    color: colorScheme.primary,
-                  ),
+                  child: Icon(step.icon, size: 72, color: colorScheme.primary),
                 ),
                 const SizedBox(height: 32),
                 Text(
                   step.eyebrow,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: colorScheme.primary,
-                        letterSpacing: 1.2,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: colorScheme.primary,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   step.title,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    fontWeight: FontWeight.w700,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   step.description,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.5,
-                      ),
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),

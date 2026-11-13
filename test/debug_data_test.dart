@@ -97,6 +97,25 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Versione'), 250);
+    await tester.pumpAndSettle();
+    for (var tap = 0; tap < 9; tap++) {
+      await tester.tap(find.text('Versione'));
+      await tester.pump();
+    }
+    expect(app.debugToolsEnabled, isFalse);
+    expect(find.text('Debug'), findsNothing);
+    expect(find.text('Popola report'), findsNothing);
+    expect(find.text('Cancella tutti i dati'), findsNothing);
+
+    await tester.tap(find.text('Versione'));
+    await tester.pumpAndSettle();
+    expect(app.debugToolsEnabled, isTrue);
+    expect(find.text('Modalità sviluppatore attivata'), findsOneWidget);
+    expect(
+      (await SharedPreferences.getInstance()).getBool('debug_tools_enabled'),
+      isTrue,
+    );
     await tester.scrollUntilVisible(find.text('Debug'), 250);
     await tester.pumpAndSettle();
     for (final label in [
@@ -135,6 +154,20 @@ void main() {
       greaterThan(tester.getTopLeft(find.text('Popola report')).dy),
     );
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    // Recreating the settings page must retain the unlocked tools.
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppProvider>.value(value: app),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Debug'), 250);
+    expect(find.text('Debug'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     app.dispose();
   });
