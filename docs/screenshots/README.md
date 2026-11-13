@@ -29,3 +29,5 @@ L'[ultima rifinitura](../images/banner-spacing-prompt.md) dimezza la fascia supe
 La [correzione di fedeltà](../images/banner-glow-repair-prompt.md) ripristina il glow, uniforma lo sfondo superiore e corregge la griglia del Report.
 
 La [correzione mirata del Report](../images/banner-report-repair-prompt.md) elimina i riquadri vuoti introdotti nella parte inferiore durante la composizione.
+
+La [correzione della continuità della griglia](../images/banner-grid-continuity-prompt.md) fa proseguire la quarta fila dietro la navbar, eliminando lo spazio vuoto tra le schede.
