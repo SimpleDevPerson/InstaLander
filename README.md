@@ -2,6 +2,8 @@
 
 Applicazione Flutter per Android che confronta i file JSON dell'esportazione Instagram e individua i profili seguiti che non ricambiano il follow. Non richiede l'accesso a Instagram e non usa API o servizi backend.
 
+Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/InstaLander/releases/latest).
+
 ## Funzionalità
 
 - Confronto tra follower e profili seguiti, con conteggi e report.

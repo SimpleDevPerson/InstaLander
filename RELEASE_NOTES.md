@@ -1,22 +1,27 @@
-# InstaLander 0.4.0
+# InstaLander 0.5.0
 
-Novità rispetto a 0.3.0 (build 2004).
+Novità rispetto a 0.4.0 (build 2005).
 
-- Annunci nativi AdMob nel report ogni 3 o 4 righe complete, con spaziatura simmetrica, gestione del consenso UMP e accesso alle opzioni privacy. Corretto il caricamento del tema durante l'inizializzazione degli annunci.
-- Interruttore persistente per disattivare annunci e relativi slot, con stile One UI e allineamento delle schede nelle impostazioni.
-- Selettore Sistema/Chiaro/Scuro in stile One UI con indicatore animato, bordo e angoli meno arrotondati. Titoli delle sezioni uniformi e collegamento alla repository dalla scheda Progetto.
-- Onboarding con icona dell'app e titolo grande in grassetto; icone dei passaggi senza sfondo blu. Icona e titolo centrati nella schermata precedente al caricamento dei file.
-- Contatori del report e della whitelist con glow coordinato al colore. A zero il report mostra «Tutto a posto!»; il tick compare solo a zero, con punto esclamativo per tutti i valori positivi.
-- Ricerca nella whitelist, azioni incorniciate per aprire e rimuovere profili, sfondo dello swipe coordinato al contatore e correzione dell'overflow dello stato vuoto.
-- Navigazione e intestazioni rifinite, con miglioramenti alla gestione degli stati di errore e dei file mancanti.
-- Migliorate le prestazioni: disposizione del feed riutilizzata durante lo scorrimento, parsing JSON in un isolate separato, lettura asincrona delle directory, meno copie temporanee nel calcolo del report e nessun riordinamento quando l'opzione è già attiva.
-- Dipendenze Flutter aggiornate e test estesi per consenso, annunci, interfaccia, spaziatura, parsing e liste da 10.000–20.000 profili.
+- Storico locale dei profili conservato prima di ogni nuova importazione JSON o ZIP. I file multipli della stessa esportazione vengono elaborati insieme e gli import non validi non sostituiscono i dati salvati.
+- Whitelist automatica dal secondo export dei follower secondo la regola `seguiti − (vecchi follower ∩ nuovi follower)`, mantenendo le esclusioni manuali.
+- Nuova Timeline accanto al Report: date delle esportazioni a sinistra, linea verticale continua con nodi e profili a destra. Sono inclusi anche i profili in whitelist. L'intervallo non indica il momento esatto dell'unfollow.
+- Riconoscimento dei possibili cambi di username tramite timestamp di follow identici e validi. L'utente può confermare le associazioni, ignorarle oppure annullare l'importazione; nessun profilo viene associato automaticamente.
+- Promemoria Instagram facoltativo ogni mese, ogni 3 mesi o ogni 6 mesi, con selettore coordinato a quello della luminosità. La notifica è pianificata da Android senza mantenere Flutter attivo in background.
+- Annunci disattivati per impostazione predefinita e toggle One UI uniforme per pubblicità e promemoria.
+- Sezione Debug con dati casuali temporanei per timeline, whitelist e report. I dati importati non vengono alterati; il comando di cancellazione completa è in fondo alla sezione e richiede conferma.
+- Correzioni di allineamento delle impostazioni e layout della Timeline verificato anche su schermi stretti e con testo ingrandito.
 
 ## Download
 
-- `InstaLander-0.4.0-universal.apk`: tutte le architetture supportate, scelta più semplice.
-- `InstaLander-0.4.0-arm64-v8a.apk`: telefoni Android ARM a 64 bit.
-- `InstaLander-0.4.0-armeabi-v7a.apk`: dispositivi ARM a 32 bit.
-- `InstaLander-0.4.0-x86_64.apk`: dispositivi o emulatori Android x86 a 64 bit.
+- `InstaLander-0.5.0-universal.apk`: tutte le architetture supportate, scelta più semplice.
+- `InstaLander-0.5.0-arm64-v8a.apk`: telefoni Android ARM a 64 bit.
+- `InstaLander-0.5.0-armeabi-v7a.apk`: dispositivi ARM a 32 bit.
+- `InstaLander-0.5.0-x86_64.apk`: dispositivi o emulatori Android x86 a 64 bit.
+- `InstaLander-0.5.0.aab`: Android App Bundle per la distribuzione tramite uno store; non installabile direttamente come APK.
+- `SHA256SUMS.txt`: checksum SHA256 dei cinque pacchetti.
 
-Android minimo: 8.0 (API 26). Gli APK sono firmati per la distribuzione. Non sono inclusi ID pubblicitari di produzione: gli annunci reali richiedono la configurazione dell'account AdMob e degli ID descritta nel README.
+Per aggiornare un'installazione esistente, usa la stessa variante APK della release precedente.
+
+Android minimo: 8.0 (API 26). APK e App Bundle sono firmati con la chiave di distribuzione già usata per le release precedenti. Non sono inclusi ID pubblicitari di produzione. Il promemoria richiede il permesso per le notifiche su Android 13 e successivi e la consegna può slittare per il risparmio energetico del dispositivo.
+
+Verifica: `flutter analyze` e `flutter test`.

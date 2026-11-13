@@ -330,7 +330,7 @@ class SettingsScreen extends StatelessWidget {
                         Icons.info_outline,
                       ),
                       const SizedBox(height: 8),
-                      _buildInfoTile(context, 'Versione', '0.4.0', Icons.tag),
+                      _buildInfoTile(context, 'Versione', '0.5.0', Icons.tag),
                       _buildActionTile(
                         context,
                         'Progetto',
