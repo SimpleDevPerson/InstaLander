@@ -10,23 +10,14 @@ Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/
 
 ## Funzionalità
 
-- Confronto tra follower e profili seguiti, con conteggi e report.
-- Ordinamento per data o alfabetico.
-- Ricerca ed esclusione dei profili tramite whitelist.
-- Storico locale dei profili a ogni importazione e whitelist automatica dal secondo export dei follower.
-- Timeline verticale degli unfollow rilevati tra due esportazioni, visibile anche per i profili in whitelist.
-- Promemoria facoltativo ogni mese, ogni 3 mesi o ogni 6 mesi per richiedere una nuova esportazione Instagram.
-- Selettore della frequenza dei promemoria nello stesso stile di quello della luminosità.
-- Onboarding iniziale sul funzionamento dell’app e guida separata all’esportazione, accessibile dal pulsante dedicato.
-- Avviso sui possibili profili «fantasma» presenti nei dati Instagram dopo la prima importazione completa.
-- Sezione Debug sbloccabile con 10 tocchi su **Impostazioni → Versione**, con pulsanti per generare timeline, whitelist e report casuali e cancellazione dei dati in fondo alla sezione.
-- Apertura dei profili nell'app Instagram o nel browser.
-- Indicatore persistente dei profili già aperti.
-- Caricamento dei file JSON direttamente dal dispositivo.
-- Temi Samsung One UI e Material Design Expressive, ciascuno con luminosità chiara, scura o predefinita di sistema (configurabile dalle impostazioni).
-- Annunci nativi AdMob nella schermata del report, subordinati al consenso UMP e disattivati per impostazione predefinita. La sezione Pubblicità delle impostazioni è nascosta.
-- Contatori con glow e stato «Tutto a posto!» quando non rimangono profili da controllare.
-- Selettori di luminosità e frequenza dei promemoria in stile One UI, con collegamento alla repository nelle impostazioni.
+- Importazione delle esportazioni Instagram da file JSON o archivi ZIP, con elaborazione locale e senza accesso all'account.
+- Report dei profili che segui e che non ricambiano il follow, con ricerca e ordinamento.
+- Storico delle importazioni e timeline degli unfollow rilevati tra esportazioni successive.
+- Whitelist manuale e automatica per escludere profili dal report.
+- Riconoscimento dei possibili cambi di username, con conferma manuale.
+- Apertura dei profili su Instagram o nel browser, con indicazione di quelli già visitati.
+- Promemoria periodici per richiedere una nuova esportazione.
+- Temi Samsung One UI e Material Design Expressive, con modalità chiara e scura.
 
 ## Esportazione Instagram
 
@@ -36,7 +27,7 @@ Quando l'archivio ZIP è pronto, scaricalo e caricalo direttamente in InstaLande
 
 L'elaborazione avviene sul dispositivo. I file selezionati e la whitelist sono salvati nell'area documenti privata dell'app; le preferenze del tema e i profili aperti sono salvati localmente. L'app non invia questi dati a un server.
 
-Durante l'importazione scegli la data dell'esportazione: i timestamp dei singoli profili rappresentano l'inizio del follow, non la creazione del JSON. Importa insieme tutti i file `followers_*.json` della stessa esportazione e, se disponibile, anche `following*.json`. Ogni nuova importazione sostituisce l'intera lista del tipo selezionato, conservando le versioni precedenti; caricare solo i seguiti non crea un confronto dei follower. Le date devono procedere in ordine cronologico. Per i JSON già presenti prima di questo aggiornamento, la prima data è stimata dalla modifica del file e segnalata nella timeline.
+Durante l'importazione JSON l'app usa la data di creazione del file originale, se disponibile sul dispositivo (Android 11 o successivo). Se selezioni più JSON, usa la data più recente; se anche un solo file non espone la data di creazione, si apre il calendario. Per gli archivi ZIP la data resta da scegliere manualmente. I timestamp dei singoli profili rappresentano l'inizio del follow, non la creazione del JSON. Importa insieme tutti i file `followers_*.json` della stessa esportazione e, se disponibile, anche `following*.json`. Ogni nuova importazione sostituisce l'intera lista del tipo selezionato, conservando le versioni precedenti; caricare solo i seguiti non crea un confronto dei follower. Le date devono procedere in ordine cronologico. Per i JSON già presenti prima di questo aggiornamento, la prima data è stimata dalla modifica del file e segnalata nella timeline.
 
 Dal secondo export dei follower, la whitelist viene ampliata con `seguiti attuali − (follower precedenti ∩ follower nuovi)`, mantenendo le esclusioni manuali. La timeline mostra invece `follower precedenti − follower nuovi`, anche se non sono più seguiti o sono in whitelist. L'intervallo non permette di determinare l'istante esatto dell'unfollow; anche account eliminati o disattivati possono risultare assenti.
 
@@ -59,8 +50,6 @@ Dalla cartella del progetto:
 flutter pub get
 flutter run
 ```
-
-Gli annunci usano gli ID di test Google in modalità debug. Per configurare gli annunci reali, imposta l'ID app AdMob nella proprietà Gradle `adMobAppId` (oppure nella variabile d'ambiente `ADMOB_APP_ID`) e passa l'ID unità annunci nativi con `--dart-define=ADMOB_NATIVE_AD_UNIT_ID=...`. Configura inoltre in AdMob i messaggi di consenso UMP e verifica le opzioni privacy prima della distribuzione. `webview_flutter_android` e `shared_preferences_android` sono bloccati alle ultime versioni compatibili con gli script Gradle del progetto: le release più recenti usano script Kotlin che non risolvono l'estensione Flutter iniettata dalla configurazione Android corrente. Le richieste pubblicitarie e i dati tecnici/di consenso necessari sono gestiti da Google solo dopo la verifica del consenso UMP.
 
 Controlli:
 

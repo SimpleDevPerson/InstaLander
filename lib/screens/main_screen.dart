@@ -827,8 +827,10 @@ class _MainScreenState extends State<MainScreen> {
     try {
       final files = await DataService.pickJsonFiles();
       if (files != null && files.isNotEmpty && mounted) {
-        final date = await _pickExportDate();
-        if (date != null) {
+        final creationDate = await DataService.jsonFilesCreationDate(files);
+        if (!mounted) return;
+        final date = creationDate ?? await _pickExportDate();
+        if (date != null && mounted) {
           await provider.loadJsonFiles(
             files,
             exportDate: date,

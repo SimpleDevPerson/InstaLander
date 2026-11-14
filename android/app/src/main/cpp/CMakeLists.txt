@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(file_metadata LANGUAGES CXX)
+add_library(file_metadata SHARED file_metadata.cpp)
+target_compile_options(file_metadata PRIVATE -Wall -Wextra)
+target_link_options(file_metadata PRIVATE "-Wl,-z,max-page-size=16384")

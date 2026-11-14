@@ -22,6 +22,15 @@ open class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.simpledevperson.instalander/file_metadata").setMethodCallHandler { call, result ->
+            if (call.method == "creationDate") {
+                val uri = call.arguments as? String
+                result.success(uri?.let { FileCreationDate.read(this, it) })
+            } else {
+                result.notImplemented()
+            }
+        }
         MonthlyReminder.schedule(this)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.simpledevperson.instalander/reminders").setMethodCallHandler { call, result ->

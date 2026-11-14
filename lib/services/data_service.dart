@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:android_file_picker/android_file_picker.dart';
 import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/import_snapshot.dart';
 import '../models/user.dart';
@@ -80,6 +82,38 @@ class AppDataSnapshot {
 
 class DataService {
   static const String _whitelistFile = 'whitelist.txt';
+  static const _fileMetadata = MethodChannel(
+    'com.simpledevperson.instalander/file_metadata',
+  );
+
+  /// Uses original file metadata, never the import cache or follow timestamps.
+  /// A partial selection without metadata requires manual date selection.
+  static Future<DateTime?> jsonFilesCreationDate(
+    List<PlatformFile> files,
+  ) async {
+    if (files.isEmpty) return null;
+    DateTime? latest;
+    for (final file in files) {
+      try {
+        final uri = file is AndroidPlatformFile
+            ? file.safHandle?.uri
+            : file.uri;
+        if (uri == null) return null;
+        final milliseconds = await _fileMetadata.invokeMethod<int>(
+          'creationDate',
+          uri.toString(),
+        );
+        if (milliseconds == null || milliseconds <= 0) return null;
+        final date = DateTime.fromMillisecondsSinceEpoch(milliseconds);
+        if (latest == null || date.isAfter(latest)) latest = date;
+      } on PlatformException {
+        return null;
+      } on MissingPluginException {
+        return null;
+      }
+    }
+    return latest;
+  }
 
   static Future<AppDataSnapshot> loadAppData({
     SortOption sort = SortOption.dateDesc,
@@ -397,6 +431,9 @@ class DataService {
   // Pick JSON files
   static Future<List<PlatformFile>?> pickJsonFiles() async {
     final files = await FilePicker.pickFiles(
+      androidOptions: const FilePickerAndroidOptions(
+        safOptions: AndroidSAFOptions(persistGrant: false),
+      ),
       type: FileType.custom,
       allowedExtensions: ['json'],
       dialogTitle:
