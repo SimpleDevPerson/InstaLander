@@ -4,7 +4,8 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+import '../l10n/app_strings.dart';
 import '../models/user.dart';
 import '../models/username_change.dart';
 import '../providers/app_provider.dart';
@@ -78,9 +79,11 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _openInstagramProfile(String username) async {
-    final url = Uri.parse('https://instagram.com/$username');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+    final opened = await context.read<AppProvider>().openProfile(username);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.cannotOpenProfile)));
     }
   }
 
@@ -153,26 +156,26 @@ class _MainScreenState extends State<MainScreen> {
       selectedIndex: _currentIndex,
       onDestinationSelected: _navigateToPage,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-      destinations: const [
+      destinations: [
         NavigationDestination(
-          icon: Icon(Icons.analytics_outlined),
-          selectedIcon: Icon(Icons.analytics),
-          label: 'Report',
+          icon: const Icon(Icons.analytics_outlined),
+          selectedIcon: const Icon(Icons.analytics),
+          label: context.l10n.report,
         ),
         NavigationDestination(
-          icon: Icon(Icons.timeline_outlined),
-          selectedIcon: Icon(Icons.timeline),
-          label: 'Timeline',
+          icon: const Icon(Icons.timeline_outlined),
+          selectedIcon: const Icon(Icons.timeline),
+          label: context.l10n.timeline,
         ),
         NavigationDestination(
-          icon: Icon(Icons.favorite_outline),
-          selectedIcon: Icon(Icons.favorite),
-          label: 'Whitelist',
+          icon: const Icon(Icons.favorite_outline),
+          selectedIcon: const Icon(Icons.favorite),
+          label: context.l10n.whitelist,
         ),
         NavigationDestination(
-          icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings),
-          label: 'Impostazioni',
+          icon: const Icon(Icons.settings_outlined),
+          selectedIcon: const Icon(Icons.settings),
+          label: context.l10n.settings,
         ),
       ],
     );
@@ -383,13 +386,13 @@ class _MainScreenState extends State<MainScreen> {
               child: Text.rich(
                 TextSpan(
                   children: provider.hasData
-                      ? const [
-                          TextSpan(text: 'Il tuo '),
+                      ? [
+                          TextSpan(text: context.l10n.reportTitlePrefix),
                           TextSpan(
-                            text: 'unfollower',
-                            style: TextStyle(fontWeight: FontWeight.w700),
+                            text: context.l10n.reportTitleEmphasis,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
                           ),
-                          TextSpan(text: ' report'),
+                          TextSpan(text: context.l10n.reportTitleSuffix),
                         ]
                       : const [TextSpan(text: 'InstaLander')],
                 ),
@@ -449,7 +452,10 @@ class _MainScreenState extends State<MainScreen> {
               color: AppTheme.instagramRed,
             ),
             const SizedBox(height: 16),
-            Text('Errore', style: Theme.of(context).textTheme.displayMedium),
+            Text(
+              context.l10n.error,
+              style: Theme.of(context).textTheme.displayMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               provider.errorMessage!,
@@ -461,7 +467,7 @@ class _MainScreenState extends State<MainScreen> {
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => provider.initialize(),
-              child: const Text('Riprova'),
+              child: Text(context.l10n.retry),
             ),
           ],
         ),
@@ -487,7 +493,9 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildMissingFileState(BuildContext context, AppProvider provider) {
     final missingFollowers = !provider.hasFollowersFile;
-    final missingLabel = missingFollowers ? 'dei follower' : 'dei seguiti';
+    final missingLabel = missingFollowers
+        ? context.l10n.followersFileLabel
+        : context.l10n.followingFileLabel;
     final missingFileName = missingFollowers
         ? 'followers_*.json'
         : 'following_*.json';
@@ -504,7 +512,7 @@ class _MainScreenState extends State<MainScreen> {
             Icon(icon, size: 56, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 16),
             Text(
-              'Manca un file',
+              context.l10n.missingFile,
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -512,9 +520,13 @@ class _MainScreenState extends State<MainScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Abbiamo rilevato il file ${missingFollowers ? 'dei seguiti' : 'dei follower'}. '
-              'Per creare il report, carica anche il file $missingLabel '
-              '($missingFileName).',
+              context.l10n.missingFileDescription(
+                missingFollowers
+                    ? context.l10n.followingFileLabel
+                    : context.l10n.followersFileLabel,
+                missingLabel,
+                missingFileName,
+              ),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppTheme.getSubTextColor(context),
                 height: 1.5,
@@ -539,7 +551,7 @@ class _MainScreenState extends State<MainScreen> {
                     const Icon(Icons.upload_file_outlined, size: 64),
                     const SizedBox(height: 12),
                     Text(
-                      'Carica file\n$missingLabel',
+                      context.l10n.loadMissingFile((missingLabel).toString()),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.w700,
@@ -554,7 +566,7 @@ class _MainScreenState extends State<MainScreen> {
             TextButton.icon(
               onPressed: () => _pickAndLoadArchive(provider),
               icon: const Icon(Icons.folder_zip_outlined),
-              label: const Text('Oppure carica un archivio ZIP'),
+              label: Text(context.l10n.orLoadZip),
             ),
           ],
         ),
@@ -584,7 +596,7 @@ class _MainScreenState extends State<MainScreen> {
         SliverToBoxAdapter(
           child: StatsCounter(
             count: provider.stats['visibleCount'] ?? 0,
-            zeroCountLabel: 'Tutto a posto!',
+            zeroCountLabel: context.l10n.allDone,
           ),
         ),
         SliverToBoxAdapter(child: _buildControls(context, provider)),
@@ -633,14 +645,16 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   itemBuilder: (context) => SortOption.values.map((option) {
                     final title = switch (option) {
-                      SortOption.dateDesc => 'Data decrescente',
-                      SortOption.dateAsc => 'Data crescente',
-                      SortOption.alphaAsc => 'Alfabetico (A-Z)',
-                      SortOption.alphaDesc => 'Alfabetico (Z-A)',
+                      SortOption.dateDesc => context.l10n.sortDateDescending,
+                      SortOption.dateAsc => context.l10n.sortDateAscending,
+                      SortOption.alphaAsc =>
+                        context.l10n.sortAlphabeticalAscending,
+                      SortOption.alphaDesc =>
+                        context.l10n.sortAlphabeticalDescending,
                     };
                     final subtitle = switch (option) {
-                      SortOption.dateDesc => '(Più recenti prima)',
-                      SortOption.dateAsc => '(Più vecchi prima)',
+                      SortOption.dateDesc => context.l10n.newestFirst,
+                      SortOption.dateAsc => context.l10n.oldestFirst,
                       SortOption.alphaAsc || SortOption.alphaDesc => '',
                     };
                     final directionIcon = switch (option) {
@@ -745,10 +759,10 @@ class _MainScreenState extends State<MainScreen> {
                       Expanded(
                         child: Text(
                           switch (provider.currentSort) {
-                            SortOption.dateDesc => 'Più recenti',
-                            SortOption.dateAsc => 'Più vecchi',
-                            SortOption.alphaAsc => 'Nome A-Z',
-                            SortOption.alphaDesc => 'Nome Z-A',
+                            SortOption.dateDesc => context.l10n.newest,
+                            SortOption.dateAsc => context.l10n.oldest,
+                            SortOption.alphaAsc => context.l10n.nameAscending,
+                            SortOption.alphaDesc => context.l10n.nameDescending,
                           },
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -840,7 +854,8 @@ class _MainScreenState extends State<MainScreen> {
         }
       }
     } catch (e) {
-      provider.setError('Errore selezione file: $e');
+      if (!mounted) return;
+      provider.setError(context.l10n.selectFilesError((e).toString()));
     }
   }
 
@@ -859,7 +874,8 @@ class _MainScreenState extends State<MainScreen> {
         }
       }
     } catch (e) {
-      provider.setError('Errore selezione archivio ZIP: $e');
+      if (!mounted) return;
+      provider.setError(context.l10n.selectArchiveError((e).toString()));
     }
   }
 
@@ -873,10 +889,9 @@ class _MainScreenState extends State<MainScreen> {
     initialDate: DateTime.now(),
     firstDate: DateTime(2010),
     lastDate: DateTime.now(),
-    helpText:
-        'Data dell’esportazione Instagram (non la data dei singoli follow)',
-    cancelText: 'Annulla',
-    confirmText: 'Importa',
+    helpText: context.l10n.exportDateHelp,
+    cancelText: context.l10n.cancel,
+    confirmText: context.l10n.importAction,
   );
 
   Future<Map<String, String>?> _resolveUsernameChanges(
@@ -1008,7 +1023,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Tutti ricambiano il follow! 🎉',
+              context.l10n.everyoneFollowsBack,
               style: Theme.of(context).textTheme.displayMedium?.copyWith(
                 color: AppTheme.getSubTextColor(context),
               ),
@@ -1016,7 +1031,7 @@ class _MainScreenState extends State<MainScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Non ci sono profili da controllare.',
+              context.l10n.noProfilesToReview,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppTheme.getSubTextColor(context),
               ),

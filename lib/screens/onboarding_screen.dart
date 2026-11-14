@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
+
 enum OnboardingMode { app, instagramExport }
 
 class OnboardingScreen extends StatefulWidget {
@@ -17,96 +19,63 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _appSteps = [
+  List<_OnboardingStep> get _appSteps => [
     _OnboardingStep(
       icon: Icons.lock_outline_rounded,
-      eyebrow: 'PASSAGGIO 1 DI 5',
-      title: 'Il tuo report, privato.',
-      description:
-          'InstaLander confronta i tuoi follower con i profili che segui '
-          'per mostrarti chi non ricambia il follow. Il confronto avviene '
-          'sul dispositivo: non serve accedere al tuo account Instagram '
-          'né fornire la password.',
+      eyebrow: context.l10n.onboardingStep1of5,
+      title: context.l10n.privateReportTitle,
+      description: context.l10n.privateReportDescription,
     ),
     _OnboardingStep(
       icon: Icons.analytics_outlined,
-      eyebrow: 'PASSAGGIO 2 DI 5',
-      title: 'Carica e consulta il report',
-      description:
-          'Carica i JSON di followers e following, oppure lo ZIP che li '
-          'contiene, e indica la data dell’esportazione. Nel Report trovi '
-          'i profili che non ti seguono: puoi ordinarli e aprirli su Instagram. '
-          'Se ti servono i file, trovi una guida nel pulsante '
-          '“Come esportare le informazioni da Instagram”.',
+      eyebrow: context.l10n.onboardingStep2of5,
+      title: context.l10n.loadReportTitle,
+      description: context.l10n.loadReportDescription,
     ),
     _OnboardingStep(
       icon: Icons.favorite_outline_rounded,
-      eyebrow: 'PASSAGGIO 3 DI 5',
-      title: 'Scegli chi tenere nella whitelist',
-      description:
-          'Vuoi continuare a seguire un profilo anche se non ti segue? '
-          'Aggiungilo alla whitelist per escluderlo dal Report. '
-          'Nella scheda Whitelist puoi cercare i profili salvati e '
-          'rimuoverli quando vuoi.',
+      eyebrow: context.l10n.onboardingStep3of5,
+      title: context.l10n.chooseWhitelistTitle,
+      description: context.l10n.chooseWhitelistDescription,
     ),
     _OnboardingStep(
       icon: Icons.timeline_rounded,
-      eyebrow: 'PASSAGGIO 4 DI 5',
-      title: 'Segui i cambiamenti nella timeline',
-      description:
-          'Quando carichi una nuova lista dei follower, l’app conserva '
-          'quella precedente e le confronta. La Timeline mostra chi '
-          'non compare più tra i follower nell’intervallo tra le due '
-          'esportazioni, senza indicare il giorno esatto dell’unfollow.',
+      eyebrow: context.l10n.onboardingStep4of5,
+      title: context.l10n.timelineIntroTitle,
+      description: context.l10n.timelineIntroDescription,
     ),
     _OnboardingStep(
       icon: Icons.notifications_none_rounded,
-      eyebrow: 'PASSAGGIO 5 DI 5',
-      title: 'Ricordati di aggiornare i dati',
-      description:
-          'Il report si aggiorna quando importi nuovi file. Nelle '
-          'Impostazioni puoi attivare un promemoria ogni mese, ogni '
-          '3 mesi o ogni 6 mesi per richiedere una nuova esportazione. '
-          'La notifica è locale e non richiede di mantenere l’app attiva.',
+      eyebrow: context.l10n.onboardingStep5of5,
+      title: context.l10n.reminderIntroTitle,
+      description: context.l10n.reminderIntroDescription,
     ),
   ];
 
-  static const _exportSteps = [
+  List<_OnboardingStep> get _exportSteps => [
     _OnboardingStep(
       icon: Icons.account_circle_outlined,
-      eyebrow: 'PASSAGGIO 1 DI 4',
-      title: 'Apri il Centro gestione account',
-      description:
-          'Apri Instagram, vai sul tuo profilo e tocca il menu ≡ in alto. '
-          'Entra nel Centro gestione account.',
+      eyebrow: context.l10n.exportStep1of4,
+      title: context.l10n.accountsCenterTitle,
+      description: context.l10n.accountsCenterDescription,
     ),
     _OnboardingStep(
       icon: Icons.folder_open_outlined,
-      eyebrow: 'PASSAGGIO 2 DI 4',
-      title: 'Richiedi una copia dei dati',
-      description:
-          'Apri “Le tue informazioni e autorizzazioni” e scegli “Esporta le '
-          'tue informazioni”, poi “Crea esportazione”. Seleziona il tuo '
-          'account Instagram.',
+      eyebrow: context.l10n.exportStep2of4,
+      title: context.l10n.requestDataTitle,
+      description: context.l10n.requestDataDescription,
     ),
     _OnboardingStep(
       icon: Icons.data_object,
-      eyebrow: 'PASSAGGIO 3 DI 4',
-      title: 'Scegli il formato JSON',
-      description:
-          'Seleziona “Esporta sul dispositivo”. Nelle opzioni dell’esportazione '
-          'scegli il formato JSON e invia la richiesta. I nomi delle voci '
-          'possono variare leggermente in base alla versione di Instagram.',
+      eyebrow: context.l10n.exportStep3of4,
+      title: context.l10n.chooseJsonTitle,
+      description: context.l10n.chooseJsonDescription,
     ),
     _OnboardingStep(
       icon: Icons.download_done_outlined,
-      eyebrow: 'PASSAGGIO 4 DI 4',
-      title: 'Scarica ed estrai l’archivio',
-      description:
-          'Quando Instagram ti avvisa che l’esportazione è pronta, scarica '
-          'lo ZIP. Puoi caricare direttamente l’archivio nell’app oppure '
-          'estrarlo e selezionare tutti i file followers_*.json e '
-          'following_*.json, di solito nella cartella followers_and_following.',
+      eyebrow: context.l10n.exportStep4of4,
+      title: context.l10n.downloadArchiveTitle,
+      description: context.l10n.downloadArchiveDescription,
     ),
   ];
 
@@ -138,7 +107,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Impossibile salvare il completamento: $error'),
+              content: Text(
+                context.l10n.saveOnboardingError((error).toString()),
+              ),
             ),
           );
         }
@@ -251,7 +222,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       style: TextButton.styleFrom(
                         foregroundColor: colorScheme.onSurface,
                       ),
-                      child: const Text('Indietro'),
+                      child: Text(context.l10n.back),
                     )
                   else
                     const SizedBox(width: 80),
@@ -270,9 +241,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         : Text(
                             isLastStep
                                 ? widget.mode == OnboardingMode.instagramExport
-                                      ? 'Torna al report'
-                                      : "Procedi nell'app"
-                                : 'Avanti',
+                                      ? context.l10n.backToReport
+                                      : context.l10n.startApp
+                                : context.l10n.next,
                           ),
                   ),
                 ],

@@ -25,6 +25,27 @@ class ReminderService {
     }
   }
 
+  static Future<bool> showDebugNotification() async => supported
+      ? await _channel.invokeMethod<bool>('showDebugNotification') ?? false
+      : false;
+
+  static Future<bool> scheduleDebugNotification(Duration delay) async {
+    if (delay.inMilliseconds <= 0) {
+      throw ArgumentError.value(delay, 'delay');
+    }
+    return supported
+        ? await _channel.invokeMethod<bool>(
+                'scheduleDebugNotification',
+                delay.inMilliseconds,
+              ) ??
+              false
+        : false;
+  }
+
+  static Future<void> cancelDebugNotification() async {
+    if (supported) await _channel.invokeMethod<void>('cancelDebugNotification');
+  }
+
   /// Android schedules the notification itself; no Flutter background isolate.
   static Future<bool> setEnabled(bool enabled) async => supported
       ? await _channel.invokeMethod<bool>('setEnabled', enabled) ?? false

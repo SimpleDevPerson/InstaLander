@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../l10n/app_strings.dart';
 import '../models/username_change.dart';
 
 class UsernameChangesDialog extends StatefulWidget {
@@ -17,18 +18,14 @@ class _UsernameChangesDialogState extends State<UsernameChangesDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Possibili cambi di username'),
+      title: Text(context.l10n.possibleUsernameChanges),
       content: SizedBox(
         width: 560,
         height: (MediaQuery.sizeOf(context).height * 0.45).clamp(160.0, 360.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Questi profili hanno lo stesso timestamp di follow. '
-              'Potrebbero essere la stessa persona, ma non è una certezza. '
-              'Scegli solo le associazioni che riconosci; le altre resteranno separate.',
-            ),
+            Text(context.l10n.usernameChangesDescription),
             const SizedBox(height: 12),
             Expanded(
               child: ListView.separated(
@@ -45,7 +42,13 @@ class _UsernameChangesDialogState extends State<UsernameChangesDialog> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       Text(
-                        'Follow: ${DateFormat('dd/MM/yyyy HH:mm:ss').format(candidate.previous.followedAt!)}',
+                        context.l10n.followDate(
+                          (DateFormat(
+                            context.l10n.localeName == 'it'
+                                ? 'dd/MM/yyyy HH:mm:ss'
+                                : 'MM/dd/yyyy HH:mm:ss',
+                          ).format(candidate.previous.followedAt!)).toString(),
+                        ),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 8),
@@ -53,13 +56,13 @@ class _UsernameChangesDialogState extends State<UsernameChangesDialog> {
                         key: ValueKey('rename-$oldName'),
                         initialValue: _selected[oldName] ?? '',
                         isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Nuovo username',
+                        decoration: InputDecoration(
+                          labelText: context.l10n.newUsername,
                         ),
                         items: [
-                          const DropdownMenuItem(
+                          DropdownMenuItem(
                             value: '',
-                            child: Text('Non associare'),
+                            child: Text(context.l10n.noMatch),
                           ),
                           for (final user in candidate.possibleMatches)
                             DropdownMenuItem(
@@ -94,16 +97,16 @@ class _UsernameChangesDialogState extends State<UsernameChangesDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Annulla importazione'),
+          child: Text(context.l10n.cancelImport),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context, <String, String>{}),
-          child: const Text('Ignora tutte'),
+          child: Text(context.l10n.ignoreAll),
         ),
         FilledButton(
           onPressed: () =>
               Navigator.pop(context, Map<String, String>.of(_selected)),
-          child: const Text('Conferma e importa'),
+          child: Text(context.l10n.confirmImport),
         ),
       ],
     );

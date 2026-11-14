@@ -1,13 +1,15 @@
 name: instalander
 description: "InstaLander - Instagram follower report"
 publish_to: 'none'
-version: 0.6.0+2006
+version: 0.7.0+2007
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   cupertino_icons: ^2.0.0
   file_picker: ^13.3.3
@@ -31,6 +33,7 @@ dependency_overrides:
   webview_flutter_android: "4.10.9"
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/images/

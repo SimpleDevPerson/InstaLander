@@ -1,9 +1,16 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+import '../l10n/app_strings.dart';
 import '../models/user.dart';
 import '../providers/app_provider.dart';
+import '../services/ads_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/ad_placement.dart';
+import '../widgets/native_ad_card.dart';
 import '../widgets/stats_counter.dart';
 
 enum _WhitelistView { list, grid }
@@ -30,6 +37,10 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
   _WhitelistView _view = _WhitelistView.list;
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  final _adRandom = Random();
+  List<String> _adUsers = const [];
+  int _adColumns = 0;
+  List<int> _feedRows = const [];
 
   @override
   void dispose() {
@@ -107,17 +118,16 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
         _sortWhitelist(whitelist, provider.currentSort);
         final normalizedQuery = _searchQuery
             .trim()
-            .replaceFirst(
-              RegExp(r'^@'),
-              '',
-            )
+            .replaceFirst(RegExp(r'^@'), '')
             .toLowerCase();
         final filteredWhitelist = normalizedQuery.isEmpty
             ? whitelist
             : whitelist
-                .where((username) =>
-                    username.toLowerCase().contains(normalizedQuery))
-                .toList();
+                  .where(
+                    (username) =>
+                        username.toLowerCase().contains(normalizedQuery),
+                  )
+                  .toList();
 
         return Scaffold(
           backgroundColor: AppTheme.getBgColor(context),
@@ -141,11 +151,9 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'Whitelist',
+                              context.l10n.whitelist,
                               textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .displayLarge
+                              style: Theme.of(context).textTheme.displayLarge
                                   ?.copyWith(
                                     fontSize: 36,
                                     fontWeight: FontWeight.w700,
@@ -159,14 +167,16 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                 ),
                 StatsCounter(
                   count: whitelist.length,
-                  label: 'Profili in whitelist:',
-                  semanticsLabel: 'Profili in whitelist',
+                  label: context.l10n.whitelistCountLabel,
+                  semanticsLabel: context.l10n.whitelistCountSemantics,
                   indicatorIcon: Icons.favorite,
                 ),
                 if (whitelist.isNotEmpty) ...[
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: Row(
                       children: [
                         Expanded(flex: 3, child: _buildViewSelector(context)),
@@ -186,12 +196,18 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                   child: whitelist.isEmpty
                       ? _buildEmptyState(context)
                       : filteredWhitelist.isEmpty
-                          ? _buildNoSearchResults(context)
-                          : _view == _WhitelistView.list
-                              ? _buildWhitelistContent(
-                                  context, provider, filteredWhitelist)
-                              : _buildWhitelistGrid(
-                                  context, provider, filteredWhitelist),
+                      ? _buildNoSearchResults(context)
+                      : _view == _WhitelistView.list
+                      ? _buildWhitelistContent(
+                          context,
+                          provider,
+                          filteredWhitelist,
+                        )
+                      : _buildWhitelistGrid(
+                          context,
+                          provider,
+                          filteredWhitelist,
+                        ),
                 ),
               ],
             ),
@@ -235,13 +251,13 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
           _buildViewOption(
             context,
             view: _WhitelistView.list,
-            label: 'Lista',
+            label: context.l10n.listView,
             icon: Icons.menu,
           ),
           _buildViewOption(
             context,
             view: _WhitelistView.grid,
-            label: 'Griglia',
+            label: context.l10n.gridView,
             icon: Icons.grid_view_outlined,
           ),
         ],
@@ -280,10 +296,9 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontSize: 16,
-                          fontWeight:
-                              selected ? FontWeight.w600 : FontWeight.w500,
-                        ),
+                      fontSize: 16,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
@@ -317,14 +332,14 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
         ),
         itemBuilder: (context) => SortOption.values.map((option) {
           final title = switch (option) {
-            SortOption.dateDesc => 'Data decrescente',
-            SortOption.dateAsc => 'Data crescente',
-            SortOption.alphaAsc => 'Alfabetico (A-Z)',
-            SortOption.alphaDesc => 'Alfabetico (Z-A)',
+            SortOption.dateDesc => context.l10n.sortDateDescending,
+            SortOption.dateAsc => context.l10n.sortDateAscending,
+            SortOption.alphaAsc => context.l10n.sortAlphabeticalAscending,
+            SortOption.alphaDesc => context.l10n.sortAlphabeticalDescending,
           };
           final subtitle = switch (option) {
-            SortOption.dateDesc => '(Più recenti prima)',
-            SortOption.dateAsc => '(Più vecchi prima)',
+            SortOption.dateDesc => context.l10n.newestFirst,
+            SortOption.dateAsc => context.l10n.oldestFirst,
             SortOption.alphaAsc || SortOption.alphaDesc => '',
           };
           final directionIcon = switch (option) {
@@ -383,21 +398,19 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                             title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
+                            style: Theme.of(context).textTheme.bodyLarge
+                                ?.copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: colorScheme.onSurface,
+                                ),
                           ),
                           if (subtitle.isNotEmpty)
                             Text(
                               subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
+                              style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
                                     fontSize: 12,
                                     color: colorScheme.onSurfaceVariant,
@@ -407,10 +420,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                       ),
                     ),
                     if (isSelected)
-                      const Icon(
-                        Icons.check,
-                        color: Color(0xFF4CAF50),
-                      ),
+                      const Icon(Icons.check, color: Color(0xFF4CAF50)),
                   ],
                 ),
               ),
@@ -424,17 +434,17 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
               Expanded(
                 child: Text(
                   switch (provider.currentSort) {
-                    SortOption.dateDesc => 'Più recenti',
-                    SortOption.dateAsc => 'Più vecchi',
-                    SortOption.alphaAsc => 'Nome A-Z',
-                    SortOption.alphaDesc => 'Nome Z-A',
+                    SortOption.dateDesc => context.l10n.newest,
+                    SortOption.dateAsc => context.l10n.oldest,
+                    SortOption.alphaAsc => context.l10n.nameAscending,
+                    SortOption.alphaDesc => context.l10n.nameDescending,
                   },
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               const SizedBox(width: 4),
@@ -459,7 +469,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
       child: IconButton(
         onPressed: () => _showClearDialog(context, provider),
         icon: const Icon(Icons.delete_forever_outlined),
-        tooltip: 'Svuota whitelist',
+        tooltip: context.l10n.clearWhitelist,
         color: errorColor,
         padding: EdgeInsets.zero,
       ),
@@ -474,7 +484,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
         controller: _searchController,
         onChanged: (value) => setState(() => _searchQuery = value),
         decoration: InputDecoration(
-          hintText: 'Cerca un profilo',
+          hintText: context.l10n.searchProfile,
           prefixIcon: const Icon(Icons.search),
           suffixIcon: _searchQuery.isEmpty
               ? null
@@ -484,11 +494,12 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                     setState(() => _searchQuery = '');
                   },
                   icon: const Icon(Icons.close),
-                  tooltip: 'Cancella ricerca',
+                  tooltip: context.l10n.clearSearch,
                 ),
           filled: true,
-          fillColor:
-              colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+          fillColor: colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.72,
+          ),
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
@@ -512,10 +523,10 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Text(
-          'Nessun profilo trovato',
+          context.l10n.noProfilesFound,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -529,13 +540,9 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
+            SizedBox(
               width: 120,
               height: 120,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                shape: BoxShape.circle,
-              ),
               child: Icon(
                 Icons.favorite_border,
                 size: 60,
@@ -544,23 +551,19 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Whitelist vuota',
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              context.l10n.emptyWhitelist,
+              style: Theme.of(
+                context,
+              ).textTheme.displayMedium?.copyWith(fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Aggiungi profili alla whitelist per escluderli\n'
-              'dall\'elenco dei non-follower.\n\n'
-              'Puoi aggiungere profili dalla schermata\n'
-              'principale toccando l\'icona del cuore\n'
-              'sulla card di un profilo.',
+              context.l10n.emptyWhitelistDescription,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.5,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -570,16 +573,11 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
   }
 
   Widget _buildWhitelistContent(
-      BuildContext context, AppProvider provider, List<String> whitelist) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: whitelist.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        final username = whitelist[index];
-        return _buildWhitelistItem(context, provider, username);
-      },
-    );
+    BuildContext context,
+    AppProvider provider,
+    List<String> whitelist,
+  ) {
+    return _buildWhitelistFeed(context, provider, whitelist, grid: false);
   }
 
   Widget _buildWhitelistGrid(
@@ -587,85 +585,164 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
     AppProvider provider,
     List<String> whitelist,
   ) {
-    final crossAxisCount =
-        (MediaQuery.sizeOf(context).width / 180).floor().clamp(2, 4);
+    return _buildWhitelistFeed(context, provider, whitelist, grid: true);
+  }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: whitelist.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.05,
-      ),
-      itemBuilder: (context, index) {
-        final username = whitelist[index];
-        final colorScheme = Theme.of(context).colorScheme;
-
-        return Card(
-          margin: EdgeInsets.zero,
-          color: Theme.of(context).cardTheme.color,
-          elevation: 3,
-          shadowColor: colorScheme.shadow.withValues(alpha: 0.22),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildWhitelistFeed(
+    BuildContext context,
+    AppProvider provider,
+    List<String> whitelist, {
+    required bool grid,
+  }) => LayoutBuilder(
+    builder: (context, constraints) {
+      final columns = grid
+          ? (constraints.maxWidth / 180).floor().clamp(2, 4)
+          : 1;
+      if (_adColumns != columns || !listEquals(_adUsers, whitelist)) {
+        _adColumns = columns;
+        _adUsers = List.of(whitelist);
+        final adOffsets = calculateAdInsertionOffsets(
+          userCount: whitelist.length,
+          crossAxisCount: columns,
+          random: _adRandom,
+        );
+        final adRows = {
+          for (var index = 0; index < adOffsets.length; index++)
+            adOffsets[index] ~/ columns: index,
+        };
+        _feedRows = [
+          for (
+            var row = 0;
+            row < (whitelist.length + columns - 1) ~/ columns;
+            row++
+          ) ...[if (adRows.containsKey(row)) -(adRows[row]! + 1), row],
+        ];
+      }
+      final width = (constraints.maxWidth - 32 - 12 * (columns - 1)) / columns;
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _feedRows.length,
+        itemBuilder: (context, index) {
+          final row = _feedRows[index];
+          if (row < 0) {
+            return ValueListenableBuilder<bool>(
+              key: ValueKey('whitelist-native-ad-${-row - 1}'),
+              valueListenable: AdsService.instance.adsEnabled,
+              builder: (context, enabled, _) =>
+                  enabled ? const NativeAdCard() : const SizedBox.shrink(),
+            );
+          }
+          if (!grid) {
+            final username = whitelist[row];
+            return Padding(
+              key: ValueKey(username),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _buildWhitelistItem(context, provider, username),
+            );
+          }
+          final start = row * columns;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 4),
-                _buildWhitelistAvatar(username, radius: 28),
-                Text(
-                  '@$username',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                for (
+                  var i = start;
+                  i < min(start + columns, whitelist.length);
+                  i++
+                ) ...[
+                  if (i > start) const SizedBox(width: 12),
+                  SizedBox(
+                    width: width,
+                    height: width / 1.05,
+                    child: _buildWhitelistGridCard(
+                      context,
+                      provider,
+                      whitelist[i],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+
+  Widget _buildWhitelistGridCard(
+    BuildContext context,
+    AppProvider provider,
+    String username,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      color: Theme.of(context).cardTheme.color,
+      elevation: 3,
+      shadowColor: colorScheme.shadow.withValues(alpha: 0.22),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const SizedBox(height: 4),
+            _buildWhitelistAvatar(username, radius: 28),
+            Text(
+              '@$username',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildFramedActionButton(
+                  context,
+                  icon: Icons.open_in_new_rounded,
+                  color: colorScheme.primary,
+                  tooltip: context.l10n.openProfile,
+                  onPressed: () => _openInstagramProfile(username),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildFramedActionButton(
+                const SizedBox(width: 8),
+                _buildFramedActionButton(
+                  context,
+                  icon: Icons.delete_outline,
+                  color: colorScheme.onSurfaceVariant,
+                  tooltip: context.l10n.removeFromWhitelist,
+                  onPressed: () async {
+                    final confirmed = await _showRemoveDialog(
                       context,
-                      icon: Icons.open_in_new_rounded,
-                      color: colorScheme.primary,
-                      tooltip: 'Apri profilo',
-                      onPressed: () => _openInstagramProfile(username),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildFramedActionButton(
-                      context,
-                      icon: Icons.delete_outline,
-                      color: colorScheme.onSurfaceVariant,
-                      tooltip: 'Rimuovi dalla whitelist',
-                      onPressed: () async {
-                        final confirmed =
-                            await _showRemoveDialog(context, username);
-                        if (confirmed == true) {
-                          provider.removeFromWhitelist(username);
-                        }
-                      },
-                    ),
-                  ],
+                      username,
+                    );
+                    if (confirmed == true) {
+                      provider.removeFromWhitelist(username);
+                    }
+                  },
                 ),
               ],
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildWhitelistItem(
-      BuildContext context, AppProvider provider, String username) {
-    final swipeGradient =
-        statsCounterGradientColors(context, provider.whitelist.length);
+    BuildContext context,
+    AppProvider provider,
+    String username,
+  ) {
+    final swipeGradient = statsCounterGradientColors(
+      context,
+      provider.whitelist.length,
+    );
     return Dismissible(
       key: Key(username),
       direction: DismissDirection.endToStart,
@@ -689,14 +766,14 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
             ),
           ],
         ),
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.delete_outline, color: Colors.white, size: 20),
-            SizedBox(width: 6),
+            const Icon(Icons.delete_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 6),
             Text(
-              'Rimuovi',
-              style: TextStyle(
+              context.l10n.remove,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -722,20 +799,22 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
           ),
         ),
         child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           leading: _buildWhitelistAvatar(username, radius: 24),
           title: Text(
             username,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
           ),
           subtitle: Text(
-            'Escluso dal report',
+            context.l10n.excludedFromReport,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -745,7 +824,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                 icon: Icons.open_in_new,
                 color: Theme.of(context).colorScheme.primary,
                 onPressed: () => _openInstagramProfile(username),
-                tooltip: 'Apri profilo Instagram',
+                tooltip: context.l10n.openInstagramProfile,
               ),
               const SizedBox(width: 8),
               _buildFramedActionButton(
@@ -758,7 +837,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                     provider.removeFromWhitelist(username);
                   }
                 },
-                tooltip: 'Rimuovi dalla whitelist',
+                tooltip: context.l10n.removeFromWhitelist,
               ),
             ],
           ),
@@ -781,17 +860,14 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
               color: Theme.of(context).colorScheme.error,
             ),
             const SizedBox(width: 12),
-            const Text('Rimuovi dalla whitelist'),
+            Text(context.l10n.removeFromWhitelist),
           ],
         ),
-        content: Text(
-          'Vuoi rimuovere "$username" dalla whitelist?\n'
-          'Tornerà a comparire nell\'elenco dei non-follower.',
-        ),
+        content: Text(context.l10n.removeWhitelistConfirmation(username)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annulla'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -799,7 +875,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: const Text('Rimuovi'),
+            child: Text(context.l10n.remove),
           ),
         ],
       ),
@@ -807,40 +883,34 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
   }
 
   Future<void> _showClearDialog(
-      BuildContext context, AppProvider provider) async {
+    BuildContext context,
+    AppProvider provider,
+  ) async {
     final colorScheme = Theme.of(context).colorScheme;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: colorScheme.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titleTextStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: colorScheme.onSurface,
-            ),
-        contentTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurface,
-            ),
+        titleTextStyle: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(color: colorScheme.onSurface),
+        contentTextStyle: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
         title: Row(
           children: [
-            Icon(
-              Icons.delete_forever_outlined,
-              color: colorScheme.error,
-            ),
+            Icon(Icons.delete_forever_outlined, color: colorScheme.error),
             const SizedBox(width: 12),
-            const Text('Svuota whitelist'),
+            Text(context.l10n.clearWhitelist),
           ],
         ),
-        content: const Text(
-          'Sei sicuro di voler rimuovere tutti i profili dalla whitelist? '
-          'Questa azione non può essere annullata.',
-        ),
+        content: Text(context.l10n.clearWhitelistConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            style: TextButton.styleFrom(
-              foregroundColor: colorScheme.onSurface,
-            ),
-            child: const Text('Annulla'),
+            style: TextButton.styleFrom(foregroundColor: colorScheme.onSurface),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
@@ -848,7 +918,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
               backgroundColor: colorScheme.error,
               foregroundColor: colorScheme.onError,
             ),
-            child: const Text('Svuota tutto'),
+            child: Text(context.l10n.clearWhitelistAction),
           ),
         ],
       ),
@@ -860,9 +930,11 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
   }
 
   Future<void> _openInstagramProfile(String username) async {
-    final url = Uri.parse('https://instagram.com/$username');
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+    final opened = await context.read<AppProvider>().openProfile(username);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.cannotOpenProfile)));
     }
   }
 }

@@ -22,9 +22,10 @@ class MonthlyReminder : BroadcastReceiver() {
         if (!prefs.getBoolean("enabled", false)) return
         if (intent.action == ACTION) {
             if (canNotify(context)) {
+                val strings = AppLanguage.context(context)
                 val manager = context.getSystemService(NotificationManager::class.java)
                 manager.createNotificationChannel(NotificationChannel(
-                    CHANNEL, "Promemoria Instagram", NotificationManager.IMPORTANCE_DEFAULT,
+                    CHANNEL, strings.getString(R.string.reminder_channel), NotificationManager.IMPORTANCE_DEFAULT,
                 ))
                 // Open whichever launcher alias is currently enabled.
                 val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
@@ -32,10 +33,10 @@ class MonthlyReminder : BroadcastReceiver() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE) }
                 manager.notify(4101, NotificationCompat.Builder(context, CHANNEL)
                     .setSmallIcon(R.drawable.ic_reminder)
-                    .setContentTitle("Aggiorna i tuoi dati Instagram")
-                    .setContentText("Richiedi il download delle tue informazioni su Instagram.")
+                    .setContentTitle(strings.getString(R.string.reminder_title))
+                    .setContentText(strings.getString(R.string.reminder_text))
                     .setStyle(NotificationCompat.BigTextStyle().bigText(
-                        "Richiedi il download delle tue informazioni su Instagram e importa i nuovi JSON per aggiornare la timeline."))
+                        strings.getString(R.string.reminder_details)))
                     .setContentIntent(tap)
                     .setAutoCancel(true)
                     .build())

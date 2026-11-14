@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 
 class WhitelistFab extends StatefulWidget {
@@ -39,15 +41,18 @@ class _WhitelistFabState extends State<WhitelistFab>
       vsync: this,
     );
 
-    _widthAnimation = Tween<double>(begin: 190, end: 320).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _heightAnimation = Tween<double>(begin: 52, end: 420).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
-    _borderRadiusAnimation = Tween<double>(begin: 30, end: 16).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _widthAnimation = Tween<double>(
+      begin: 190,
+      end: 320,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _heightAnimation = Tween<double>(
+      begin: 52,
+      end: 420,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+    _borderRadiusAnimation = Tween<double>(
+      begin: 30,
+      end: 16,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _panelOpacityAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
@@ -112,7 +117,7 @@ class _WhitelistFabState extends State<WhitelistFab>
                   opacity: 1 - _controller.value,
                   child: Center(
                     child: Text(
-                      '📋 Gestisci Whitelist',
+                      context.l10n.manageWhitelist,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -159,10 +164,10 @@ class _WhitelistFabState extends State<WhitelistFab>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'La tua Whitelist',
-                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                  fontSize: 18,
-                ),
+                context.l10n.yourWhitelist,
+                style: Theme.of(
+                  context,
+                ).textTheme.displayMedium?.copyWith(fontSize: 18),
               ),
               GestureDetector(
                 onTap: widget.onClose,
@@ -183,7 +188,7 @@ class _WhitelistFabState extends State<WhitelistFab>
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      'La whitelist è vuota.',
+                      context.l10n.whitelistIsEmpty,
                       style: TextStyle(
                         color: AppTheme.getSubTextColor(context),
                         fontSize: 14,
@@ -194,8 +199,10 @@ class _WhitelistFabState extends State<WhitelistFab>
               : ListView.separated(
                   padding: const EdgeInsets.all(10),
                   itemCount: sortedWhitelist.length,
-                  separatorBuilder: (context, index) =>
-                      Divider(color: AppTheme.getBorderColor(context), height: 1),
+                  separatorBuilder: (context, index) => Divider(
+                    color: AppTheme.getBorderColor(context),
+                    height: 1,
+                  ),
                   itemBuilder: (context, index) {
                     final username = sortedWhitelist[index];
                     return _WhitelistItem(
@@ -214,10 +221,7 @@ class _WhitelistItem extends StatelessWidget {
   final String username;
   final VoidCallback onRemove;
 
-  const _WhitelistItem({
-    required this.username,
-    required this.onRemove,
-  });
+  const _WhitelistItem({required this.username, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -240,14 +244,17 @@ class _WhitelistItem extends StatelessWidget {
               onTap: onRemove,
               borderRadius: BorderRadius.circular(5),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.instagramRed,
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: const Text(
-                  'Rimuovi',
-                  style: TextStyle(
+                child: Text(
+                  context.l10n.remove,
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

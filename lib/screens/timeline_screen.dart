@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../l10n/app_strings.dart';
 import '../models/import_snapshot.dart';
 import '../models/user.dart';
 import '../providers/app_provider.dart';
@@ -47,7 +47,7 @@ class TimelineScreen extends StatelessWidget {
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(
-                        'Timeline',
+                        context.l10n.timeline,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.displayLarge?.copyWith(
                           fontSize: 36,
@@ -63,9 +63,7 @@ class TimelineScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Text(
-              'Chi non compare più nei follower, tra le date delle esportazioni. '
-              'L’intervallo non indica il giorno esatto dell’unfollow. '
-              'Include i profili in whitelist.',
+              context.l10n.timelineDescription,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -76,11 +74,11 @@ class TimelineScreen extends StatelessWidget {
             child: provider.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : intervals.isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
                       child: Text(
-                        'Carica due esportazioni dei follower per iniziare la timeline.',
+                        context.l10n.timelineEmpty,
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -162,17 +160,19 @@ class _TimelineRow extends StatelessWidget {
                             children: [
                               Text(
                                 interval.users.isEmpty
-                                    ? 'Nessun unfollow'
+                                    ? context.l10n.noUnfollows
                                     : interval.users.length == 1
-                                    ? '1 profilo non più tra i follower'
-                                    : '${interval.users.length} profili non più tra i follower',
+                                    ? context.l10n.oneLostFollower
+                                    : context.l10n.lostFollowers(
+                                        (interval.users.length).toString(),
+                                      ),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Confronto tra esportazioni',
+                                context.l10n.exportComparison,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: colors.onSurfaceVariant,
                                 ),
@@ -180,7 +180,7 @@ class _TimelineRow extends StatelessWidget {
                               if (interval.previous.estimatedDate) ...[
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Data iniziale stimata dal vecchio JSON.',
+                                  context.l10n.estimatedDate,
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: colors.onSurfaceVariant,
                                   ),
@@ -268,18 +268,15 @@ class _TimelineRow extends StatelessWidget {
 
   Future<void> _openProfile(BuildContext context, String username) async {
     try {
-      final opened = await launchUrl(
-        Uri.https('www.instagram.com', '/$username/'),
-        mode: LaunchMode.externalApplication,
-      );
+      final opened = await context.read<AppProvider>().openProfile(username);
       if (opened) return;
     } on Exception {
       // Report unavailable handlers in the UI.
     }
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Impossibile aprire il profilo.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.cannotOpenProfile)));
     }
   }
 }
@@ -291,11 +288,16 @@ class _IntervalDates extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final format = DateFormat('dd/MM/yyyy');
+    final format = DateFormat(
+      context.l10n.localeName == 'it' ? 'dd/MM/yyyy' : 'MM/dd/yyyy',
+    );
     final previous = format.format(interval.previous.date);
     final current = format.format(interval.current.date);
     return Semantics(
-      label: 'Dal $previous al $current',
+      label: context.l10n.dateInterval(
+        (previous).toString(),
+        (current).toString(),
+      ),
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.only(top: 12, right: 12, bottom: 12),
@@ -303,7 +305,7 @@ class _IntervalDates extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              'dal',
+              context.l10n.from,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -317,7 +319,7 @@ class _IntervalDates extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'al',
+              context.l10n.to,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

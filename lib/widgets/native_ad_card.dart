@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import '../l10n/app_strings.dart';
 import '../services/ads_service.dart';
 
 class NativeAdCard extends StatefulWidget {
@@ -138,11 +139,9 @@ class _NativeAdCardState extends State<NativeAdCard> {
                       Padding(
                         padding: const EdgeInsets.only(left: 4, bottom: 4),
                         child: Text(
-                          'Annuncio',
-                          style:
-                              Theme.of(context).textTheme.labelSmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
+                          context.l10n.ad,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
                         ),
                       ),
                       SizedBox(height: 96, child: AdWidget(ad: _ad!)),
@@ -154,10 +153,8 @@ class _NativeAdCardState extends State<NativeAdCard> {
                       child: _isLoading
                           ? const CircularProgressIndicator()
                           : Text(
-                              'Annuncio non disponibile',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              context.l10n.adUnavailable,
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: colorScheme.onSurfaceVariant,
                                   ),

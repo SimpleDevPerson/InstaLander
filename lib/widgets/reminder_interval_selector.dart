@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../l10n/app_strings.dart';
 import 'one_ui_segmented_selector.dart';
 
 class ReminderIntervalSelector extends StatelessWidget {
@@ -12,14 +14,27 @@ class ReminderIntervalSelector extends StatelessWidget {
   final bool isSamsung;
   final ValueChanged<int>? onChanged;
 
-  static const options = [
-    SelectorOption(1, 'Ogni mese', key: ValueKey('reminder-months-1')),
-    SelectorOption(3, 'Ogni 3 mesi', key: ValueKey('reminder-months-3')),
-    SelectorOption(6, 'Ogni 6 mesi', key: ValueKey('reminder-months-6')),
+  List<SelectorOption<int>> options(BuildContext context) => [
+    SelectorOption(
+      1,
+      context.l10n.everyMonth,
+      key: const ValueKey('reminder-months-1'),
+    ),
+    SelectorOption(
+      3,
+      context.l10n.everyThreeMonths,
+      key: const ValueKey('reminder-months-3'),
+    ),
+    SelectorOption(
+      6,
+      context.l10n.everySixMonths,
+      key: const ValueKey('reminder-months-6'),
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final options = this.options(context);
     if (isSamsung) {
       return OneUiSegmentedSelector<int>(
         value: value,

@@ -80,6 +80,95 @@ void main() {
     },
   );
 
+  testWidgets('rapid version taps update one banner with the exact countdown', (
+    tester,
+  ) async {
+    final app = AppProvider();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppProvider>.value(value: app),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Versione'), 250);
+    await tester.pumpAndSettle();
+    State? bannerState;
+    for (var tap = 1; tap <= 9; tap++) {
+      await tester.tap(find.text('Versione'));
+      await tester.pump(const Duration(milliseconds: 40));
+      expect(app.debugToolsEnabled, isFalse);
+      if (tap < 5) {
+        expect(find.byType(SnackBar), findsNothing);
+      } else {
+        expect(find.byType(SnackBar), findsOneWidget);
+        bannerState ??= tester.state(find.byType(SnackBar));
+        expect(tester.state(find.byType(SnackBar)), same(bannerState));
+        final remaining = 10 - tap;
+        expect(
+          find.text(
+            remaining == 1
+                ? 'Ancora un tocco per attivare la modalità sviluppatore'
+                : 'Ancora $remaining tocchi per attivare la modalità sviluppatore',
+          ),
+          findsOneWidget,
+        );
+      }
+    }
+    await tester.tap(find.text('Versione'));
+    await tester.pumpAndSettle();
+    expect(app.debugToolsEnabled, isTrue);
+    expect(find.text('Modalità sviluppatore attivata'), findsOneWidget);
+    expect(tester.state(find.byType(SnackBar)), same(bannerState));
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    app.dispose();
+  });
+
+  testWidgets('debug options can be hidden and unlocked again', (tester) async {
+    final app = AppProvider();
+    await app.enableDebugTools();
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppProvider>.value(value: app),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ],
+        child: const MaterialApp(home: SettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Nascondi opzioni di debug').hitTestable(),
+      250,
+    );
+    await tester.tap(find.text('Nascondi opzioni di debug'));
+    await tester.pumpAndSettle();
+    expect(app.debugToolsEnabled, isFalse);
+    expect(find.text('Modalità di compilazione'), findsNothing);
+    expect(
+      (await SharedPreferences.getInstance()).getBool('debug_tools_enabled'),
+      isFalse,
+    );
+    await tester.scrollUntilVisible(find.text('Versione').hitTestable(), -200);
+    for (var tap = 0; tap < 9; tap++) {
+      await tester.tap(find.text('Versione'));
+      await tester.pump();
+    }
+    expect(app.debugToolsEnabled, isFalse);
+    await tester.tap(find.text('Versione'));
+    await tester.pumpAndSettle();
+    expect(app.debugToolsEnabled, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+    app.dispose();
+  });
+
   testWidgets('debug buttons populate their sections and reset remains last', (
     tester,
   ) async {
@@ -116,7 +205,7 @@ void main() {
       (await SharedPreferences.getInstance()).getBool('debug_tools_enabled'),
       isTrue,
     );
-    await tester.scrollUntilVisible(find.text('Debug'), 250);
+    await tester.scrollUntilVisible(find.text('Modalità di compilazione'), 250);
     await tester.pumpAndSettle();
     for (final label in [
       'Popola timeline',
@@ -166,8 +255,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(find.text('Debug'), 250);
-    expect(find.text('Debug'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Modalità di compilazione'), 250);
+    expect(find.text('Modalità di compilazione'), findsOneWidget);
+    expect(find.text('Debug'), findsNWidgets(2));
     await tester.pumpWidget(const SizedBox.shrink());
     app.dispose();
   });

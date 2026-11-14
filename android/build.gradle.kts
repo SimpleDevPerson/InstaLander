@@ -26,7 +26,14 @@ val newBuildDir: Directory =
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    // AGP's unit-test configuration requires sources and outputs on the same
+    // drive. On Windows the Pub cache can be on a different drive from the app.
+    val newSubprojectBuildDir: Directory =
+        if (project.projectDir.toPath().root != newBuildDir.asFile.toPath().root) {
+            project.layout.projectDirectory.dir("build")
+        } else {
+            newBuildDir.dir(project.name)
+        }
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="choose_instagram_client">Open Instagram profile with</string>
+    <string name="reminder_channel">Instagram reminders</string>
+    <string name="reminder_title">Update your Instagram data</string>
+    <string name="reminder_text">Request a download of your Instagram information.</string>
+    <string name="reminder_details">Request a download of your Instagram information and import the new JSON files to update your timeline.</string>
+    <string name="debug_notification_channel">Test notifications</string>
+    <string name="debug_notification_title">InstaLander test notification</string>
+    <string name="debug_notification_text">Your test notification arrived successfully.</string>
+    <string name="notification_request_busy">A notification permission request is already in progress</string>
+    <string name="invalid_notification_delay">Enter a positive delay</string>
+    <string name="invalid_reminder_interval">Choose 1, 3 or 6 months</string>
+</resources>

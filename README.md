@@ -6,7 +6,7 @@ Applicazione Flutter per Android che confronta i file JSON dell'esportazione Ins
 
 ## Installazione
 
-Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/InstaLander/releases/latest) e installala sul tuo dispositivo Android.
+Scarica l' APK per il tuo dispositvo dalla [release più recente](https://github.com/SimpleDevPerson/InstaLander/releases/latest) e installala sul tuo dispositivo Android.
 
 ## Funzionalità
 
@@ -15,9 +15,10 @@ Scarica gli APK dalla [release più recente](https://github.com/SimpleDevPerson/
 - Storico delle importazioni e timeline degli unfollow rilevati tra esportazioni successive.
 - Whitelist manuale e automatica per escludere profili dal report.
 - Riconoscimento dei possibili cambi di username, con conferma manuale.
-- Apertura dei profili su Instagram o nel browser, con indicazione di quelli già visitati.
+- Apertura dei profili nell'app Instagram o nel browser predefinito, a scelta dalle impostazioni, con indicazione di quelli già visitati.
 - Promemoria periodici per richiedere una nuova esportazione.
 - Temi Samsung One UI e Material Design Expressive, con modalità chiara e scura.
+- Interfaccia in italiano e inglese, con rilevamento della lingua del telefono e selezione manuale nelle impostazioni.
 
 ## Esportazione Instagram
 
@@ -29,7 +30,7 @@ L'elaborazione avviene sul dispositivo. I file selezionati e la whitelist sono s
 
 Durante l'importazione JSON l'app usa la data di creazione del file originale, se disponibile sul dispositivo (Android 11 o successivo). Se selezioni più JSON, usa la data più recente; se anche un solo file non espone la data di creazione, si apre il calendario. Per gli archivi ZIP la data resta da scegliere manualmente. I timestamp dei singoli profili rappresentano l'inizio del follow, non la creazione del JSON. Importa insieme tutti i file `followers_*.json` della stessa esportazione e, se disponibile, anche `following*.json`. Ogni nuova importazione sostituisce l'intera lista del tipo selezionato, conservando le versioni precedenti; caricare solo i seguiti non crea un confronto dei follower. Le date devono procedere in ordine cronologico. Per i JSON già presenti prima di questo aggiornamento, la prima data è stimata dalla modifica del file e segnalata nella timeline.
 
-Dal secondo export dei follower, la whitelist viene ampliata con `seguiti attuali − (follower precedenti ∩ follower nuovi)`, mantenendo le esclusioni manuali. La timeline mostra invece `follower precedenti − follower nuovi`, anche se non sono più seguiti o sono in whitelist. L'intervallo non permette di determinare l'istante esatto dell'unfollow; anche account eliminati o disattivati possono risultare assenti.
+Dal secondo export dei follower, se è attiva **Impostazioni → Comportamento → Whitelist automatica all’importazione**, la whitelist viene ampliata con `seguiti attuali − (follower precedenti ∩ follower nuovi)`, mantenendo le esclusioni manuali. L’opzione è attiva inizialmente; disattivarla non rimuove i profili già salvati. La timeline mostra invece `follower precedenti − follower nuovi`, anche se non sono più seguiti o sono in whitelist. L'intervallo non permette di determinare l'istante esatto dell'unfollow; anche account eliminati o disattivati possono risultare assenti.
 
 Quando un follower scompare e un nuovo username compare con lo stesso timestamp di follow (maggiore di zero), l'app propone un possibile cambio di nome, sia per importazioni JSON sia ZIP. Nessuna associazione è preselezionata: puoi confermare le corrispondenze che riconosci, ignorarle o annullare l'importazione. Timestamp uguali non garantiscono che si tratti della stessa persona; nei casi ambigui puoi scegliere tra più candidati, usando ogni nuovo username una sola volta. Le associazioni confermate sono conservate nello storico, escluse dagli unfollow e considerate nel confronto per la whitelist; eventuali voci nei seguiti e nella whitelist passano al nuovo nome. I nomi delle vecchie esportazioni rimangono conservati.
 

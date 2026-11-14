@@ -15,6 +15,13 @@
         android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
         android:supportsRtl="true">
+        <receiver android:name=".DebugNotifications" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
         <receiver android:name=".MonthlyReminder" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -86,6 +93,17 @@
     </application>
 
     <queries>
+        <package android:name="com.instagram.android" />
+        <package android:name="com.instagram.android.piko" />
+        <package android:name="com.instander.android" />
+        <package android:name="com.instander" />
+        <package android:name="com.instamod.android" />
+        <package android:name="com.myinsta.android" />
+        <package android:name="com.myinsta" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="instagram" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />

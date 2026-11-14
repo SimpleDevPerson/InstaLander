@@ -1,0 +1,410 @@
+{
+  "@@locale": "it",
+  "sortDateDescendingLong": "Data decrescente (Più recenti prima)",
+  "sortDateAscendingLong": "Data crescente (Più vecchi prima)",
+  "sortAlphabeticalAscending": "Alfabetico (A-Z)",
+  "sortAlphabeticalDescending": "Alfabetico (Z-A)",
+  "cannotSavePreference": "Impossibile salvare la preferenza",
+  "initializationError": "Errore durante l'inizializzazione: {arg0}",
+  "@initializationError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteDataError": "Errore durante l’eliminazione dei dati: {arg0}",
+  "@deleteDataError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "loadFilesError": "Errore durante il caricamento dei file: {arg0}",
+  "@loadFilesError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "loadArchiveError": "Errore durante il caricamento dell’archivio ZIP: {arg0}",
+  "@loadArchiveError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "saveWhitelistError": "Impossibile salvare la whitelist: {arg0}",
+  "@saveWhitelistError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "originalIcon": "Originale",
+  "darkIcon": "Scura",
+  "systemDefault": "Predefinito di sistema",
+  "light": "Chiaro",
+  "dark": "Scuro",
+  "cannotOpenProfile": "Impossibile aprire il profilo.",
+  "report": "Report",
+  "timeline": "Timeline",
+  "whitelist": "Whitelist",
+  "settings": "Impostazioni",
+  "reportTitlePrefix": "Il tuo ",
+  "reportTitleEmphasis": "unfollower",
+  "reportTitleSuffix": " report",
+  "error": "Errore",
+  "retry": "Riprova",
+  "followersFileLabel": "dei follower",
+  "followingFileLabel": "dei seguiti",
+  "missingFile": "Manca un file",
+  "loadMissingFile": "Carica file\n{arg0}",
+  "@loadMissingFile": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "orLoadZip": "Oppure carica un archivio ZIP",
+  "allDone": "Tutto a posto!",
+  "sortDateDescending": "Data decrescente",
+  "sortDateAscending": "Data crescente",
+  "newestFirst": "(Più recenti prima)",
+  "oldestFirst": "(Più vecchi prima)",
+  "newest": "Più recenti",
+  "oldest": "Più vecchi",
+  "nameAscending": "Nome A-Z",
+  "nameDescending": "Nome Z-A",
+  "selectFilesError": "Errore selezione file: {arg0}",
+  "@selectFilesError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "selectArchiveError": "Errore selezione archivio ZIP: {arg0}",
+  "@selectArchiveError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "exportDateHelp": "Data dell’esportazione Instagram (non la data dei singoli follow)",
+  "cancel": "Annulla",
+  "importAction": "Importa",
+  "everyoneFollowsBack": "Tutti ricambiano il follow! 🎉",
+  "noProfilesToReview": "Non ci sono profili da controllare.",
+  "onboardingStep1of5": "PASSAGGIO 1 DI 5",
+  "privateReportTitle": "Il tuo report, privato.",
+  "privateReportDescription": "InstaLander confronta i tuoi follower con i profili che segui per mostrarti chi non ricambia il follow. Il confronto avviene sul dispositivo: non serve accedere al tuo account Instagram né fornire la password.",
+  "onboardingStep2of5": "PASSAGGIO 2 DI 5",
+  "loadReportTitle": "Carica e consulta il report",
+  "loadReportDescription": "Carica i JSON di followers e following, oppure lo ZIP che li contiene, e indica la data dell’esportazione. Nel Report trovi i profili che non ti seguono: puoi ordinarli e aprirli su Instagram. Se ti servono i file, trovi una guida nel pulsante “Come esportare le informazioni da Instagram”.",
+  "onboardingStep3of5": "PASSAGGIO 3 DI 5",
+  "chooseWhitelistTitle": "Scegli chi tenere nella whitelist",
+  "chooseWhitelistDescription": "Vuoi continuare a seguire un profilo anche se non ti segue? Aggiungilo alla whitelist per escluderlo dal Report. Nella scheda Whitelist puoi cercare i profili salvati e rimuoverli quando vuoi.",
+  "onboardingStep4of5": "PASSAGGIO 4 DI 5",
+  "timelineIntroTitle": "Segui i cambiamenti nella timeline",
+  "timelineIntroDescription": "Quando carichi una nuova lista dei follower, l’app conserva quella precedente e le confronta. La Timeline mostra chi non compare più tra i follower nell’intervallo tra le due esportazioni, senza indicare il giorno esatto dell’unfollow.",
+  "onboardingStep5of5": "PASSAGGIO 5 DI 5",
+  "reminderIntroTitle": "Ricordati di aggiornare i dati",
+  "reminderIntroDescription": "Il report si aggiorna quando importi nuovi file. Nelle Impostazioni puoi attivare un promemoria ogni mese, ogni 3 mesi o ogni 6 mesi per richiedere una nuova esportazione. La notifica è locale e non richiede di mantenere l’app attiva.",
+  "exportStep1of4": "PASSAGGIO 1 DI 4",
+  "accountsCenterTitle": "Apri il Centro gestione account",
+  "accountsCenterDescription": "Apri Instagram, vai sul tuo profilo e tocca il menu ≡ in alto. Entra nel Centro gestione account.",
+  "exportStep2of4": "PASSAGGIO 2 DI 4",
+  "requestDataTitle": "Richiedi una copia dei dati",
+  "requestDataDescription": "Apri “Le tue informazioni e autorizzazioni” e scegli “Esporta le tue informazioni”, poi “Crea esportazione”. Seleziona il tuo account Instagram.",
+  "exportStep3of4": "PASSAGGIO 3 DI 4",
+  "chooseJsonTitle": "Scegli il formato JSON",
+  "chooseJsonDescription": "Seleziona “Esporta sul dispositivo”. Nelle opzioni dell’esportazione scegli il formato JSON e invia la richiesta. I nomi delle voci possono variare leggermente in base alla versione di Instagram.",
+  "exportStep4of4": "PASSAGGIO 4 DI 4",
+  "downloadArchiveTitle": "Scarica ed estrai l’archivio",
+  "downloadArchiveDescription": "Quando Instagram ti avvisa che l’esportazione è pronta, scarica lo ZIP. Puoi caricare direttamente l’archivio nell’app oppure estrarlo e selezionare tutti i file followers_*.json e following_*.json, di solito nella cartella followers_and_following.",
+  "saveOnboardingError": "Impossibile salvare il completamento: {arg0}",
+  "@saveOnboardingError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "back": "Indietro",
+  "backToReport": "Torna al report",
+  "startApp": "Procedi nell'app",
+  "next": "Avanti",
+  "oneTapToDeveloper": "Ancora un tocco per attivare la modalità sviluppatore",
+  "tapsToDeveloper": "Ancora {arg0} tocchi per attivare la modalità sviluppatore",
+  "@tapsToDeveloper": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "enablingDeveloper": "Attivazione della modalità sviluppatore…",
+  "developerEnabled": "Modalità sviluppatore attivata",
+  "developerEnableError": "Impossibile attivare la modalità sviluppatore. Riprova.",
+  "appearance": "Aspetto",
+  "materialThemeDescription": "Layout e componenti Material 3",
+  "oneUiThemeDescription": "Interfaccia One UI con navigazione a pillola",
+  "brightness": "Luminosità",
+  "brightnessDescription": "Scegli una luminosità fissa oppure segui il dispositivo.",
+  "system": "Sistema",
+  "appIcon": "Icona dell’app",
+  "lightIcon": "Icona chiara",
+  "lightIconDescription": "Icona originale con sfondo chiaro",
+  "darkIconTitle": "Icona scura",
+  "darkIconDescription": "Variante con sfondo scuro",
+  "behavior": "Comportamento",
+  "openProfilesInBrowser": "Apri i profili nel browser",
+  "openBrowserDescription": "Usa il browser predefinito del dispositivo.",
+  "openInstagramDescription": "Usa l’app Instagram; se non è installata, usa il browser.",
+  "savePreferenceError": "Impossibile salvare la preferenza.",
+  "autoWhitelist": "Whitelist automatica all’importazione",
+  "autoWhitelistDescription": "Dalla seconda esportazione dei follower, considera già controllati i profili che non ricambiano il follow e aggiungili alla whitelist.",
+  "reminders": "Promemoria",
+  "instagramReminder": "Promemoria Instagram",
+  "reminderDescription": "Ricorda di richiedere il download delle tue informazioni. Notifica locale, senza mantenere l’app attiva.",
+  "androidOnly": "Disponibile nell’app Android.",
+  "allowReminderNotifications": "Consenti le notifiche nelle impostazioni di sistema per attivare il promemoria.",
+  "setReminderError": "Impossibile impostare il promemoria: {arg0}",
+  "@setReminderError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "saveReminderFrequencyError": "Impossibile salvare la frequenza: {arg0}",
+  "@saveReminderFrequencyError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "about": "Informazioni",
+  "version": "Versione",
+  "project": "Progetto",
+  "advertisingPrivacy": "Privacy pubblicitaria",
+  "manageConsent": "Gestisci le preferenze di consenso",
+  "noConsentOptions": "Al momento non sono disponibili opzioni di consenso pubblicitario.",
+  "cannotOpenRepository": "Impossibile aprire la repository",
+  "testNotificationScheduled": "Notifica di prova programmata.",
+  "testNotificationSent": "Notifica di prova inviata.",
+  "allowTestNotifications": "Consenti le notifiche di InstaLander nelle impostazioni di sistema.",
+  "testNotificationError": "Impossibile inviare o programmare la notifica di prova.",
+  "testDataAdded": "Dati di prova aggiunti: {arg0}",
+  "@testDataAdded": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "buildMode": "Modalità di compilazione",
+  "debugDataDescription": "Genera profili casuali con prefisso debug_. I dati di prova sono temporanei: scompaiono al riavvio o quando importi nuovi JSON. I dati importati restano conservati.",
+  "advertising": "Pubblicità",
+  "advertisingDescription": "Mostra gli annunci nel report, dopo il consenso richiesto.",
+  "populateTimeline": "Popola timeline",
+  "populateTimelineDescription": "Aggiungi intervalli e unfollow di prova",
+  "populateWhitelist": "Popola whitelist",
+  "populateWhitelistDescription": "Aggiungi profili di prova alla whitelist",
+  "populateReport": "Popola report",
+  "populateReportDescription": "Genera follower e seguiti di prova",
+  "sendTestNotification": "Invia notifica di prova",
+  "sendTestNotificationDescription": "Mostra subito una notifica sul dispositivo",
+  "scheduleTestNotification": "Programma notifica di prova",
+  "scheduleTestNotificationDescription": "Scegli liberamente il tempo di attesa",
+  "clearAllData": "Cancella tutti i dati",
+  "clearAllDataDescription": "Rimuove file importati, timeline, whitelist, promemoria e preferenze",
+  "changeIconError": "Impossibile cambiare icona: {arg0}",
+  "@changeIconError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "clearAllDataTitle": "Cancellare tutti i dati?",
+  "clearAllDataConfirmation": "Verranno eliminati i file importati, la timeline, il promemoria, la whitelist, i profili controllati e le preferenze. L’operazione non può essere annullata.",
+  "clearEverything": "Cancella tutto",
+  "clearAllDataError": "Impossibile cancellare i dati: {arg0}",
+  "@clearAllDataError": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "timelineDescription": "Chi non compare più nei follower, tra le date delle esportazioni. L’intervallo non indica il giorno esatto dell’unfollow. Include i profili in whitelist.",
+  "timelineEmpty": "Carica due esportazioni dei follower per iniziare la timeline.",
+  "noUnfollows": "Nessun unfollow",
+  "oneLostFollower": "1 profilo non più tra i follower",
+  "lostFollowers": "{arg0} profili non più tra i follower",
+  "@lostFollowers": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "exportComparison": "Confronto tra esportazioni",
+  "estimatedDate": "Data iniziale stimata dal vecchio JSON.",
+  "dateInterval": "Dal {arg0} al {arg1}",
+  "@dateInterval": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      },
+      "arg1": {
+        "type": "String"
+      }
+    }
+  },
+  "from": "dal",
+  "to": "al",
+  "whitelistCountLabel": "Profili in whitelist:",
+  "whitelistCountSemantics": "Profili in whitelist",
+  "listView": "Lista",
+  "gridView": "Griglia",
+  "clearWhitelist": "Svuota whitelist",
+  "searchProfile": "Cerca un profilo",
+  "clearSearch": "Cancella ricerca",
+  "noProfilesFound": "Nessun profilo trovato",
+  "emptyWhitelist": "Whitelist vuota",
+  "emptyWhitelistDescription": "Aggiungi profili alla whitelist per escluderli\ndall'elenco dei non-follower.\n\nPuoi aggiungere profili dalla schermata\nprincipale toccando l'icona del cuore\nsulla card di un profilo.",
+  "openProfile": "Apri profilo",
+  "removeFromWhitelist": "Rimuovi dalla whitelist",
+  "remove": "Rimuovi",
+  "excludedFromReport": "Escluso dal report",
+  "openInstagramProfile": "Apri profilo Instagram",
+  "clearWhitelistConfirmation": "Sei sicuro di voler rimuovere tutti i profili dalla whitelist? Questa azione non può essere annullata.",
+  "clearWhitelistAction": "Svuota tutto",
+  "duplicateArchiveFile": "Nome file duplicato nell’archivio: {arg0}",
+  "@duplicateArchiveFile": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "unreadableArchiveFile": "Impossibile leggere il file {arg0} nell’archivio",
+  "@unreadableArchiveFile": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "noArchiveFiles": "Nell’archivio non sono stati trovati file followers*.json o following*.json",
+  "pickJsonTitle": "Seleziona file JSON di Instagram (followers_*.json, following_*.json)",
+  "pickArchiveTitle": "Seleziona l’archivio ZIP di Instagram",
+  "selectValidFiles": "Seleziona followers*.json o following*.json",
+  "chronologicalImportError": "La data deve essere uguale o successiva all’ultima importazione.",
+  "invalidProfileMatch": "Associazione dei profili non valida o duplicata.",
+  "invalidInstagramFormat": "Formato Instagram non valido: {arg0}",
+  "@invalidInstagramFormat": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "unrecognizedProfiles": "Nessun profilo riconoscibile in {arg0}",
+  "@unrecognizedProfiles": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationDelay": "Tempo di attesa",
+  "invalidNotificationDelay": "Inserisci un tempo positivo valido.",
+  "timeUnit": "Unità di tempo",
+  "milliseconds": "Millisecondi",
+  "seconds": "Secondi",
+  "minutes": "Minuti",
+  "hours": "Ore",
+  "days": "Giorni",
+  "notificationDelayDescription": "Puoi inserire anche valori decimali. La nuova programmazione sostituisce la precedente notifica di prova. Android può ritardare la consegna per risparmiare batteria.",
+  "schedule": "Programma",
+  "ghostProfilesTitle": "Possibili profili “fantasma”",
+  "ghostProfilesDescription": "Nei JSON esportati da Instagram possono comparire profili “fantasma”: account che non segui più oppure che sono stati eliminati.\n\nQueste incongruenze dipendono dai dati forniti da Instagram, non da un errore dell’app. InstaLander elabora le informazioni presenti nei file che hai caricato.",
+  "gotIt": "Ho capito",
+  "ad": "Annuncio",
+  "adUnavailable": "Annuncio non disponibile",
+  "everyMonth": "Ogni mese",
+  "everyThreeMonths": "Ogni 3 mesi",
+  "everySixMonths": "Ogni 6 mesi",
+  "required": "Richiesto",
+  "setUpReport": "Configura il report",
+  "setUpReportDescription": "Per iniziare, aggiungi i file JSON di Instagram con i tuoi follower e i profili che segui.",
+  "requiredFiles": "FILE NECESSARI",
+  "standardJson": "Formato JSON standard",
+  "exportGuide": "Come esportare le informazioni da Instagram",
+  "loadJson": "Carica JSON",
+  "loadZip": "Carica archivio ZIP",
+  "reviewCountLabel": "Da controllare:",
+  "reviewCountSemantics": "Profili da controllare",
+  "possibleUsernameChanges": "Possibili cambi di username",
+  "usernameChangesDescription": "Questi profili hanno lo stesso timestamp di follow. Potrebbero essere la stessa persona, ma non è una certezza. Scegli solo le associazioni che riconosci; le altre resteranno separate.",
+  "followDate": "Follow: {arg0}",
+  "@followDate": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "newUsername": "Nuovo username",
+  "noMatch": "Non associare",
+  "cancelImport": "Annulla importazione",
+  "ignoreAll": "Ignora tutte",
+  "confirmImport": "Conferma e importa",
+  "unknownDate": "Data sconosciuta",
+  "profileDetails": "Dettagli del profilo",
+  "followedOn": "Seguito il",
+  "doesNotFollowBack": "Non ti segue",
+  "dragToSelect": "Trascina il dito su un’azione per selezionarla",
+  "manageWhitelist": "📋 Gestisci Whitelist",
+  "yourWhitelist": "La tua Whitelist",
+  "whitelistIsEmpty": "La whitelist è vuota.",
+  "language": "Lingua",
+  "languageSystem": "Sistema (automatica)",
+  "languageDescription": "Scegli la lingua dell’app oppure segui quella del telefono.",
+  "missingFileDescription": "Abbiamo rilevato il file {arg0}. Per creare il report, carica anche il file {arg1} ({arg2}).",
+  "@missingFileDescription": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      },
+      "arg1": {
+        "type": "String"
+      },
+      "arg2": {
+        "type": "String"
+      }
+    }
+  },
+  "removeWhitelistConfirmation": "Vuoi rimuovere \"{arg0}\" dalla whitelist?\nTornerà a comparire nell'elenco dei non-follower.",
+  "@removeWhitelistConfirmation": {
+    "placeholders": {
+      "arg0": {
+        "type": "String"
+      }
+    }
+  },
+  "hideDebug": "Nascondi opzioni di debug",
+  "hideDebugDescription": "Puoi mostrarle di nuovo con 10 tocchi sulla versione.",
+  "debugHidden": "Opzioni di debug nascoste."
+}

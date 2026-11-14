@@ -1,14 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/app_strings.dart';
 
 enum AppIconStyle {
-  original('Originale'),
-  dark('Scura');
+  original,
+  dark;
 
-  const AppIconStyle(this.label);
-  final String label;
+  String get label => this == original
+      ? AppStrings.current.originalIcon
+      : AppStrings.current.darkIcon;
 }
 
 enum AppThemeStyle {
@@ -20,27 +24,72 @@ enum AppThemeStyle {
 }
 
 enum AppBrightnessMode {
-  system('Predefinito di sistema', Icons.brightness_auto_outlined),
-  light('Chiaro', Icons.light_mode_outlined),
-  dark('Scuro', Icons.dark_mode_outlined);
+  system(Icons.brightness_auto_outlined),
+  light(Icons.light_mode_outlined),
+  dark(Icons.dark_mode_outlined);
 
-  const AppBrightnessMode(this.label, this.icon);
-  final String label;
+  const AppBrightnessMode(this.icon);
+  String get label => switch (this) {
+    system => AppStrings.current.systemDefault,
+    light => AppStrings.current.light,
+    dark => AppStrings.current.dark,
+  };
   final IconData icon;
 
   ThemeMode get themeMode => switch (this) {
-        AppBrightnessMode.system => ThemeMode.system,
-        AppBrightnessMode.light => ThemeMode.light,
-        AppBrightnessMode.dark => ThemeMode.dark,
-      };
+    AppBrightnessMode.system => ThemeMode.system,
+    AppBrightnessMode.light => ThemeMode.light,
+    AppBrightnessMode.dark => ThemeMode.dark,
+  };
 }
 
 class ThemeProvider extends ChangeNotifier {
+  static const _languageKey = 'app_language';
+  static const _localeChannel = MethodChannel(
+    'com.simpledevperson.instalander/locale',
+  );
+  String? _languageCode;
+  String? get languageCode => _languageCode;
+  Locale? get locale => _languageCode == null ? null : Locale(_languageCode!);
+
+  Future<void> setLanguage(String? code) async {
+    if (code != null && code != 'it' && code != 'en') {
+      throw ArgumentError.value(code);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    final saved = code == null
+        ? await prefs.remove(_languageKey)
+        : await prefs.setString(_languageKey, code);
+    if (!saved) throw StateError(AppStrings.current.cannotSavePreference);
+    _languageCode = code;
+    _applyLanguage();
+    notifyListeners();
+    await _syncNativeLanguage();
+  }
+
+  void _applyLanguage() {
+    AppStrings.useLanguage(
+      _languageCode ??
+          WidgetsBinding.instance.platformDispatcher.locale.languageCode,
+    );
+  }
+
+  Future<void> _syncNativeLanguage() async {
+    try {
+      await _localeChannel.invokeMethod<void>('setLanguage', _languageCode);
+    } on MissingPluginException {
+      // Widget tests and non-Android targets have no native notifications.
+    } on PlatformException {
+      // Flutter language remains available if native resources are unavailable.
+    }
+  }
+
   AppThemeStyle _themeStyle = AppThemeStyle.samsungOneUi;
   AppBrightnessMode _brightnessMode = AppBrightnessMode.system;
   AppIconStyle _appIconStyle = AppIconStyle.original;
-  static const MethodChannel _appIconChannel =
-      MethodChannel('com.simpledevperson.instalander/app_icon');
+  static const MethodChannel _appIconChannel = MethodChannel(
+    'com.simpledevperson.instalander/app_icon',
+  );
   static const String _themeStyleKey = 'app_theme_style';
   static const String _brightnessModeKey = 'app_brightness_mode';
   static const String _appIconStyleKey = 'app_icon_style';
@@ -58,6 +107,11 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
+
+    final language = prefs.getString(_languageKey);
+    _languageCode = language == 'it' || language == 'en' ? language : null;
+    _applyLanguage();
+    unawaited(_syncNativeLanguage());
 
     final styleIndex = prefs.getInt(_themeStyleKey);
     final brightnessIndex = prefs.getInt(_brightnessModeKey);
@@ -133,6 +187,7 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> resetToDefaults() async {
+    await setLanguage(null);
     await setAppIconStyle(AppIconStyle.original);
     _themeStyle = AppThemeStyle.samsungOneUi;
     _brightnessMode = AppBrightnessMode.system;

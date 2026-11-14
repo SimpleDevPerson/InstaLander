@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'l10n/app_localizations.dart';
+import 'l10n/app_strings.dart';
 import 'providers/app_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/main_screen.dart';
@@ -29,9 +31,14 @@ class InstagramFollowerCheckerApp extends StatelessWidget {
           return MaterialApp(
             title: 'InstaLander',
             debugShowCheckedModeBanner: false,
+            locale: themeProvider.locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: const [Locale('en'), Locale('it')],
+            localeListResolutionCallback: AppStrings.resolveLocale,
             theme: isSamsung ? AppTheme.samsungLightTheme : AppTheme.lightTheme,
-            darkTheme:
-                isSamsung ? AppTheme.samsungDarkTheme : AppTheme.darkTheme,
+            darkTheme: isSamsung
+                ? AppTheme.samsungDarkTheme
+                : AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
             home: const MainScreen(),
             routes: {

@@ -1,13 +1,18 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../l10n/app_strings.dart';
 import '../providers/app_provider.dart';
 import '../providers/theme_provider.dart';
 import '../services/ads_service.dart';
 import '../services/reminder_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/debug_notification_dialog.dart';
+import '../widgets/language_selector.dart';
 import '../widgets/one_ui_brightness_selector.dart';
 import '../widgets/reminder_interval_selector.dart';
 import '../widgets/settings_toggle_tile.dart';
@@ -22,6 +27,55 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   int _versionTapCount = 0;
   bool _unlockingDebug = false;
+  ValueNotifier<String>? _developerNotice;
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _developerSnackBar;
+  Timer? _developerNoticeTimer;
+
+  void _showDeveloperNotice(String message) {
+    final notice = _developerNotice;
+    if (notice != null) {
+      notice.value = message;
+    } else {
+      final newNotice = ValueNotifier(message);
+      _developerNotice = newNotice;
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.removeCurrentSnackBar();
+      final controller = messenger.showSnackBar(
+        SnackBar(
+          // A resettable timer below controls dismissal after the last tap.
+          duration: const Duration(days: 1),
+          content: ValueListenableBuilder<String>(
+            valueListenable: newNotice,
+            builder: (_, text, _) => Text(text),
+          ),
+        ),
+      );
+      _developerSnackBar = controller;
+      unawaited(
+        controller.closed.then((_) {
+          newNotice.dispose();
+          if (identical(_developerNotice, newNotice)) {
+            _developerNotice = null;
+            _developerSnackBar = null;
+          }
+        }),
+      );
+    }
+    _developerNoticeTimer?.cancel();
+    _developerNoticeTimer = Timer(const Duration(seconds: 3), () {
+      final controller = _developerSnackBar;
+      _developerNotice = null;
+      _developerSnackBar = null;
+      controller?.close();
+    });
+  }
+
+  @override
+  void dispose() {
+    _developerNoticeTimer?.cancel();
+    _developerSnackBar?.close();
+    super.dispose();
+  }
 
   Future<void> _onVersionTap() async {
     final app = context.read<AppProvider>();
@@ -32,24 +86,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (remaining > 0) {
       if (remaining > 5) return;
       message = remaining == 1
-          ? 'Ancora un tocco per attivare la modalità sviluppatore'
-          : 'Ancora $remaining tocchi per attivare la modalità sviluppatore';
+          ? context.l10n.oneTapToDeveloper
+          : context.l10n.tapsToDeveloper((remaining).toString());
     } else {
       _unlockingDebug = true;
+      _showDeveloperNotice(context.l10n.enablingDeveloper);
       try {
         await app.enableDebugTools();
-        message = 'Modalità sviluppatore attivata';
+        if (!mounted) return;
+        message = context.l10n.developerEnabled;
       } catch (_) {
+        if (!mounted) return;
         _versionTapCount = 9;
-        message = 'Impossibile attivare la modalità sviluppatore. Riprova.';
+        message = context.l10n.developerEnableError;
       } finally {
         _unlockingDebug = false;
       }
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    _showDeveloperNotice(message);
   }
 
   @override
@@ -76,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          'Impostazioni',
+                          context.l10n.settings,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.displayLarge
                               ?.copyWith(
@@ -100,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // Theme Section
                       _buildSectionHeader(
                         context,
-                        'Aspetto',
+                        context.l10n.appearance,
                         Icons.palette_outlined,
                       ),
                       const SizedBox(height: 8),
@@ -118,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               themeProvider,
                               AppThemeStyle.materialExpressive,
                               AppThemeStyle.materialExpressive.label,
-                              'Layout e componenti Material 3',
+                              context.l10n.materialThemeDescription,
                               Icons.widgets_outlined,
                             ),
                             _buildThemeOption(
@@ -126,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               themeProvider,
                               AppThemeStyle.samsungOneUi,
                               AppThemeStyle.samsungOneUi.label,
-                              'Interfaccia One UI con navigazione a pillola',
+                              context.l10n.oneUiThemeDescription,
                               Icons.branding_watermark,
                             ),
                           ],
@@ -135,12 +190,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 24),
                       _buildSectionHeader(
                         context,
-                        'Luminosità',
+                        context.l10n.brightness,
                         Icons.brightness_6_outlined,
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Scegli una luminosità fissa oppure segui il dispositivo.',
+                        context.l10n.brightnessDescription,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -159,9 +214,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 value: mode,
                                 icon: Icon(mode.icon),
                                 label: Text(switch (mode) {
-                                  AppBrightnessMode.system => 'Sistema',
-                                  AppBrightnessMode.light => 'Chiaro',
-                                  AppBrightnessMode.dark => 'Scuro',
+                                  AppBrightnessMode.system =>
+                                    context.l10n.system,
+                                  AppBrightnessMode.light => context.l10n.light,
+                                  AppBrightnessMode.dark => context.l10n.dark,
                                 }),
                               ),
                           ],
@@ -199,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 24),
                       _buildSectionHeader(
                         context,
-                        'Icona dell’app',
+                        context.l10n.appIcon,
                         Icons.image_outlined,
                       ),
                       const SizedBox(height: 8),
@@ -218,25 +274,86 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               context,
                               themeProvider,
                               AppIconStyle.original,
-                              'Icona chiara',
-                              'Icona originale con sfondo chiaro',
+                              context.l10n.lightIcon,
+                              context.l10n.lightIconDescription,
                               'assets/images/app_icon_original.png',
                             ),
                             _buildAppIconOption(
                               context,
                               themeProvider,
                               AppIconStyle.dark,
-                              'Icona scura',
-                              'Variante con sfondo scuro',
+                              context.l10n.darkIconTitle,
+                              context.l10n.darkIconDescription,
                               'assets/images/app_icon_dark.jpg',
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 24),
+                      _buildLanguageSection(context, themeProvider),
+                      const SizedBox(height: 24),
                       _buildSectionHeader(
                         context,
-                        'Promemoria',
+                        context.l10n.behavior,
+                        Icons.tune_rounded,
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: Consumer<AppProvider>(
+                          builder: (context, app, _) => SettingsToggleTile(
+                            title: context.l10n.openProfilesInBrowser,
+                            subtitle: app.openProfilesInBrowser
+                                ? context.l10n.openBrowserDescription
+                                : context.l10n.openInstagramDescription,
+                            value: app.openProfilesInBrowser,
+                            isSamsung: themeProvider.isSamsungTheme,
+                            onChanged: (value) async {
+                              try {
+                                await app.setOpenProfilesInBrowser(value);
+                              } catch (_) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      context.l10n.savePreferenceError,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: Consumer<AppProvider>(
+                          builder: (context, app, _) => SettingsToggleTile(
+                            title: context.l10n.autoWhitelist,
+                            subtitle: context.l10n.autoWhitelistDescription,
+                            value: app.autoWhitelistOnImport,
+                            isSamsung: themeProvider.isSamsungTheme,
+                            onChanged: (value) async {
+                              try {
+                                await app.setAutoWhitelistOnImport(value);
+                              } catch (_) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      context.l10n.savePreferenceError,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader(
+                        context,
+                        context.l10n.reminders,
                         Icons.notifications_outlined,
                       ),
                       const SizedBox(height: 8),
@@ -246,11 +363,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           builder: (context, app, _) => Column(
                             children: [
                               SettingsToggleTile(
-                                title: 'Promemoria Instagram',
+                                title: context.l10n.instagramReminder,
                                 isSamsung: themeProvider.isSamsungTheme,
                                 subtitle: ReminderService.supported
-                                    ? 'Ricorda di richiedere il download delle tue informazioni. Notifica locale, senza mantenere l’app attiva.'
-                                    : 'Disponibile nell’app Android.',
+                                    ? context.l10n.reminderDescription
+                                    : context.l10n.androidOnly,
                                 value: app.monthlyReminder,
                                 onChanged: ReminderService.supported
                                     ? (enabled) async {
@@ -261,9 +378,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             ScaffoldMessenger.of(
                                               context,
                                             ).showSnackBar(
-                                              const SnackBar(
+                                              SnackBar(
                                                 content: Text(
-                                                  'Consenti le notifiche nelle impostazioni di sistema per attivare il promemoria.',
+                                                  context
+                                                      .l10n
+                                                      .allowReminderNotifications,
                                                 ),
                                               ),
                                             );
@@ -275,7 +394,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           ).showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                'Impossibile impostare il promemoria: $error',
+                                                context.l10n.setReminderError(
+                                                  (error).toString(),
+                                                ),
                                               ),
                                             ),
                                           );
@@ -307,7 +428,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                             ).showSnackBar(
                                               SnackBar(
                                                 content: Text(
-                                                  'Impossibile salvare la frequenza: $error',
+                                                  context.l10n
+                                                      .saveReminderFrequencyError(
+                                                        (error).toString(),
+                                                      ),
                                                 ),
                                               ),
                                             );
@@ -324,36 +448,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       // About Section
                       _buildSectionHeader(
                         context,
-                        'Informazioni',
+                        context.l10n.about,
                         Icons.info_outline,
                       ),
                       const SizedBox(height: 8),
                       _buildInfoTile(
                         context,
-                        'Versione',
-                        '0.6.0',
+                        context.l10n.version,
+                        '0.7.0',
                         Icons.tag,
                         onTap: _onVersionTap,
                       ),
                       _buildActionTile(
                         context,
-                        'Progetto',
+                        context.l10n.project,
                         'InstaLander',
                         Icons.code,
                         () => unawaited(_openProject(context)),
                       ),
-                      ValueListenableBuilder<bool>(
-                        valueListenable:
-                            AdsService.instance.privacyOptionsRequired,
-                        builder: (context, isRequired, child) {
-                          if (!isRequired) return const SizedBox.shrink();
-                          return _buildActionTile(
-                            context,
-                            'Privacy pubblicitaria',
-                            'Gestisci le preferenze di consenso',
-                            Icons.privacy_tip_outlined,
-                            AdsService.instance.showPrivacyOptions,
-                          );
+                      _buildActionTile(
+                        context,
+                        context.l10n.advertisingPrivacy,
+                        context.l10n.manageConsent,
+                        Icons.privacy_tip_outlined,
+                        () async {
+                          if (AdsService
+                              .instance
+                              .privacyOptionsRequired
+                              .value) {
+                            await AdsService.instance.showPrivacyOptions();
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(context.l10n.noConsentOptions),
+                              ),
+                            );
+                          }
                         },
                       ),
                       if (context.watch<AppProvider>().debugToolsEnabled) ...[
@@ -371,6 +501,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildLanguageSection(BuildContext context, ThemeProvider provider) =>
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildSectionHeader(
+            context,
+            context.l10n.language,
+            Icons.language_rounded,
+          ),
+          const SizedBox(height: 8),
+          LanguageSelector(
+            value: provider.languageCode,
+            onChanged: (code) async {
+              try {
+                await provider.setLanguage(code);
+              } catch (_) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(context.l10n.savePreferenceError)),
+                );
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(context.l10n.languageDescription),
+          ),
+        ],
+      );
+
+  Future<void> _hideDebugOptions() async {
+    try {
+      await context.read<AppProvider>().hideDebugTools();
+      if (!mounted) return;
+      setState(() => _versionTapCount = 0);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.debugHidden)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.savePreferenceError)));
+    }
+  }
+
   Future<void> _openProject(BuildContext context) async {
     try {
       final opened = await launchUrl(
@@ -382,9 +559,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Report both launch failures and unavailable URL handlers below.
     }
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Impossibile aprire la repository')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.l10n.cannotOpenRepository)));
+  }
+
+  Future<void> _testNotification({bool scheduled = false}) async {
+    Duration? delay;
+    if (scheduled) {
+      delay = await showDialog<Duration>(
+        context: context,
+        builder: (_) => const DebugNotificationDialog(),
+      );
+      if (delay == null || !mounted) return;
+    }
+    String message;
+    try {
+      final sent = scheduled
+          ? await ReminderService.scheduleDebugNotification(delay!)
+          : await ReminderService.showDebugNotification();
+      if (!mounted) return;
+      message = sent
+          ? (scheduled
+                ? context.l10n.testNotificationScheduled
+                : context.l10n.testNotificationSent)
+          : context.l10n.allowTestNotifications;
+    } catch (_) {
+      if (!mounted) return;
+      message = context.l10n.testNotificationError;
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildDebugSection(BuildContext context) {
@@ -394,7 +601,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(content: Text('Dati di prova aggiunti: $section')),
+          SnackBar(
+            content: Text(context.l10n.testDataAdded((section).toString())),
+          ),
         );
     }
 
@@ -403,35 +612,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         _buildSectionHeader(context, 'Debug', Icons.bug_report_outlined),
         const SizedBox(height: 8),
-        const Text(
-          'Genera profili casuali con prefisso debug_. I dati di prova sono temporanei: scompaiono al riavvio o quando importi nuovi JSON. I dati importati restano conservati.',
+        _buildInfoTile(
+          context,
+          context.l10n.buildMode,
+          kDebugMode ? 'Debug' : (kProfileMode ? 'Profile' : 'Release'),
+          kDebugMode ? Icons.bug_report_outlined : Icons.verified_outlined,
         ),
+        Text(context.l10n.debugDataDescription),
         const SizedBox(height: 12),
+        Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ValueListenableBuilder<bool>(
+            valueListenable: AdsService.instance.adsEnabled,
+            builder: (context, enabled, _) => SettingsToggleTile(
+              title: context.l10n.advertising,
+              subtitle: context.l10n.advertisingDescription,
+              value: enabled,
+              isSamsung: context.watch<ThemeProvider>().isSamsungTheme,
+              onChanged: (value) async {
+                try {
+                  await AdsService.instance.setAdsEnabled(value);
+                } catch (_) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(context.l10n.savePreferenceError)),
+                  );
+                }
+              },
+            ),
+          ),
+        ),
         _buildActionTile(
           context,
-          'Popola timeline',
-          'Aggiungi intervalli e unfollow di prova',
+          context.l10n.populateTimeline,
+          context.l10n.populateTimelineDescription,
           Icons.timeline,
           () => populate(app.populateDebugTimeline, 'timeline'),
           showChevron: false,
         ),
         _buildActionTile(
           context,
-          'Popola whitelist',
-          'Aggiungi profili di prova alla whitelist',
+          context.l10n.populateWhitelist,
+          context.l10n.populateWhitelistDescription,
           Icons.favorite_outline,
           () => populate(app.populateDebugWhitelist, 'whitelist'),
           showChevron: false,
         ),
         _buildActionTile(
           context,
-          'Popola report',
-          'Genera follower e seguiti di prova',
+          context.l10n.populateReport,
+          context.l10n.populateReportDescription,
           Icons.analytics_outlined,
           () => populate(app.populateDebugReport, 'report'),
           showChevron: false,
         ),
         const SizedBox(height: 24),
+        _buildActionTile(
+          context,
+          context.l10n.sendTestNotification,
+          context.l10n.sendTestNotificationDescription,
+          Icons.notifications_active_outlined,
+          () => _testNotification(),
+          showChevron: false,
+        ),
+        _buildActionTile(
+          context,
+          context.l10n.scheduleTestNotification,
+          context.l10n.scheduleTestNotificationDescription,
+          Icons.notification_add_outlined,
+          () => _testNotification(scheduled: true),
+        ),
+        const SizedBox(height: 24),
+        _buildActionTile(
+          context,
+          context.l10n.hideDebug,
+          context.l10n.hideDebugDescription,
+          Icons.visibility_off_outlined,
+          _hideDebugOptions,
+          showChevron: false,
+        ),
         _buildClearDataTile(context),
       ],
     );
@@ -451,15 +710,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: ListTile(
         leading: Icon(Icons.delete_outline, color: colorScheme.error),
         title: Text(
-          'Cancella tutti i dati',
+          context.l10n.clearAllData,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: colorScheme.error,
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: const Text(
-          'Rimuove file importati, timeline, whitelist, promemoria e preferenze',
-        ),
+        subtitle: Text(context.l10n.clearAllDataDescription),
         onTap: () => _confirmAndClearData(context),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -477,7 +734,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Impossibile cambiare icona: $error')),
+        SnackBar(
+          content: Text(context.l10n.changeIconError((error).toString())),
+        ),
       );
     }
   }
@@ -545,15 +804,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final shouldClear = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Cancellare tutti i dati?'),
-        content: const Text(
-          'Verranno eliminati i file importati, la timeline, il promemoria, la whitelist, i profili '
-          'controllati e le preferenze. L’operazione non può essere annullata.',
-        ),
+        title: Text(context.l10n.clearAllDataTitle),
+        content: Text(context.l10n.clearAllDataConfirmation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Annulla'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
@@ -561,7 +817,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               backgroundColor: Theme.of(dialogContext).colorScheme.error,
               foregroundColor: Theme.of(dialogContext).colorScheme.onError,
             ),
-            child: const Text('Cancella tutto'),
+            child: Text(context.l10n.clearEverything),
           ),
         ],
       ),
@@ -578,7 +834,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Impossibile cancellare i dati: $error')),
+        SnackBar(
+          content: Text(context.l10n.clearAllDataError((error).toString())),
+        ),
       );
     }
   }
@@ -657,9 +915,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
-        secondary: isSelected
-            ? Icon(Icons.check_circle, color: themeColor, size: 24)
-            : null,
         activeColor: themeColor,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

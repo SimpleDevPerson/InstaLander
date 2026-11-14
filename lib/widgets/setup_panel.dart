@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 
 class SetupPanel extends StatelessWidget {
@@ -68,19 +69,19 @@ class SetupPanel extends StatelessWidget {
                             color: Colors.white.withValues(alpha: 0.15),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.circle,
                               size: 6,
                               color: Colors.lightBlueAccent,
                             ),
-                            SizedBox(width: 6),
+                            const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                'Richiesto',
-                                style: TextStyle(
+                                context.l10n.required,
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -110,7 +111,7 @@ class SetupPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Configura il report',
+                  context.l10n.setUpReport,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -119,7 +120,7 @@ class SetupPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Per iniziare, aggiungi i file JSON di Instagram con i tuoi follower e i profili che segui.',
+                  context.l10n.setUpReportDescription,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white,
                     height: 1.5,
@@ -147,14 +148,14 @@ class SetupPanel extends StatelessWidget {
                   runSpacing: 4,
                   children: [
                     Text(
-                      'FILE NECESSARI',
+                      context.l10n.requiredFiles,
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: colors.onSurfaceVariant,
                         letterSpacing: 0.7,
                       ),
                     ),
                     Text(
-                      'Formato JSON standard',
+                      context.l10n.standardJson,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
@@ -208,7 +209,7 @@ class SetupPanel extends StatelessWidget {
                       ),
                     ),
                     title: Text(
-                      'Come esportare le informazioni da Instagram',
+                      context.l10n.exportGuide,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
@@ -224,7 +225,7 @@ class SetupPanel extends StatelessWidget {
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final jsonButton = _ImportButton(
-                      label: 'Carica JSON',
+                      label: context.l10n.loadJson,
                       icon: Icons.cloud_upload_outlined,
                       iconColor: isDark
                           ? Colors.lightBlueAccent
@@ -232,7 +233,7 @@ class SetupPanel extends StatelessWidget {
                       onPressed: onLoadJson,
                     );
                     final archiveButton = _ImportButton(
-                      label: 'Carica archivio ZIP',
+                      label: context.l10n.loadZip,
                       icon: Icons.folder_zip_outlined,
                       iconColor: isDark ? Colors.amber : Colors.amber.shade900,
                       onPressed: onLoadArchive,

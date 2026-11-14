@@ -10,18 +10,57 @@ import io.flutter.plugin.common.MethodChannel
 
 open class MainActivity : FlutterActivity() {
     private var reminderResult: MethodChannel.Result? = null
+    private var notificationAction: (() -> Boolean)? = null
+
+    private fun withNotificationPermission(result: MethodChannel.Result, action: () -> Boolean) {
+        if (reminderResult != null) {
+            result.error("busy", AppLanguage.context(this).getString(R.string.notification_request_busy), null)
+        } else if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            reminderResult = result
+            notificationAction = action
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 4101)
+        } else {
+            result.success(action())
+        }
+    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 4101) {
-            reminderResult?.success(MonthlyReminder.setEnabled(this,
-                grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED))
+            val allowed = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            reminderResult?.success(if (allowed) notificationAction?.invoke() ?: false else false)
             reminderResult = null
+            notificationAction = null
         }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.simpledevperson.instalander/locale").setMethodCallHandler { call, result ->
+            if (call.method == "setLanguage") {
+                val language = call.arguments as? String
+                if (language != null && language !in listOf("it", "en")) {
+                    result.error("invalid_language", "Unsupported language", null)
+                } else {
+                    AppLanguage.set(this, language)
+                    result.success(null)
+                }
+            } else {
+                result.notImplemented()
+            }
+        }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "com.simpledevperson.instalander/profiles").setMethodCallHandler { call, result ->
+            if (call.method == "open") {
+                val username = call.argument<String>("username")
+                val inBrowser = call.argument<Boolean>("inBrowser") ?: false
+                result.success(username != null && ProfileLauncher.open(this, username, inBrowser))
+            } else {
+                result.notImplemented()
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.simpledevperson.instalander/file_metadata").setMethodCallHandler { call, result ->
             if (call.method == "creationDate") {
@@ -32,15 +71,31 @@ open class MainActivity : FlutterActivity() {
             }
         }
         MonthlyReminder.schedule(this)
+        DebugNotifications.restore(this)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.simpledevperson.instalander/reminders").setMethodCallHandler { call, result ->
             when (call.method) {
+                "showDebugNotification" -> withNotificationPermission(result) {
+                    DebugNotifications.show(this)
+                }
+                "scheduleDebugNotification" -> {
+                    val delay = (call.arguments as? Number)?.toLong()
+                    if (delay == null || delay <= 0 || delay > Long.MAX_VALUE - System.currentTimeMillis()) {
+                        result.error("invalid_delay", AppLanguage.context(this).getString(R.string.invalid_notification_delay), null)
+                    } else {
+                        withNotificationPermission(result) { DebugNotifications.schedule(this, delay) }
+                    }
+                }
+                "cancelDebugNotification" -> {
+                    DebugNotifications.cancel(this)
+                    result.success(null)
+                }
                 "isEnabled" -> result.success(MonthlyReminder.isEnabled(this))
                 "getIntervalMonths" -> result.success(MonthlyReminder.getIntervalMonths(this))
                 "setIntervalMonths" -> {
                     val months = call.arguments as? Int
                     if (months !in listOf(1, 3, 6)) {
-                        result.error("invalid_interval", "Scegli 1, 3 o 6 mesi", null)
+                        result.error("invalid_interval", AppLanguage.context(this).getString(R.string.invalid_reminder_interval), null)
                     } else {
                         MonthlyReminder.setIntervalMonths(this, months!!)
                         result.success(null)
@@ -48,14 +103,10 @@ open class MainActivity : FlutterActivity() {
                 }
                 "setEnabled" -> {
                     val enabled = call.arguments == true
-                    if (reminderResult != null) {
-                        result.error("busy", "Richiesta notifiche già in corso", null)
-                    } else if (enabled && Build.VERSION.SDK_INT >= 33 &&
-                        checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                        reminderResult = result
-                        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 4101)
+                    if (enabled) {
+                        withNotificationPermission(result) { MonthlyReminder.setEnabled(this, true) }
                     } else {
-                        result.success(MonthlyReminder.setEnabled(this, enabled))
+                        result.success(MonthlyReminder.setEnabled(this, false))
                     }
                 }
                 else -> result.notImplemented()

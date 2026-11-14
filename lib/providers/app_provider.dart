@@ -2,17 +2,48 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../l10n/app_strings.dart';
 import '../models/import_snapshot.dart';
 import '../models/user.dart';
 import '../models/username_change.dart';
 import '../services/data_service.dart';
 import '../services/debug_data_service.dart';
+import '../services/profile_launcher.dart';
 import '../services/reminder_service.dart';
 
 class AppProvider extends ChangeNotifier {
   static const String _viewedProfilesKey = 'viewed_profiles';
   static const String _onboardingCompletedKey = 'onboarding_completed_v2';
   static const String _debugToolsEnabledKey = 'debug_tools_enabled';
+  static const String _profileBrowserKey = 'open_profiles_in_browser';
+  static const String _autoWhitelistKey = 'auto_whitelist_on_import';
+
+  bool _autoWhitelistOnImport = true;
+  bool get autoWhitelistOnImport => _autoWhitelistOnImport;
+
+  Future<void> setAutoWhitelistOnImport(bool value) async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!await preferences.setBool(_autoWhitelistKey, value)) {
+      throw StateError(AppStrings.current.cannotSavePreference);
+    }
+    _autoWhitelistOnImport = value;
+    notifyListeners();
+  }
+
+  bool _openProfilesInBrowser = false;
+  bool get openProfilesInBrowser => _openProfilesInBrowser;
+
+  Future<void> setOpenProfilesInBrowser(bool value) async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!await preferences.setBool(_profileBrowserKey, value)) {
+      throw StateError(AppStrings.current.cannotSavePreference);
+    }
+    _openProfilesInBrowser = value;
+    notifyListeners();
+  }
+
+  Future<bool> openProfile(String username) =>
+      ProfileLauncher.open(username, inBrowser: _openProfilesInBrowser);
 
   bool _debugToolsEnabled = false;
   bool get debugToolsEnabled => _debugToolsEnabled;
@@ -21,6 +52,15 @@ class AppProvider extends ChangeNotifier {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool(_debugToolsEnabledKey, true);
     _debugToolsEnabled = true;
+    notifyListeners();
+  }
+
+  Future<void> hideDebugTools() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!await preferences.setBool(_debugToolsEnabledKey, false)) {
+      throw StateError(AppStrings.current.cannotSavePreference);
+    }
+    _debugToolsEnabled = false;
     notifyListeners();
   }
 
@@ -172,11 +212,13 @@ class AppProvider extends ChangeNotifier {
       _hasCompletedOnboarding =
           preferences.getBool(_onboardingCompletedKey) ?? false;
       _debugToolsEnabled = preferences.getBool(_debugToolsEnabledKey) ?? false;
+      _openProfilesInBrowser = preferences.getBool(_profileBrowserKey) ?? false;
+      _autoWhitelistOnImport = preferences.getBool(_autoWhitelistKey) ?? true;
 
       // Note: Non impostiamo _errorMessage se non ci sono file al primo avvio.
       // Lo stato _hasData = false farà vedere la schermata di setup con il pulsante "Carica JSON".
     } catch (e) {
-      _errorMessage = 'Errore durante l\'inizializzazione: $e';
+      _errorMessage = AppStrings.current.initializationError((e).toString());
     } finally {
       _setLoading(false);
     }
@@ -194,6 +236,7 @@ class AppProvider extends ChangeNotifier {
 
     try {
       if (ReminderService.supported) {
+        await ReminderService.cancelDebugNotification();
         await ReminderService.setEnabled(false);
         await ReminderService.setIntervalMonths(1);
       }
@@ -218,11 +261,13 @@ class AppProvider extends ChangeNotifier {
       _hasFollowingFile = false;
       _hasCompletedOnboarding = false;
       _debugToolsEnabled = false;
+      _openProfilesInBrowser = false;
+      _autoWhitelistOnImport = true;
       _errorMessage = null;
       _isLoading = false;
       notifyListeners();
     } catch (error) {
-      _errorMessage = 'Errore durante l’eliminazione dei dati: $error';
+      _errorMessage = AppStrings.current.deleteDataError((error).toString());
       _setLoading(false);
       rethrow;
     }
@@ -241,12 +286,13 @@ class AppProvider extends ChangeNotifier {
       await DataService.saveJsonFiles(
         files.cast<PlatformFile>(),
         exportDate: exportDate,
+        autoWhitelistOnImport: _autoWhitelistOnImport,
         resolveUsernameChanges: resolveUsernameChanges,
       );
 
       await _loadSavedFiles();
     } catch (e) {
-      _errorMessage = 'Errore durante il caricamento dei file: $e';
+      _errorMessage = AppStrings.current.loadFilesError((e).toString());
     } finally {
       _setLoading(false);
     }
@@ -264,10 +310,11 @@ class AppProvider extends ChangeNotifier {
       await DataService.saveInstagramArchive(
         archiveFile,
         exportDate: exportDate,
+        autoWhitelistOnImport: _autoWhitelistOnImport,
         resolveUsernameChanges: resolveUsernameChanges,
       );
     } catch (e) {
-      _errorMessage = 'Errore durante il caricamento dell’archivio ZIP: $e';
+      _errorMessage = AppStrings.current.loadArchiveError((e).toString());
       _setLoading(false);
       return;
     }
@@ -345,7 +392,7 @@ class AppProvider extends ChangeNotifier {
     try {
       await DataService.saveWhitelist(_whitelist);
     } catch (error) {
-      setError('Impossibile salvare la whitelist: $error');
+      setError(AppStrings.current.saveWhitelistError((error).toString()));
     }
   }
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="choose_instagram_client">Apri il profilo Instagram con</string>
+    <string name="reminder_channel">Promemoria Instagram</string>
+    <string name="reminder_title">Aggiorna i tuoi dati Instagram</string>
+    <string name="reminder_text">Richiedi il download delle tue informazioni su Instagram.</string>
+    <string name="reminder_details">Richiedi il download delle tue informazioni su Instagram e importa i nuovi JSON per aggiornare la timeline.</string>
+    <string name="debug_notification_channel">Notifiche di prova</string>
+    <string name="debug_notification_title">Notifica di prova InstaLander</string>
+    <string name="debug_notification_text">La notifica di prova è arrivata correttamente.</string>
+    <string name="notification_request_busy">Richiesta notifiche già in corso</string>
+    <string name="invalid_notification_delay">Inserisci un intervallo positivo</string>
+    <string name="invalid_reminder_interval">Scegli 1, 3 o 6 mesi</string>
+</resources>

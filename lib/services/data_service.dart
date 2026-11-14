@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:android_file_picker/android_file_picker.dart';
 import 'package:archive/archive.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+
+import '../l10n/app_strings.dart';
 import '../models/import_snapshot.dart';
 import '../models/user.dart';
 import '../models/username_change.dart';
@@ -25,23 +28,30 @@ Map<String, List<int>> _decodeInstagramArchive(List<int> bytes) {
     }
 
     if (files.containsKey(name)) {
-      throw FormatException('Nome file duplicato nell’archivio: $name');
+      throw FormatException(
+        AppStrings.current.duplicateArchiveFile((name).toString()),
+      );
     }
 
     final content = entry.readBytes();
     if (content == null) {
-      throw FormatException('Impossibile leggere il file $name nell’archivio');
+      throw FormatException(
+        AppStrings.current.unreadableArchiveFile((name).toString()),
+      );
     }
     files[name] = content;
   }
 
   if (files.isEmpty) {
-    throw const FormatException(
-      'Nell’archivio non sono stati trovati file followers*.json o following*.json',
-    );
+    throw FormatException(AppStrings.current.noArchiveFiles);
   }
 
   return files;
+}
+
+Map<String, List<int>> _decodeLocalizedArchive((List<int>, String) request) {
+  AppStrings.useLanguage(request.$2);
+  return _decodeInstagramArchive(request.$1);
 }
 
 /// A complete startup result, prepared off the UI isolate.
@@ -342,6 +352,7 @@ class DataService {
   static Future<void> saveJsonFiles(
     List<PlatformFile> files, {
     DateTime? exportDate,
+    bool autoWhitelistOnImport = true,
     ResolveUsernameChanges? resolveUsernameChanges,
   }) async {
     if (files.isEmpty) return;
@@ -352,6 +363,7 @@ class DataService {
     await HistoryService.importFiles(
       content,
       date: exportDate ?? DateTime.now(),
+      autoWhitelistOnImport: autoWhitelistOnImport,
       resolveUsernameChanges: resolveUsernameChanges,
     );
   }
@@ -359,13 +371,18 @@ class DataService {
   static Future<void> saveInstagramArchive(
     PlatformFile archiveFile, {
     DateTime? exportDate,
+    bool autoWhitelistOnImport = true,
     ResolveUsernameChanges? resolveUsernameChanges,
   }) async {
     final Uint8List bytes = await archiveFile.readAsBytes();
-    final extractedFiles = await compute(_decodeInstagramArchive, bytes);
+    final extractedFiles = await compute(_decodeLocalizedArchive, (
+      bytes,
+      AppStrings.current.localeName,
+    ));
     await HistoryService.importFiles(
       extractedFiles,
       date: exportDate ?? DateTime.now(),
+      autoWhitelistOnImport: autoWhitelistOnImport,
       resolveUsernameChanges: resolveUsernameChanges,
     );
   }
@@ -436,8 +453,7 @@ class DataService {
       ),
       type: FileType.custom,
       allowedExtensions: ['json'],
-      dialogTitle:
-          'Seleziona file JSON di Instagram (followers_*.json, following_*.json)',
+      dialogTitle: AppStrings.current.pickJsonTitle,
     );
 
     return files.isEmpty ? null : files;
@@ -447,7 +463,7 @@ class DataService {
     return FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['zip'],
-      dialogTitle: 'Seleziona l’archivio ZIP di Instagram',
+      dialogTitle: AppStrings.current.pickArchiveTitle,
     );
   }
 

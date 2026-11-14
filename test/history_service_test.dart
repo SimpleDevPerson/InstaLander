@@ -89,6 +89,39 @@ void main() {
     },
   );
 
+  for (final enabled in [false, true]) {
+    test('automatic whitelist follows import preference: $enabled', () async {
+      await File('${directory.path}/whitelist.txt').writeAsString('manual\n');
+      await import({
+        'followers.json': profiles(['kept', 'lost']),
+        'following.json': profiles(['kept', 'lost', 'never']),
+      }, 1);
+      await HistoryService.importFiles(
+        {
+          'followers.json': profiles(['kept']),
+        },
+        date: DateTime(2026, 2, 1),
+        path: directory.path,
+        autoWhitelistOnImport: enabled,
+      );
+      final data = load();
+      expect(
+        data.whitelist,
+        enabled ? {'manual', 'lost', 'never'} : {'manual'},
+      );
+      expect(data.history.length, 2);
+      expect(data.followers.keys, ['kept']);
+      expect(
+        DataService.computeNonFollowers(
+          data.followers,
+          data.following,
+          data.whitelist,
+        ).map((user) => user.username).toSet(),
+        enabled ? isEmpty : {'lost', 'never'},
+      );
+    });
+  }
+
   test('confirmed rename moves a manual whitelist entry', () async {
     await File('${directory.path}/whitelist.txt').writeAsString('old\n');
     await import({

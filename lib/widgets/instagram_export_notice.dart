@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../l10n/app_strings.dart';
+
 /// Shown after the first successful import of both follower lists.
 Future<void> showInstagramExportNoticeIfNeeded(BuildContext context) async {
   const preferenceKey = 'instagram_export_notice_shown';
@@ -12,21 +14,14 @@ Future<void> showInstagramExportNoticeIfNeeded(BuildContext context) async {
     barrierDismissible: false,
     builder: (context) => AlertDialog(
       icon: const Icon(Icons.info_outline_rounded),
-      title: const Text('Possibili profili “fantasma”'),
-      content: const SingleChildScrollView(
-        child: Text(
-          'Nei JSON esportati da Instagram possono comparire profili '
-          '“fantasma”: account che non segui più oppure che sono stati '
-          'eliminati.\n\n'
-          'Queste incongruenze dipendono dai dati forniti da Instagram, '
-          'non da un errore dell’app. InstaLander elabora le informazioni '
-          'presenti nei file che hai caricato.',
-        ),
+      title: Text(context.l10n.ghostProfilesTitle),
+      content: SingleChildScrollView(
+        child: Text(context.l10n.ghostProfilesDescription),
       ),
       actions: [
         FilledButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Ho capito'),
+          child: Text(context.l10n.gotIt),
         ),
       ],
     ),

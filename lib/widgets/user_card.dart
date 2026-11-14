@@ -3,6 +3,8 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+import '../l10n/app_strings.dart';
 import '../models/user.dart';
 import '../theme/app_theme.dart';
 
@@ -116,10 +118,7 @@ class _UserCardState extends State<UserCard> {
         shadowColor: colorScheme.shadow.withValues(alpha: 0.22),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
-          side: BorderSide(
-            color: colorScheme.outlineVariant,
-            width: 1.5,
-          ),
+          side: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
         ),
         child: Padding(
           padding: const EdgeInsets.all(10),
@@ -140,10 +139,11 @@ class _UserCardState extends State<UserCard> {
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: (widget.isViewed
-                                        ? AppTheme.instagramGradientMid
-                                        : avatarColor)
-                                    .withValues(alpha: 0.32),
+                                color:
+                                    (widget.isViewed
+                                            ? AppTheme.instagramGradientMid
+                                            : avatarColor)
+                                        .withValues(alpha: 0.32),
                                 blurRadius: 12,
                                 spreadRadius: 1,
                               ),
@@ -199,9 +199,7 @@ class _UserCardState extends State<UserCard> {
                                 '@${widget.user.username}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -218,15 +216,17 @@ class _UserCardState extends State<UserCard> {
                               Expanded(
                                 child: Text(
                                   widget.user.followedAt == null
-                                      ? 'Data sconosciuta'
-                                      : DateFormat('dd/MM/yyyy')
-                                          .format(widget.user.followedAt!),
+                                      ? context.l10n.unknownDate
+                                      : DateFormat(
+                                          context.l10n.localeName == 'it'
+                                              ? 'dd/MM/yyyy'
+                                              : 'MM/dd/yyyy',
+                                        ).format(widget.user.followedAt!),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(fontSize: 11),
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.copyWith(fontSize: 11),
                                 ),
                               ),
                             ],
@@ -254,7 +254,7 @@ class _UserCardState extends State<UserCard> {
                     child: OutlinedButton.icon(
                       onPressed: widget.onWhitelist,
                       icon: const Icon(Icons.favorite_border, size: 20),
-                      label: const Text('Whitelist'),
+                      label: Text(context.l10n.whitelist),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(color: _actionBorder),
@@ -408,11 +408,7 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 22,
-              color: colorScheme.onSurface,
-            ),
+            Icon(icon, size: 22, color: colorScheme.onSurface),
             const SizedBox(width: 10),
             Flexible(
               child: Text(
@@ -420,9 +416,9 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -442,10 +438,12 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
           final targetLeft = (constraints.maxWidth - cardWidth) / 2;
           final contentHeight = cardHeight + 80;
           final targetTop = (constraints.maxHeight - contentHeight) / 2;
-          final originLeft =
-              widget.origin.left.clamp(0.0, constraints.maxWidth).toDouble();
-          final originTop =
-              widget.origin.top.clamp(0.0, constraints.maxHeight).toDouble();
+          final originLeft = widget.origin.left
+              .clamp(0.0, constraints.maxWidth)
+              .toDouble();
+          final originTop = widget.origin.top
+              .clamp(0.0, constraints.maxHeight)
+              .toDouble();
 
           return Stack(
             children: [
@@ -478,10 +476,7 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                   clipBehavior: Clip.antiAlias,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(
-                      color: colorScheme.outline,
-                      width: 1.5,
-                    ),
+                    side: BorderSide(color: colorScheme.outline, width: 1.5),
                   ),
                   child: AnimatedOpacity(
                     duration: const Duration(milliseconds: 140),
@@ -497,8 +492,9 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                                 width: 38,
                                 height: 38,
                                 decoration: BoxDecoration(
-                                  color: colorScheme.primary
-                                      .withValues(alpha: 0.14),
+                                  color: colorScheme.primary.withValues(
+                                    alpha: 0.14,
+                                  ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
@@ -509,10 +505,8 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  'Dettagli del profilo',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
+                                  context.l10n.profileDetails,
+                                  style: Theme.of(context).textTheme.titleLarge
                                       ?.copyWith(
                                         color: colorScheme.onSurface,
                                         fontWeight: FontWeight.w700,
@@ -544,9 +538,7 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                                   '@${widget.user.username}',
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
+                                  style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(
                                         color: colorScheme.onSurface,
                                         fontWeight: FontWeight.w700,
@@ -579,7 +571,7 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Seguito il',
+                                        context.l10n.followedOn,
                                         style: Theme.of(context)
                                             .textTheme
                                             .labelMedium
@@ -591,10 +583,12 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                                       const SizedBox(height: 3),
                                       Text(
                                         widget.user.followedAt == null
-                                            ? 'Data sconosciuta'
-                                            : DateFormat('dd/MM/yyyy • HH:mm')
-                                                .format(
-                                                    widget.user.followedAt!),
+                                            ? context.l10n.unknownDate
+                                            : DateFormat(
+                                                context.l10n.localeName == 'it'
+                                                    ? 'dd/MM/yyyy • HH:mm'
+                                                    : 'MM/dd/yyyy • HH:mm',
+                                              ).format(widget.user.followedAt!),
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodyLarge
@@ -616,8 +610,9 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                               vertical: 8,
                             ),
                             decoration: BoxDecoration(
-                              color: colorScheme.errorContainer
-                                  .withValues(alpha: 0.45),
+                              color: colorScheme.errorContainer.withValues(
+                                alpha: 0.45,
+                              ),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
@@ -630,10 +625,8 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                                 ),
                                 const SizedBox(width: 7),
                                 Text(
-                                  'Non ti segue',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelLarge
+                                  context.l10n.doesNotFollowBack,
+                                  style: Theme.of(context).textTheme.labelLarge
                                       ?.copyWith(
                                         color: colorScheme.onSurface,
                                         fontWeight: FontWeight.w600,
@@ -644,11 +637,9 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            'Trascina il dito su un’azione per selezionarla',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                    ),
+                            context.l10n.dragToSelect,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: colorScheme.onSurfaceVariant),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -686,7 +677,7 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                           context,
                           index: 1,
                           icon: Icons.favorite_border,
-                          label: 'Whitelist',
+                          label: context.l10n.whitelist,
                         ),
                       ),
                     ],

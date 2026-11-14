@@ -392,6 +392,14 @@ void main() {
       tester.getSize(navigationBar).width,
       tester.view.physicalSize.width / tester.view.devicePixelRatio,
     );
+    await tester.scrollUntilVisible(
+      find.byType(SegmentedButton<AppBrightnessMode>),
+      150,
+      scrollable: find.descendant(
+        of: find.byType(SettingsScreen),
+        matching: find.byType(Scrollable),
+      ).first,
+    );
     expect(find.byType(SegmentedButton<AppBrightnessMode>), findsOneWidget);
     final segmentedButton = tester.widget<SegmentedButton<AppBrightnessMode>>(
       find.byType(SegmentedButton<AppBrightnessMode>),
@@ -1177,7 +1185,7 @@ void main() {
         child: const MaterialApp(home: SettingsScreen()),
       ),
     );
-    await tester.ensureVisible(find.text('Icona chiara'));
+    await tester.scrollUntilVisible(find.text('Icona chiara'), 150);
     await tester.pumpAndSettle();
 
     final settingsScaffold = tester.widget<Scaffold>(
@@ -1302,7 +1310,7 @@ void main() {
     await tester.tap(find.text('Griglia'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(GridView), findsOneWidget);
+    expect(find.byType(ListView), findsOneWidget);
     expect(find.text('@first_profile'), findsOneWidget);
     expect(find.text('@second'), findsOneWidget);
     _expectWhitelistAvatarGlow(tester, 'first_profile');

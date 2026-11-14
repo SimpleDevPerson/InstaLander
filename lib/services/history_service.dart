@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../l10n/app_strings.dart';
 import '../models/import_snapshot.dart';
 import '../models/user.dart';
 import '../models/username_change.dart';
@@ -41,12 +42,14 @@ class HistoryService {
   static Future<void> importFiles(
     Map<String, List<int>> files, {
     required DateTime date,
+    bool autoWhitelistOnImport = true,
     String? path,
     ResolveUsernameChanges? resolveUsernameChanges,
   }) => write(
     () => _importFiles(
       files,
       date: date,
+      autoWhitelistOnImport: autoWhitelistOnImport,
       path: path,
       resolveUsernameChanges: resolveUsernameChanges,
     ),
@@ -55,6 +58,7 @@ class HistoryService {
   static Future<void> _importFiles(
     Map<String, List<int>> files, {
     required DateTime date,
+    required bool autoWhitelistOnImport,
     String? path,
     ResolveUsernameChanges? resolveUsernameChanges,
   }) async {
@@ -69,15 +73,17 @@ class HistoryService {
       final isFollowers = name.startsWith('followers');
       final isFollowing = name.startsWith('following');
       if (!isFollowers && !isFollowing) continue;
-      final users = await compute(_validateProfiles, (name, entry.value));
+      final users = await compute(_validateProfiles, (
+        name,
+        entry.value,
+        AppStrings.current.localeName,
+      ));
       (isFollowers ? followers : following).addAll(users);
       hasFollowers |= isFollowers;
       hasFollowing |= isFollowing;
     }
     if (!hasFollowers && !hasFollowing) {
-      throw const FormatException(
-        'Seleziona followers*.json o following*.json',
-      );
+      throw FormatException(AppStrings.current.selectValidFiles);
     }
 
     final history = await load(path: path);
@@ -115,9 +121,7 @@ class HistoryService {
     final previous = history.lastOrNull;
     // Dates must move forward; reimporting the same day is permitted.
     if (previous != null && _day(date).isBefore(_day(previous.date))) {
-      throw const FormatException(
-        'La data deve essere uguale o successiva all’ultima importazione.',
-      );
+      throw FormatException(AppStrings.current.chronologicalImportError);
     }
     final changes = <String, String>{};
     if (hasFollowers && previous != null && previous.hasFollowers) {
@@ -139,9 +143,7 @@ class HistoryService {
         for (final entry in selected.entries) {
           if (!(allowed[entry.key]?.contains(entry.value) ?? false) ||
               changes.containsValue(entry.value)) {
-            throw const FormatException(
-              'Associazione dei profili non valida o duplicata.',
-            );
+            throw FormatException(AppStrings.current.invalidProfileMatch);
           }
           changes[entry.key] = entry.value;
         }
@@ -184,13 +186,15 @@ class HistoryService {
       for (final entry in changes.entries) {
         if (whitelist.remove(entry.key)) whitelist.add(entry.value);
       }
-      final intersection = previous.followers.keys
-          .map((name) => changes[name] ?? name)
-          .toSet()
-          .intersection(followers.keys.toSet());
-      whitelist.addAll(
-        next.following.keys.where((name) => !intersection.contains(name)),
-      );
+      if (autoWhitelistOnImport) {
+        final intersection = previous.followers.keys
+            .map((name) => changes[name] ?? name)
+            .toSet()
+            .intersection(followers.keys.toSet());
+        whitelist.addAll(
+          next.following.keys.where((name) => !intersection.contains(name)),
+        );
+      }
     }
     history.add(next);
     final pending = File('$path/$fileName.tmp');
@@ -212,13 +216,16 @@ class HistoryService {
       DateTime(date.year, date.month, date.day);
 
   static Map<String, InstagramUser> _validateProfiles(
-    (String, List<int>) input,
+    (String, List<int>, String) input,
   ) {
-    final (name, bytes) = input;
+    final (name, bytes, language) = input;
+    AppStrings.useLanguage(language);
     final content = utf8.decode(bytes);
     final root = jsonDecode(content);
     if (root is! List && root is! Map<String, dynamic>) {
-      throw FormatException('Formato Instagram non valido: $name');
+      throw FormatException(
+        AppStrings.current.invalidInstagramFormat((name).toString()),
+      );
     }
     final users = DataService.parseUsersJson(content);
     // Empty Instagram lists are valid; populated unrecognizable data is not.
@@ -226,7 +233,9 @@ class HistoryService {
         ? root
         : (root as Map).values.expand((v) => v is List ? v : [v]).toList();
     if (entries.isNotEmpty && users.isEmpty) {
-      throw FormatException('Nessun profilo riconoscibile in $name');
+      throw FormatException(
+        AppStrings.current.unrecognizedProfiles((name).toString()),
+      );
     }
     return users;
   }
