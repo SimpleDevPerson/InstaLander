@@ -1484,7 +1484,12 @@ void _expectWhitelistAvatarGlow(WidgetTester tester, String username) {
   expect(decoration.boxShadow!.single.blurRadius, 12);
   expect(decoration.boxShadow!.single.spreadRadius, 1);
 
-  final avatar = avatarContainer.child! as CircleAvatar;
+  final avatar = tester.widget<CircleAvatar>(
+    find.descendant(
+      of: find.byKey(ValueKey('whitelist-avatar-$username')),
+      matching: find.byType(CircleAvatar),
+    ),
+  );
   expect(
     decoration.boxShadow!.single.color,
     avatar.backgroundColor!.withValues(alpha: 0.32),

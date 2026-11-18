@@ -166,6 +166,8 @@
   "darkIconDescription": "Variante con sfondo scuro",
   "behavior": "Comportamento",
   "openProfilesInBrowser": "Apri i profili nel browser",
+  "showProfilePhotos": "Mostra le foto profilo",
+  "showProfilePhotosDescription": "Cerca le foto sulle pagine pubbliche di Instagram. Se non sono disponibili, mostra le iniziali.",
   "openBrowserDescription": "Usa il browser predefinito del dispositivo.",
   "openInstagramDescription": "Usa l’app Instagram; se non è installata, usa il browser.",
   "savePreferenceError": "Impossibile salvare la preferenza.",

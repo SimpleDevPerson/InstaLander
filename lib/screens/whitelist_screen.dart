@@ -11,6 +11,7 @@ import '../services/ads_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ad_placement.dart';
 import '../widgets/native_ad_card.dart';
+import '../widgets/profile_photo.dart';
 import '../widgets/stats_counter.dart';
 
 enum _WhitelistView { list, grid }
@@ -58,19 +59,10 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
 
   Widget _buildWhitelistAvatar(String username, {required double radius}) {
     final avatarColor = _avatarColor(username);
-    return Container(
-      key: ValueKey('whitelist-avatar-$username'),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: avatarColor.withValues(alpha: 0.32),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: CircleAvatar(
+    return ProfilePhoto(
+      username: username,
+      size: radius * 2,
+      placeholder: CircleAvatar(
         radius: radius,
         backgroundColor: avatarColor,
         foregroundColor: Colors.white,
@@ -81,6 +73,20 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
+      ),
+      builder: (avatar, glowColor) => Container(
+        key: ValueKey('whitelist-avatar-$username'),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: (glowColor ?? avatarColor).withValues(alpha: 0.32),
+              blurRadius: 12,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+        child: avatar,
       ),
     );
   }

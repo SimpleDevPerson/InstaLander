@@ -53,6 +53,7 @@ void main() {
       expect(await app.openProfile('example'), isTrue);
       expect(calls.last.arguments, {'username': 'example', 'inBrowser': false});
       await app.setOpenProfilesInBrowser(true);
+      await app.setShowProfilePhotos(false);
       expect(app.autoWhitelistOnImport, isTrue);
       await app.setAutoWhitelistOnImport(false);
       final restarted = AppProvider();
@@ -60,6 +61,7 @@ void main() {
       await restarted.initialize();
       expect(restarted.errorMessage, isNull);
       expect(restarted.openProfilesInBrowser, isTrue);
+      expect(restarted.showProfilePhotos, isFalse);
       expect(restarted.autoWhitelistOnImport, isFalse);
       expect(await restarted.openProfile('example'), isTrue);
       expect(calls.last.arguments, {'username': 'example', 'inBrowser': true});
@@ -109,6 +111,21 @@ void main() {
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(app.openProfilesInBrowser, isFalse);
+    final photoLabel = find.text('Mostra le foto profilo');
+    await tester.scrollUntilVisible(photoLabel, 150);
+    await tester.pumpAndSettle();
+    final photoToggle = find.descendant(
+      of: find.ancestor(
+        of: photoLabel,
+        matching: find.byType(SettingsToggleTile),
+      ),
+      matching: find.byType(Switch),
+    );
+    expect(tester.widget<Switch>(photoToggle).value, isTrue);
+    await tester.tap(photoToggle);
+    await tester.pumpAndSettle();
+    expect(tester.widget<Switch>(photoToggle).value, isFalse);
+    expect(app.showProfilePhotos, isFalse);
     await tester.pumpWidget(const SizedBox.shrink());
     app.dispose();
   });

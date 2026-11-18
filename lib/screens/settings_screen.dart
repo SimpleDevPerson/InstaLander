@@ -329,6 +329,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         margin: const EdgeInsets.only(bottom: 8),
                         child: Consumer<AppProvider>(
                           builder: (context, app, _) => SettingsToggleTile(
+                            title: context.l10n.showProfilePhotos,
+                            subtitle: context.l10n.showProfilePhotosDescription,
+                            value: app.showProfilePhotos,
+                            isSamsung: themeProvider.isSamsungTheme,
+                            onChanged: (value) async {
+                              try {
+                                await app.setShowProfilePhotos(value);
+                              } catch (_) {
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      context.l10n.savePreferenceError,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                      Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: Consumer<AppProvider>(
+                          builder: (context, app, _) => SettingsToggleTile(
                             title: context.l10n.autoWhitelist,
                             subtitle: context.l10n.autoWhitelistDescription,
                             value: app.autoWhitelistOnImport,

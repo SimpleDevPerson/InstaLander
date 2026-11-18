@@ -17,6 +17,7 @@ class AppProvider extends ChangeNotifier {
   static const String _onboardingCompletedKey = 'onboarding_completed_v2';
   static const String _debugToolsEnabledKey = 'debug_tools_enabled';
   static const String _profileBrowserKey = 'open_profiles_in_browser';
+  static const String _profilePhotosKey = 'show_profile_photos';
   static const String _autoWhitelistKey = 'auto_whitelist_on_import';
 
   bool _autoWhitelistOnImport = true;
@@ -45,6 +46,18 @@ class AppProvider extends ChangeNotifier {
 
   Future<bool> openProfile(String username) =>
       ProfileLauncher.open(username, inBrowser: _openProfilesInBrowser);
+
+  bool _showProfilePhotos = true;
+  bool get showProfilePhotos => _showProfilePhotos;
+
+  Future<void> setShowProfilePhotos(bool value) async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!await preferences.setBool(_profilePhotosKey, value)) {
+      throw StateError(AppStrings.current.cannotSavePreference);
+    }
+    _showProfilePhotos = value;
+    notifyListeners();
+  }
 
   bool _debugToolsEnabled = false;
   bool get debugToolsEnabled => _debugToolsEnabled;
@@ -221,6 +234,7 @@ class AppProvider extends ChangeNotifier {
         preferences.getBool(_onboardingCompletedKey) ?? false;
     _debugToolsEnabled = preferences.getBool(_debugToolsEnabledKey) ?? false;
     _openProfilesInBrowser = preferences.getBool(_profileBrowserKey) ?? false;
+    _showProfilePhotos = preferences.getBool(_profilePhotosKey) ?? true;
     _autoWhitelistOnImport = preferences.getBool(_autoWhitelistKey) ?? true;
   }
 
@@ -272,6 +286,7 @@ class AppProvider extends ChangeNotifier {
       _hasCompletedOnboarding = false;
       _debugToolsEnabled = false;
       _openProfilesInBrowser = false;
+      _showProfilePhotos = true;
       _autoWhitelistOnImport = true;
       _errorMessage = null;
       _isLoading = false;

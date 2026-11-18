@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../l10n/app_strings.dart';
 import '../models/user.dart';
 import '../theme/app_theme.dart';
+import 'profile_photo.dart';
 
 class UserCard extends StatefulWidget {
   final InstagramUser user;
@@ -157,50 +158,57 @@ class _UserCardState extends State<UserCard> {
                       child: InkWell(
                         onTap: widget.onTap,
                         customBorder: const CircleBorder(),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    (widget.isViewed
-                                            ? AppTheme.instagramGradientMid
-                                            : avatarColor)
-                                        .withValues(alpha: 0.32),
-                                blurRadius: 12,
-                                spreadRadius: 1,
+                        child: ProfilePhoto(
+                          username: widget.user.username,
+                          size: 56,
+                          placeholder: Center(
+                            child: Text(
+                              username,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
+                            ),
                           ),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            padding: EdgeInsets.all(widget.isViewed ? 3 : 0),
+                          builder: (avatar, glowColor) => Container(
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: widget.isViewed
-                                  ? AppTheme.instagramGradient
-                                  : null,
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      (glowColor ??
+                                              (widget.isViewed
+                                                  ? AppTheme
+                                                        .instagramGradientMid
+                                                  : avatarColor))
+                                          .withValues(alpha: 0.32),
+                                  blurRadius: 12,
+                                  spreadRadius: 1,
+                                ),
+                              ],
                             ),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 250),
-                              width: 56,
-                              height: 56,
+                              padding: EdgeInsets.all(widget.isViewed ? 3 : 0),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: widget.isViewed ? null : avatarColor,
                                 gradient: widget.isViewed
                                     ? AppTheme.instagramGradient
                                     : null,
                               ),
-                              child: Center(
-                                child: Text(
-                                  username,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: widget.isViewed ? null : avatarColor,
+                                  gradient: widget.isViewed
+                                      ? AppTheme.instagramGradient
+                                      : null,
                                 ),
+                                child: avatar,
                               ),
                             ),
                           ),
@@ -523,17 +531,21 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                           const SizedBox(height: 18),
                           Row(
                             children: [
-                              CircleAvatar(
-                                radius: 28,
-                                backgroundColor: colorScheme.primary,
-                                foregroundColor: colorScheme.onPrimary,
-                                child: Text(
-                                  widget.user.username.isEmpty
-                                      ? '?'
-                                      : widget.user.username[0].toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
+                              ProfilePhoto(
+                                username: widget.user.username,
+                                size: 56,
+                                placeholder: CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: colorScheme.primary,
+                                  foregroundColor: colorScheme.onPrimary,
+                                  child: Text(
+                                    widget.user.username.isEmpty
+                                        ? '?'
+                                        : widget.user.username[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                 ),
                               ),

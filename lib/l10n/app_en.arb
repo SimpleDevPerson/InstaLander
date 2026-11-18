@@ -96,6 +96,8 @@
   "darkIconDescription": "Variant with a dark background",
   "behavior": "Behavior",
   "openProfilesInBrowser": "Open profiles in the browser",
+  "showProfilePhotos": "Show profile photos",
+  "showProfilePhotosDescription": "Look for photos on public Instagram pages. Show initials when a photo is unavailable.",
   "openBrowserDescription": "Use your device's default browser.",
   "openInstagramDescription": "Use the Instagram app, or the browser if it isn't installed.",
   "savePreferenceError": "Unable to save the preference.",

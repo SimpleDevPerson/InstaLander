@@ -674,6 +674,18 @@ abstract class AppLocalizations {
   /// **'Apri i profili nel browser'**
   String get openProfilesInBrowser;
 
+  /// No description provided for @showProfilePhotos.
+  ///
+  /// In it, this message translates to:
+  /// **'Mostra le foto profilo'**
+  String get showProfilePhotos;
+
+  /// No description provided for @showProfilePhotosDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Cerca le foto sulle pagine pubbliche di Instagram. Se non sono disponibili, mostra le iniziali.'**
+  String get showProfilePhotosDescription;
+
   /// No description provided for @openBrowserDescription.
   ///
   /// In it, this message translates to:

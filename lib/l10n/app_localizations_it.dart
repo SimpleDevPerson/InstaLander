@@ -331,6 +331,13 @@ class AppLocalizationsIt extends AppLocalizations {
   String get openProfilesInBrowser => 'Apri i profili nel browser';
 
   @override
+  String get showProfilePhotos => 'Mostra le foto profilo';
+
+  @override
+  String get showProfilePhotosDescription =>
+      'Cerca le foto sulle pagine pubbliche di Instagram. Se non sono disponibili, mostra le iniziali.';
+
+  @override
   String get openBrowserDescription =>
       'Usa il browser predefinito del dispositivo.';
 
