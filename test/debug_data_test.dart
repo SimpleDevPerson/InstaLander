@@ -27,17 +27,14 @@ void main() {
       expect(followers.keys.every(following.containsKey), isTrue);
       final timeline = data.timeline();
       expect(timeline, hasLength(4));
+      final removed = <String>{};
       for (final interval in timeline) {
-        expect(interval.previous.date.isBefore(interval.current.date), isTrue);
+        expect(interval.previousDate.isBefore(interval.currentDate), isTrue);
         expect(interval.users, isNotEmpty);
-        expect(
-          interval.users.every(
-            (u) =>
-                u.username.startsWith('debug_') &&
-                !interval.current.followers.containsKey(u.username),
-          ),
-          isTrue,
-        );
+        for (final user in interval.users) {
+          expect(user.username, startsWith('debug_'));
+          expect(removed.add(user.username), isTrue);
+        }
       }
     },
   );
@@ -47,7 +44,7 @@ void main() {
     () async {
       final app = AppProvider();
       app.populateDebugTimeline();
-      expect(app.timeline, hasLength(4));
+      expect(app.debugTimeline, hasLength(4));
       expect(app.following, isEmpty);
       expect(app.whitelist, isEmpty);
       app.populateDebugWhitelist();
@@ -72,7 +69,7 @@ void main() {
       expect((await SharedPreferences.getInstance()).getKeys(), isEmpty);
       // A fresh session must not inherit any of the fake profiles.
       final fresh = AppProvider();
-      expect(fresh.timeline, isEmpty);
+      expect(fresh.debugTimeline, isEmpty);
       expect(fresh.whitelist, isEmpty);
       expect(fresh.following, isEmpty);
       fresh.dispose();
@@ -232,7 +229,7 @@ void main() {
       await tester.tap(find.text(label));
       await tester.pumpAndSettle();
     }
-    expect(app.timeline, isNotEmpty);
+    expect(app.debugTimeline, isNotEmpty);
     expect(app.whitelist, isNotEmpty);
     expect(app.nonFollowers, isNotEmpty);
     final reset = find.text('Cancella tutti i dati');

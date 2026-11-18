@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:instalander/models/import_snapshot.dart';
 import 'package:instalander/models/user.dart';
 import 'package:instalander/models/username_change.dart';
+import 'package:instalander/providers/app_provider.dart';
 import 'package:instalander/services/data_service.dart';
 import 'package:instalander/services/history_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 List<int> profiles(List<String> names) => utf8.encode(
   jsonEncode([
@@ -33,6 +36,8 @@ void main() {
     SortOption.dateDesc,
     null,
   ));
+  Future<List<UnfollowInterval>> loadTimeline() =>
+      HistoryService.loadTimeline(path: directory.path);
   Future<void> import(
     Map<String, List<int>> files,
     int month, {
@@ -66,26 +71,18 @@ void main() {
       );
       expect(prompted, isTrue);
       final data = load();
-      expect(data.history.first.followers.containsKey('old'), isTrue);
-      expect(data.history.last.usernameChanges, {'old': 'new'});
       expect(data.following.keys, ['never', 'new']);
       expect(data.whitelist, {'never'});
-      expect(
-        UnfollowInterval(data.history.first, data.history.last).users,
-        isEmpty,
-      );
+      expect((await loadTimeline()).single.users, isEmpty);
       final restored = await HistoryService.load(path: directory.path);
+      expect(restored.first.followers.containsKey('old'), isTrue);
       expect(restored.last.usernameChanges, {'old': 'new'});
       await import({
         'followers.json': profiles(['kept']),
       }, 3);
-      expect(
-        UnfollowInterval(
-          load().history[1],
-          load().history[2],
-        ).users.single.username,
-        'new',
-      );
+      final timeline = await loadTimeline();
+      expect(timeline.first.users.single.username, 'new');
+      expect(timeline.last.users, isEmpty);
     },
   );
 
@@ -109,7 +106,7 @@ void main() {
         data.whitelist,
         enabled ? {'manual', 'lost', 'never'} : {'manual'},
       );
-      expect(data.history.length, 2);
+      expect(data.followerSnapshotCount, 2);
       expect(data.followers.keys, ['kept']);
       expect(
         DataService.computeNonFollowers(
@@ -163,14 +160,9 @@ void main() {
         2,
         resolve: (_) async => {},
       );
-      expect(load().history.last.usernameChanges, isEmpty);
-      expect(
-        UnfollowInterval(
-          load().history.first,
-          load().history.last,
-        ).users.single.username,
-        'old',
-      );
+      final restored = await HistoryService.load(path: directory.path);
+      expect(restored.last.usernameChanges, isEmpty);
+      expect((await loadTimeline()).single.users.single.username, 'old');
     },
   );
 
@@ -215,10 +207,7 @@ void main() {
         2,
         resolve: (_) async => {'old1': 'new1', 'old2': 'new2'},
       );
-      expect(
-        UnfollowInterval(load().history.first, load().history.last).users,
-        isEmpty,
-      );
+      expect((await loadTimeline()).single.users, isEmpty);
     },
   );
 
@@ -270,17 +259,13 @@ void main() {
       final data = load();
       expect(data.followers.keys, ['kept', 'new_follower']);
       expect(data.whitelist, {'lost', 'never_followed', 'new_follower'});
-      expect(data.history.first.followers.keys, [
-        'kept',
-        'lost',
-        'not_followed',
-      ]);
-      final interval = UnfollowInterval(data.history.first, data.history.last);
+      final interval = (await loadTimeline()).single;
       expect(interval.users.map((u) => u.username), ['lost', 'not_followed']);
-      expect(interval.previous.date, DateTime(2026, 1, 1));
-      expect(interval.current.date, DateTime(2026, 2, 1));
+      expect(interval.previousDate, DateTime(2026, 1, 1));
+      expect(interval.currentDate, DateTime(2026, 2, 1));
       final reloaded = await HistoryService.load(path: directory.path);
       expect(reloaded, hasLength(2));
+      expect(reloaded.first.followers.keys, ['kept', 'lost', 'not_followed']);
       expect(reloaded.first.followers['lost']!.timestamp, 123);
     },
   );
@@ -292,18 +277,12 @@ void main() {
         'followers_1.json': profiles(['first']),
         'followers_2.json': profiles(['second']),
       }, 1);
-      expect(load().history, hasLength(1));
+      expect(load().followerSnapshotCount, 1);
       await import({
         'followers.json': profiles(['first']),
       }, 2);
       expect(load().followers.keys, ['first']);
-      expect(
-        UnfollowInterval(
-          load().history.first,
-          load().history.last,
-        ).users.single.username,
-        'second',
-      );
+      expect((await loadTimeline()).single.users.single.username, 'second');
     },
   );
 
@@ -317,12 +296,52 @@ void main() {
     }, 2);
     expect(load().followers.keys, ['lost']);
     expect(load().whitelist, isEmpty);
-    expect(load().history.where((s) => s.followersImported), hasLength(1));
+    expect(load().followerSnapshotCount, 1);
+    expect(await loadTimeline(), isEmpty);
     await import({'followers_1.json': profiles([])}, 3);
     expect(load().followers, isEmpty);
     expect(load().following.keys, ['lost', 'other']);
     expect(load().whitelist, {'lost', 'other'});
+    final interval = (await loadTimeline()).single;
+    expect(interval.previousDate, DateTime(2026, 1, 1));
+    expect(interval.currentDate, DateTime(2026, 3, 1));
+    expect(interval.users.single.username, 'lost');
   });
+
+  test(
+    'reloading the report refreshes the timeline after another import',
+    () async {
+      const channel = MethodChannel('plugins.flutter.io/path_provider');
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(channel, (_) async => directory.path);
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      SharedPreferences.setMockInitialValues({});
+
+      await import({
+        'followers.json': profiles(['first', 'second', 'kept']),
+        'following.json': profiles(['first', 'second', 'kept', 'other']),
+      }, 1);
+      await import({
+        'followers.json': profiles(['second', 'kept']),
+      }, 2);
+
+      final app = AppProvider();
+      addTearDown(app.dispose);
+      await app.initialize();
+      expect(app.hasData, isTrue);
+      final firstTimeline = app.savedTimeline!;
+      expect((await firstTimeline).single.users.single.username, 'first');
+      expect(app.savedTimeline, same(firstTimeline));
+
+      await import({
+        'followers.json': profiles(['kept']),
+      }, 3);
+      await app.loadJsonFiles(const []);
+      final updated = (await app.savedTimeline)!;
+      expect(updated.map((i) => i.users.single.username), ['second', 'first']);
+    },
+  );
 
   test('invalid import and backwards date preserve saved state', () async {
     await import({
@@ -353,7 +372,7 @@ void main() {
     await import({
       'followers_1.json': profiles(['safe']),
     }, 3);
-    expect(load().history, hasLength(2));
+    expect(load().followerSnapshotCount, 2);
   });
 
   test('migrates existing raw JSONs and keeps the manual whitelist', () async {
@@ -368,9 +387,10 @@ void main() {
       'followers_1.json': profiles(['current']),
     }, 2);
     final data = load();
-    expect(data.history, hasLength(2));
-    expect(data.history.first.estimatedDate, isTrue);
-    expect(data.history.first.followers.keys, ['legacy']);
+    expect(data.followerSnapshotCount, 2);
+    final interval = (await loadTimeline()).single;
+    expect(interval.estimatedDate, isTrue);
+    expect(interval.users.single.username, 'legacy');
     expect(data.followers.keys, ['current']);
     expect(data.whitelist, {'legacy', 'manual'});
   });

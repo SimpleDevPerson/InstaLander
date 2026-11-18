@@ -395,10 +395,12 @@ void main() {
     await tester.scrollUntilVisible(
       find.byType(SegmentedButton<AppBrightnessMode>),
       150,
-      scrollable: find.descendant(
-        of: find.byType(SettingsScreen),
-        matching: find.byType(Scrollable),
-      ).first,
+      scrollable: find
+          .descendant(
+            of: find.byType(SettingsScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
     );
     expect(find.byType(SegmentedButton<AppBrightnessMode>), findsOneWidget);
     final segmentedButton = tester.widget<SegmentedButton<AppBrightnessMode>>(
@@ -455,6 +457,10 @@ void main() {
 
     expect(find.text('Il tuo unfollower report'), findsOneWidget);
     expect(find.text('InstaLander'), findsNothing);
+    expect(
+      tester.widget<BackdropFilter>(find.byType(BackdropFilter)).enabled,
+      isTrue,
+    );
     expect(find.byType(StatsCounter), findsOneWidget);
     final statusIcon = tester.widget<Icon>(find.byIcon(Icons.check_rounded));
     expect(statusIcon.size, 18);
@@ -534,13 +540,35 @@ void main() {
     expect(users.reads, greaterThan(0));
     expect(users.reads, lessThan(1000));
     expect(tester.takeException(), isNull);
+
+    final scrollable = find
+        .descendant(
+          of: find.byType(CustomScrollView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    final position = tester.state<ScrollableState>(scrollable).position;
+    users.reads = 0;
+    position.jumpTo(position.maxScrollExtent * 0.8);
+    await tester.pump();
+    expect(users.reads, lessThan(150));
+    expect(
+      tester
+          .widgetList<UserCard>(find.byType(UserCard))
+          .map((card) => int.parse(card.user.username.split('_').last)),
+      everyElement(greaterThan(7500)),
+    );
+    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Loaded report with ad slots builds valid slivers', (
+  testWidgets('Report skips ad slots until ads can be requested', (
     tester,
   ) async {
     SharedPreferences.setMockInitialValues({'ads_enabled': true});
-    AdsService.instance.adsEnabled.value = true;
+    final ads = AdsService.instance;
+    final previousConsent = ads.canRequestAds.value;
+    ads.canRequestAds.value = false;
+    addTearDown(() => ads.canRequestAds.value = previousConsent);
     final users = List.generate(
       1200,
       (index) => InstagramUser(username: 'profile_$index', timestamp: index),
@@ -548,21 +576,10 @@ void main() {
     await tester.pumpWidget(_mainScreen(_TestReportAppProvider(users)));
     await tester.pump();
 
-    expect(find.byType(CustomScrollView), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.scrollUntilVisible(
-      find.byKey(const ValueKey('feed-native-ad-0')),
-      200,
-      scrollable: find
-          .descendant(
-            of: find.byType(CustomScrollView),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, 200));
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1800));
     await tester.pumpAndSettle();
-    expect(find.byType(NativeAdCard), findsAtLeastNWidgets(1));
+    expect(find.byType(SliverGrid), findsOneWidget);
+    expect(find.byType(NativeAdCard), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -1049,11 +1066,14 @@ void main() {
     await tester.pumpWidget(buildApp(ThemeMode.light));
     await tester.pumpAndSettle();
 
+    String assetName(Image icon) {
+      final image = icon.image;
+      final source = image is ResizeImage ? image.imageProvider : image;
+      return (source as AssetImage).assetName;
+    }
+
     Image appIcon = tester.widget<Image>(find.byType(Image).first);
-    expect(
-      (appIcon.image as AssetImage).assetName,
-      'assets/images/app_icon_original.png',
-    );
+    expect(assetName(appIcon), 'assets/images/app_icon_original.png');
     expect(appIcon.width, 44);
     expect(appIcon.height, 44);
     final header = tester.widget<Container>(
@@ -1065,10 +1085,7 @@ void main() {
     await tester.pumpAndSettle();
 
     appIcon = tester.widget<Image>(find.byType(Image).first);
-    expect(
-      (appIcon.image as AssetImage).assetName,
-      'assets/images/app_icon_dark.jpg',
-    );
+    expect(assetName(appIcon), 'assets/images/app_icon_dark.jpg');
   });
 
   testWidgets('Holding a profile card expands its details', (tester) async {

@@ -63,7 +63,7 @@ class AppDataSnapshot {
     required this.hasFollowersFile,
     required this.hasFollowingFile,
     required this.sort,
-    this.history = const [],
+    this.followerSnapshotCount = 0,
   }) : followers = Map.unmodifiable(followers),
        following = Map.unmodifiable(following),
        whitelist = Set.unmodifiable(whitelist) {
@@ -84,7 +84,7 @@ class AppDataSnapshot {
   final bool hasFollowersFile;
   final bool hasFollowingFile;
   final SortOption sort;
-  final List<ImportSnapshot> history;
+  final int followerSnapshotCount;
   late final List<InstagramUser> nonFollowers;
   late final List<InstagramUser> sortedNonFollowers;
   late final Map<String, int> stats;
@@ -97,12 +97,12 @@ class DataService {
   );
 
   /// Uses original file metadata, never the import cache or follow timestamps.
-  /// A partial selection without metadata requires manual date selection.
+  /// All selected files must have metadata and share the same calendar day.
   static Future<DateTime?> jsonFilesCreationDate(
     List<PlatformFile> files,
   ) async {
     if (files.isEmpty) return null;
-    DateTime? latest;
+    DateTime? commonDate;
     for (final file in files) {
       try {
         final uri = file is AndroidPlatformFile
@@ -115,14 +115,16 @@ class DataService {
         );
         if (milliseconds == null || milliseconds <= 0) return null;
         final date = DateTime.fromMillisecondsSinceEpoch(milliseconds);
-        if (latest == null || date.isAfter(latest)) latest = date;
+        final day = DateTime(date.year, date.month, date.day);
+        if (commonDate != null && commonDate != day) return null;
+        commonDate = day;
       } on PlatformException {
         return null;
       } on MissingPluginException {
         return null;
       }
     }
-    return latest;
+    return commonDate;
   }
 
   static Future<AppDataSnapshot> loadAppData({
@@ -146,10 +148,10 @@ class DataService {
       // Do not fall back to stale exports when the history is unreadable.
       final state =
           jsonDecode(historyFile.readAsStringSync()) as Map<String, dynamic>;
-      final history = (state['snapshots'] as List)
-          .map((s) => ImportSnapshot.fromJson(s as Map<String, dynamic>))
-          .toList();
-      final latest = history.last;
+      final snapshots = state['snapshots'] as List;
+      final latest = ImportSnapshot.fromJson(
+        snapshots.last as Map<String, dynamic>,
+      );
       return AppDataSnapshot(
         followers: latest.followers,
         following: latest.following,
@@ -158,7 +160,9 @@ class DataService {
         hasFollowersFile: latest.hasFollowers,
         hasFollowingFile: latest.hasFollowing,
         sort: sort,
-        history: List.unmodifiable(history),
+        followerSnapshotCount: snapshots
+            .where((snapshot) => snapshot['followersImported'] as bool)
+            .length,
       );
     }
     final followers = <String, InstagramUser>{};
@@ -426,12 +430,7 @@ class DataService {
     final directory = await getApplicationDocumentsDirectory();
     final state = File('${directory.path}/${HistoryService.fileName}');
     if (await state.exists()) {
-      final data =
-          jsonDecode(await state.readAsString()) as Map<String, dynamic>;
-      data['whitelist'] = whitelist.toList();
-      final pending = File('${state.path}.tmp');
-      await pending.writeAsString(jsonEncode(data), flush: true);
-      await pending.rename(state.path);
+      await compute(_saveHistoryWhitelist, (state.path, whitelist));
       return;
     }
     final file = File('${directory.path}/$_whitelistFile');
@@ -443,6 +442,16 @@ class DataService {
     } catch (e) {
       debugPrint('❌ Errore salvataggio whitelist: $e');
     }
+  }
+
+  static void _saveHistoryWhitelist((String, Set<String>) update) {
+    final (path, whitelist) = update;
+    final data =
+        jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
+    data['whitelist'] = whitelist.toList();
+    final pending = File('$path.tmp');
+    pending.writeAsStringSync(jsonEncode(data), flush: true);
+    pending.renameSync(path);
   }
 
   // Pick JSON files

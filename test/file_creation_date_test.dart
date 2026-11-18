@@ -61,7 +61,7 @@ void main() {
   );
 
   test(
-    'reads creation metadata from original URI and chooses latest file',
+    'uses the common calendar day even when file times differ',
     () async {
       final earlier = DateTime(2026, 5, 3, 9);
       final later = DateTime(2026, 5, 3, 10);
@@ -74,9 +74,22 @@ void main() {
         return (call.arguments == first.uri.toString() ? earlier : later)
             .millisecondsSinceEpoch;
       });
-      expect(await DataService.jsonFilesCreationDate([first, second]), later);
+      expect(
+        await DataService.jsonFilesCreationDate([first, second]),
+        DateTime(2026, 5, 3),
+      );
     },
   );
+
+  test('requests manual date when the file dates differ', () async {
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      return (call.arguments == first.uri.toString()
+              ? DateTime(2026, 5, 3, 23, 59)
+              : DateTime(2026, 5, 4))
+          .millisecondsSinceEpoch;
+    });
+    expect(await DataService.jsonFilesCreationDate([first, second]), isNull);
+  });
 
   test('requests manual date if any file has no creation time', () async {
     for (final missing in [null, 0, -1]) {

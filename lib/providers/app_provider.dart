@@ -8,6 +8,7 @@ import '../models/user.dart';
 import '../models/username_change.dart';
 import '../services/data_service.dart';
 import '../services/debug_data_service.dart';
+import '../services/history_service.dart';
 import '../services/profile_launcher.dart';
 import '../services/reminder_service.dart';
 
@@ -72,7 +73,8 @@ class AppProvider extends ChangeNotifier {
   List<InstagramUser> _nonFollowers = [];
   List<InstagramUser> _sortedNonFollowers = [];
   Map<String, int> _stats = {};
-  List<ImportSnapshot> _history = [];
+  int _followerSnapshotCount = 0;
+  Future<List<UnfollowInterval>>? _savedTimeline;
   Map<String, InstagramUser> _debugFollowers = {};
   Map<String, InstagramUser> _debugFollowing = {};
   Set<String> _debugWhitelist = {};
@@ -116,17 +118,17 @@ class AppProvider extends ChangeNotifier {
   }
 
   bool get monthlyReminder => _monthlyReminder;
-  List<UnfollowInterval> get timeline {
-    final snapshots = _history.where((s) => s.followersImported).toList();
-    return [
-      ..._debugTimeline,
-      for (var i = snapshots.length - 1; i > 0; i--)
-        UnfollowInterval(snapshots[i - 1], snapshots[i]),
-    ];
-  }
+  List<UnfollowInterval> get debugTimeline => _debugTimeline;
 
-  int get followerSnapshotCount =>
-      _history.where((s) => s.followersImported).length;
+  Future<List<UnfollowInterval>>? get savedTimeline =>
+      _followerSnapshotCount < 2
+      ? null
+      : _savedTimeline ??= HistoryService.loadTimeline();
+
+  void retryTimeline() {
+    _savedTimeline = null;
+    notifyListeners();
+  }
 
   Future<bool> setMonthlyReminder(bool enabled) async {
     final result = await ReminderService.setEnabled(enabled);
@@ -195,32 +197,39 @@ class AppProvider extends ChangeNotifier {
 
   // Initialize app data
   Future<void> initialize() async {
-    _setLoading(true);
     _errorMessage = null;
+    if (!_isLoading) _setLoading(true);
 
     try {
-      await _loadSavedFiles();
-      try {
-        _monthlyReminder = await ReminderService.isEnabled();
-        _reminderIntervalMonths = await ReminderService.getIntervalMonths();
-      } on Exception {
-        _monthlyReminder = false;
-      }
-      final preferences = await SharedPreferences.getInstance();
-      _viewedProfiles =
-          preferences.getStringList(_viewedProfilesKey)?.toSet() ?? {};
-      _hasCompletedOnboarding =
-          preferences.getBool(_onboardingCompletedKey) ?? false;
-      _debugToolsEnabled = preferences.getBool(_debugToolsEnabledKey) ?? false;
-      _openProfilesInBrowser = preferences.getBool(_profileBrowserKey) ?? false;
-      _autoWhitelistOnImport = preferences.getBool(_autoWhitelistKey) ?? true;
-
-      // Note: Non impostiamo _errorMessage se non ci sono file al primo avvio.
-      // Lo stato _hasData = false farà vedere la schermata di setup con il pulsante "Carica JSON".
+      await Future.wait([
+        _loadSavedFiles(),
+        _loadPreferences(),
+        _loadReminderSettings(),
+      ]);
     } catch (e) {
       _errorMessage = AppStrings.current.initializationError((e).toString());
     } finally {
       _setLoading(false);
+    }
+  }
+
+  Future<void> _loadPreferences() async {
+    final preferences = await SharedPreferences.getInstance();
+    _viewedProfiles =
+        preferences.getStringList(_viewedProfilesKey)?.toSet() ?? {};
+    _hasCompletedOnboarding =
+        preferences.getBool(_onboardingCompletedKey) ?? false;
+    _debugToolsEnabled = preferences.getBool(_debugToolsEnabledKey) ?? false;
+    _openProfilesInBrowser = preferences.getBool(_profileBrowserKey) ?? false;
+    _autoWhitelistOnImport = preferences.getBool(_autoWhitelistKey) ?? true;
+  }
+
+  Future<void> _loadReminderSettings() async {
+    try {
+      _monthlyReminder = await ReminderService.isEnabled();
+      _reminderIntervalMonths = await ReminderService.getIntervalMonths();
+    } on Exception {
+      _monthlyReminder = false;
     }
   }
 
@@ -251,7 +260,8 @@ class AppProvider extends ChangeNotifier {
       _nonFollowers = [];
       _sortedNonFollowers = [];
       _stats = DataService.getStats(_followers, _following, _whitelist);
-      _history = [];
+      _followerSnapshotCount = 0;
+      _savedTimeline = null;
       _clearDebugData();
       _monthlyReminder = false;
       _reminderIntervalMonths = 1;
@@ -330,7 +340,8 @@ class AppProvider extends ChangeNotifier {
     _followers = snapshot.followers;
     _following = snapshot.following;
     _whitelist = Set.of(snapshot.whitelist);
-    _history = snapshot.history;
+    _followerSnapshotCount = snapshot.followerSnapshotCount;
+    _savedTimeline = null;
     _nonFollowers = snapshot.nonFollowers;
     _sortedNonFollowers = snapshot.sortedNonFollowers;
     _stats = snapshot.stats;

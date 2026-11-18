@@ -61,8 +61,11 @@ class ImportSnapshot {
 }
 
 class UnfollowInterval {
-  UnfollowInterval(this.previous, this.current)
-    : users = List.unmodifiable(
+  UnfollowInterval(ImportSnapshot previous, ImportSnapshot current)
+    : previousDate = previous.date,
+      currentDate = current.date,
+      estimatedDate = previous.estimatedDate,
+      users = List.unmodifiable(
         previous.followers.entries
             .where(
               (entry) => !current.followers.containsKey(
@@ -72,7 +75,8 @@ class UnfollowInterval {
             .map((entry) => entry.value),
       );
 
-  final ImportSnapshot previous;
-  final ImportSnapshot current;
+  final DateTime previousDate;
+  final DateTime currentDate;
+  final bool estimatedDate;
   final List<InstagramUser> users;
 }

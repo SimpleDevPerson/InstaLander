@@ -143,8 +143,10 @@ class ThemeProvider extends ChangeNotifier {
           _brightnessMode = AppBrightnessMode.dark;
           break;
       }
-      await prefs.setInt(_themeStyleKey, _themeStyle.index);
-      await prefs.setInt(_brightnessModeKey, _brightnessMode.index);
+      if (legacyMode != null) {
+        await prefs.setInt(_themeStyleKey, _themeStyle.index);
+        await prefs.setInt(_brightnessModeKey, _brightnessMode.index);
+      }
     }
 
     if (iconIndex != null &&

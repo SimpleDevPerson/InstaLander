@@ -14,14 +14,6 @@ class TimelineScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
-    final intervals = provider.timeline;
-    // Keep profiles lazy even when an interval contains thousands of users.
-    final rows = <(UnfollowInterval, InstagramUser?)>[
-      for (final interval in intervals) ...[
-        (interval, null),
-        for (final user in interval.users) (interval, user),
-      ],
-    ];
     final bottomPadding = context.watch<ThemeProvider>().isSamsungTheme
         ? 100.0
         : 24.0;
@@ -73,37 +65,88 @@ class TimelineScreen extends StatelessWidget {
           Expanded(
             child: provider.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : intervals.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Text(
-                        context.l10n.timelineEmpty,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      final dateWidth = ((constraints.maxWidth - 32) * 0.25)
-                          .clamp(88.0, 112.0);
-                      return ListView.builder(
-                        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
-                        itemCount: rows.length,
-                        itemBuilder: (context, index) => _TimelineRow(
-                          key: ValueKey('timeline-row-$index'),
-                          interval: rows[index].$1,
-                          user: rows[index].$2,
-                          dateWidth: dateWidth,
-                          isFirst: index == 0,
-                          isLast: index == rows.length - 1,
-                        ),
-                      );
-                    },
-                  ),
+                : _buildTimeline(provider, bottomPadding),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTimeline(AppProvider provider, double bottomPadding) {
+    final savedTimeline = provider.savedTimeline;
+    return FutureBuilder<List<UnfollowInterval>>(
+      future: savedTimeline,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (savedTimeline != null && snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    context.l10n.initializationError(snapshot.error.toString()),
+                    textAlign: TextAlign.center,
+                  ),
+                  TextButton(
+                    onPressed: provider.retryTimeline,
+                    child: Text(context.l10n.retry),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return _buildIntervals(context, [
+          ...provider.debugTimeline,
+          if (savedTimeline != null) ...?snapshot.data,
+        ], bottomPadding);
+      },
+    );
+  }
+
+  Widget _buildIntervals(
+    BuildContext context,
+    List<UnfollowInterval> intervals,
+    double bottomPadding,
+  ) {
+    if (intervals.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(context.l10n.timelineEmpty, textAlign: TextAlign.center),
+        ),
+      );
+    }
+
+    final rows = <(UnfollowInterval, InstagramUser?)>[
+      for (final interval in intervals) ...[
+        (interval, null),
+        for (final user in interval.users) (interval, user),
+      ],
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final dateWidth = ((constraints.maxWidth - 32) * 0.25).clamp(
+          88.0,
+          112.0,
+        );
+        return ListView.builder(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
+          itemCount: rows.length,
+          itemBuilder: (context, index) => _TimelineRow(
+            key: ValueKey('timeline-row-$index'),
+            interval: rows[index].$1,
+            user: rows[index].$2,
+            dateWidth: dateWidth,
+            isFirst: index == 0,
+            isLast: index == rows.length - 1,
+          ),
+        );
+      },
     );
   }
 }
@@ -177,7 +220,7 @@ class _TimelineRow extends StatelessWidget {
                                   color: colors.onSurfaceVariant,
                                 ),
                               ),
-                              if (interval.previous.estimatedDate) ...[
+                              if (interval.estimatedDate) ...[
                                 const SizedBox(height: 6),
                                 Text(
                                   context.l10n.estimatedDate,
@@ -291,8 +334,8 @@ class _IntervalDates extends StatelessWidget {
     final format = DateFormat(
       context.l10n.localeName == 'it' ? 'dd/MM/yyyy' : 'MM/dd/yyyy',
     );
-    final previous = format.format(interval.previous.date);
-    final current = format.format(interval.current.date);
+    final previous = format.format(interval.previousDate);
+    final current = format.format(interval.currentDate);
     return Semantics(
       label: context.l10n.dateInterval(
         (previous).toString(),

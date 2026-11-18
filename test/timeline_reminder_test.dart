@@ -32,7 +32,9 @@ class TimelineProvider extends AppProvider {
   @override
   bool get isLoading => false;
   @override
-  List<UnfollowInterval> get timeline => intervals;
+  late final Future<List<UnfollowInterval>> savedTimeline = Future.value(
+    intervals,
+  );
   @override
   Set<String> get whitelist => {'lost'};
 }

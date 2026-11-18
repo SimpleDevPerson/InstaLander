@@ -36,20 +36,25 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   late final PageController _pageController;
   final Random _adRandom = Random();
-  List<InstagramUser>? _scheduledAdUsers;
-  List<int> _scheduledAdOffsets = const [];
   List<int> _scheduledFeedItems = const [];
   int _scheduledAdColumnCount = 0;
+  int _scheduledAdUserCount = 0;
+
+  static const _profileSpacing = 12.0;
+  static const _profileAspectRatio = 1.05;
+  static const _profileHorizontalPadding = 16.0;
 
   // Navbar constants
   static const double navbarHeight = 60;
   static const double navbarBottomMargin = 12;
+  static final _navbarBlur = ImageFilter.blur(sigmaX: 12, sigmaY: 12);
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: 0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<AppProvider>().initialize();
       unawaited(AdsService.instance.initialize());
     });
@@ -107,7 +112,7 @@ class _MainScreenState extends State<MainScreen> {
         }
 
         final isSamsung = context.watch<ThemeProvider>().isSamsungTheme;
-        final bottomSafePadding = MediaQuery.of(context).padding.bottom;
+        final bottomSafePadding = MediaQuery.paddingOf(context).bottom;
 
         return PopScope<Object?>(
           canPop: _currentIndex == 0,
@@ -203,7 +208,7 @@ class _MainScreenState extends State<MainScreen> {
               ClipRRect(
                 borderRadius: BorderRadius.circular(navbarHeight / 2),
                 child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  filter: _navbarBlur,
                   child: Container(
                     height: navbarHeight,
                     decoration: BoxDecoration(
@@ -410,14 +415,16 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildAppIcon(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    const size = 44.0;
     return ClipRRect(
       borderRadius: BorderRadius.circular(11),
       child: Image.asset(
         isDark
             ? 'assets/images/app_icon_dark.jpg'
             : 'assets/images/app_icon_original.png',
-        width: 44,
-        height: 44,
+        width: size,
+        height: size,
+        cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
         fit: BoxFit.cover,
       ),
     );
@@ -590,22 +597,24 @@ class _MainScreenState extends State<MainScreen> {
   Widget _buildMainContent(BuildContext context, AppProvider provider) {
     final users = provider.sortedNonFollowers;
 
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverToBoxAdapter(
-          child: StatsCounter(
-            count: provider.stats['visibleCount'] ?? 0,
-            zeroCountLabel: context.l10n.allDone,
+    return LayoutBuilder(
+      builder: (context, constraints) => CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: StatsCounter(
+              count: provider.stats['visibleCount'] ?? 0,
+              zeroCountLabel: context.l10n.allDone,
+            ),
           ),
-        ),
-        SliverToBoxAdapter(child: _buildControls(context, provider)),
-        if (users.isNotEmpty)
-          _buildUserList(context, provider, users)
-        else
-          SliverToBoxAdapter(child: _buildEmptyState(context)),
-        const SliverToBoxAdapter(child: SizedBox(height: 24)),
-      ],
+          SliverToBoxAdapter(child: _buildControls(context, provider)),
+          if (users.isNotEmpty)
+            _buildUserList(provider, users, constraints.maxWidth)
+          else
+            SliverToBoxAdapter(child: _buildEmptyState(context)),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
+      ),
     );
   }
 
@@ -906,107 +915,127 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildUserList(
-    BuildContext context,
     AppProvider provider,
     List<InstagramUser> users,
+    double width,
   ) {
-    return SliverLayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = (constraints.crossAxisExtent / 180)
-            .floor()
-            .clamp(2, 4);
-        final horizontalPadding = 32.0;
-        const crossAxisSpacing = 12.0;
-        const childAspectRatio = 1.05;
-        final profileCellWidth =
-            (constraints.crossAxisExtent -
-                horizontalPadding -
-                crossAxisSpacing * (crossAxisCount - 1)) /
-            crossAxisCount;
-        final profileCellHeight = profileCellWidth / childAspectRatio;
-        // AppProvider replaces this snapshot when the report or sorting changes.
-        // SliverLayoutBuilder also runs while scrolling: reuse its feed layout.
-        if (_scheduledAdColumnCount != crossAxisCount ||
-            !identical(_scheduledAdUsers, users)) {
-          _scheduledAdUsers = users;
-          _scheduledAdColumnCount = crossAxisCount;
-          _scheduledAdOffsets = calculateAdInsertionOffsets(
-            userCount: users.length,
-            crossAxisCount: crossAxisCount,
-            random: _adRandom,
-          );
-
-          final adRows = {
-            for (var index = 0; index < _scheduledAdOffsets.length; index++)
-              _scheduledAdOffsets[index] ~/ crossAxisCount: index,
-          };
-          final profileRowCount =
-              (users.length + crossAxisCount - 1) ~/ crossAxisCount;
-          final feedItems = <int>[];
-          for (var row = 0; row < profileRowCount; row++) {
-            final adIndex = adRows[row];
-            if (adIndex != null) feedItems.add(-(adIndex + 1));
-            feedItems.add(row);
-          }
-          _scheduledFeedItems = feedItems;
+    final crossAxisCount = (width / 180).floor().clamp(2, 4);
+    final ads = AdsService.instance;
+    return ListenableBuilder(
+      listenable: Listenable.merge([ads.adsEnabled, ads.canRequestAds]),
+      builder: (context, grid) {
+        if (!ads.adsEnabled.value ||
+            !ads.canRequestAds.value ||
+            !AdsService.isSupportedPlatform ||
+            AdsService.nativeAdUnitId.isEmpty ||
+            users.length <= 3 * crossAxisCount) {
+          return grid!;
         }
-        final feedItems = _scheduledFeedItems;
-
-        return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate((context, itemIndex) {
-              final item = feedItems[itemIndex];
-              if (item < 0) {
-                final adIndex = -item - 1;
-                return ValueListenableBuilder<bool>(
-                  key: ValueKey('feed-native-ad-$adIndex'),
-                  valueListenable: AdsService.instance.adsEnabled,
-                  builder: (context, enabled, child) =>
-                      enabled ? const NativeAdCard() : const SizedBox.shrink(),
-                );
-              }
-
-              final start = item * crossAxisCount;
-              final end = min(start + crossAxisCount, users.length);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (
-                      var userIndex = start;
-                      userIndex < end;
-                      userIndex++
-                    ) ...[
-                      if (userIndex > start)
-                        const SizedBox(width: crossAxisSpacing),
-                      SizedBox(
-                        width: profileCellWidth,
-                        height: profileCellHeight,
-                        child: UserCard(
-                          user: users[userIndex],
-                          isViewed: provider.isProfileViewed(
-                            users[userIndex].username,
-                          ),
-                          onTap: () async {
-                            final username = users[userIndex].username;
-                            await provider.markProfileViewed(username);
-                            await _openInstagramProfile(username);
-                          },
-                          onWhitelist: () => provider.addToWhitelist(
-                            users[userIndex].username,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }, childCount: feedItems.length),
-          ),
-        );
+        return _buildUserListWithAds(provider, users, width, crossAxisCount);
       },
+      child: SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+          _profileHorizontalPadding,
+          8,
+          _profileHorizontalPadding,
+          8 + _profileSpacing,
+        ),
+        sliver: SliverGrid.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: _profileSpacing,
+            mainAxisSpacing: _profileSpacing,
+            childAspectRatio: _profileAspectRatio,
+          ),
+          itemCount: users.length,
+          itemBuilder: (context, index) =>
+              _buildUserCard(provider, users[index]),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserListWithAds(
+    AppProvider provider,
+    List<InstagramUser> users,
+    double width,
+    int crossAxisCount,
+  ) {
+    final cellWidth =
+        (width -
+            2 * _profileHorizontalPadding -
+            _profileSpacing * (crossAxisCount - 1)) /
+        crossAxisCount;
+    final cellHeight = cellWidth / _profileAspectRatio;
+    if (_scheduledAdColumnCount != crossAxisCount ||
+        _scheduledAdUserCount != users.length) {
+      _scheduledAdUserCount = users.length;
+      _scheduledAdColumnCount = crossAxisCount;
+      final adOffsets = calculateAdInsertionOffsets(
+        userCount: users.length,
+        crossAxisCount: crossAxisCount,
+        random: _adRandom,
+      );
+      final rows = (users.length + crossAxisCount - 1) ~/ crossAxisCount;
+      final items = <int>[];
+      var adIndex = 0;
+      for (var row = 0; row < rows; row++) {
+        if (adIndex < adOffsets.length &&
+            adOffsets[adIndex] == row * crossAxisCount) {
+          items.add(-(adIndex + 1));
+          adIndex++;
+        }
+        items.add(row);
+      }
+      _scheduledFeedItems = items;
+    }
+    final feedItems = _scheduledFeedItems;
+
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: _profileHorizontalPadding,
+        vertical: 8,
+      ),
+      sliver: SliverList.builder(
+        itemCount: feedItems.length,
+        itemBuilder: (context, index) {
+          final row = feedItems[index];
+          if (row < 0) {
+            return NativeAdCard(key: ValueKey('feed-native-ad-${-row - 1}'));
+          }
+
+          final start = row * crossAxisCount;
+          final end = min(start + crossAxisCount, users.length);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: _profileSpacing),
+            child: Row(
+              spacing: _profileSpacing,
+              children: [
+                for (var i = start; i < end; i++)
+                  SizedBox(
+                    width: cellWidth,
+                    height: cellHeight,
+                    child: _buildUserCard(provider, users[i]),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildUserCard(AppProvider provider, InstagramUser user) {
+    final username = user.username;
+    return UserCard(
+      key: ValueKey(username),
+      user: user,
+      isViewed: provider.isProfileViewed(username),
+      onTap: () async {
+        await provider.markProfileViewed(username);
+        if (mounted) await _openInstagramProfile(username);
+      },
+      onWhitelist: () => provider.addToWhitelist(username),
     );
   }
 

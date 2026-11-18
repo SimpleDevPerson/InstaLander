@@ -153,6 +153,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           : 'assets/images/app_icon_original.png',
                       width: 52,
                       height: 52,
+                      cacheWidth: (52 * MediaQuery.devicePixelRatioOf(context))
+                          .ceil(),
                       fit: BoxFit.cover,
                     ),
                   ),

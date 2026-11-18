@@ -29,7 +29,7 @@ class AdsService {
     if (_configuredNativeAdUnitId.isNotEmpty) {
       return _configuredNativeAdUnitId;
     }
-    return kDebugMode ? _testNativeAdUnitId : '';
+    return kReleaseMode ? '' : _testNativeAdUnitId;
   }
 
   Future<void> initialize() async {

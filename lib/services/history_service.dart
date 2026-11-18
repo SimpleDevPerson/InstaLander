@@ -37,6 +37,28 @@ class HistoryService {
           .map((item) => ImportSnapshot.fromJson(item as Map<String, dynamic>))
           .toList();
 
+  static Future<List<UnfollowInterval>> loadTimeline({String? path}) async {
+    path ??= (await getApplicationDocumentsDirectory()).path;
+    return compute(_readTimeline, path);
+  }
+
+  static List<UnfollowInterval> _readTimeline(String path) {
+    final file = File('$path/$fileName');
+    if (!file.existsSync()) return const [];
+
+    final intervals = <UnfollowInterval>[];
+    ImportSnapshot? previous;
+    final snapshots = jsonDecode(file.readAsStringSync())['snapshots'] as List;
+    for (final entry in snapshots) {
+      final data = entry as Map<String, dynamic>;
+      if (!(data['followersImported'] as bool)) continue;
+      final current = ImportSnapshot.fromJson(data);
+      if (previous != null) intervals.add(UnfollowInterval(previous, current));
+      previous = current;
+    }
+    return intervals.reversed.toList(growable: false);
+  }
+
   /// Validation finishes before touching saved data. The atomic state includes
   /// the old profiles, the new profiles and the updated whitelist together.
   static Future<void> importFiles(

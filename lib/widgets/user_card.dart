@@ -30,8 +30,20 @@ class _UserCardState extends State<UserCard> {
   static const _actionBackground = Color(0xFF2B2B2B);
   static const _actionBorder = Color(0xFF666666);
   static const _expansionDuration = Duration(milliseconds: 220);
+  // Both numeric formats use the same digits and need no extra locale data.
+  static final _italianDate = DateFormat('dd/MM/yyyy', 'en_US');
+  static final _englishDate = DateFormat('MM/dd/yyyy', 'en_US');
+  static final _whitelistButtonStyle = OutlinedButton.styleFrom(
+    foregroundColor: Colors.white,
+    side: const BorderSide(color: _actionBorder),
+    backgroundColor: _actionBackground,
+    minimumSize: const Size(0, 50),
+    padding: const EdgeInsets.symmetric(horizontal: 8),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+  );
 
-  final _expandedOverlayKey = GlobalKey<_ExpandedUserCardOverlayState>();
+  GlobalKey<_ExpandedUserCardOverlayState>? _expandedOverlayKey;
   OverlayEntry? _expandedOverlayEntry;
 
   static const _avatarBlues = [
@@ -65,9 +77,11 @@ class _UserCardState extends State<UserCard> {
     );
     final cardRect = cardOrigin & cardRenderBox.size;
 
+    final overlayKey = GlobalKey<_ExpandedUserCardOverlayState>();
+    _expandedOverlayKey = overlayKey;
     _expandedOverlayEntry = OverlayEntry(
       builder: (context) => _ExpandedUserCardOverlay(
-        key: _expandedOverlayKey,
+        key: overlayKey,
         user: widget.user,
         origin: cardRect,
         onOpenProfile: widget.onTap,
@@ -79,17 +93,18 @@ class _UserCardState extends State<UserCard> {
   }
 
   void _updateExpandedCardPointer(Offset position) {
-    _expandedOverlayKey.currentState?.updatePointer(position);
+    _expandedOverlayKey?.currentState?.updatePointer(position);
   }
 
   void _finishExpandedCardPointer(Offset position) {
-    _expandedOverlayKey.currentState?.finishPointer(position);
+    _expandedOverlayKey?.currentState?.finishPointer(position);
   }
 
   void _removeExpandedCard() {
     _expandedOverlayEntry?.remove();
     _expandedOverlayEntry?.dispose();
     _expandedOverlayEntry = null;
+    _expandedOverlayKey = null;
   }
 
   @override
@@ -101,7 +116,15 @@ class _UserCardState extends State<UserCard> {
   @override
   Widget build(BuildContext context) {
     final avatarColor = _avatarColor(widget.user.username);
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final strings = context.l10n;
+    final followedAt = widget.user.followedAt;
+    final dateLabel = followedAt == null
+        ? strings.unknownDate
+        : (strings.localeName == 'it' ? _italianDate : _englishDate).format(
+            followedAt,
+          );
     final username = widget.user.username.isNotEmpty
         ? widget.user.username[0].toUpperCase()
         : '?';
@@ -199,8 +222,9 @@ class _UserCardState extends State<UserCard> {
                                 '@${widget.user.username}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
@@ -215,18 +239,12 @@ class _UserCardState extends State<UserCard> {
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  widget.user.followedAt == null
-                                      ? context.l10n.unknownDate
-                                      : DateFormat(
-                                          context.l10n.localeName == 'it'
-                                              ? 'dd/MM/yyyy'
-                                              : 'MM/dd/yyyy',
-                                        ).format(widget.user.followedAt!),
+                                  dateLabel,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodySmall?.copyWith(fontSize: 11),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ),
                             ],
@@ -254,21 +272,8 @@ class _UserCardState extends State<UserCard> {
                     child: OutlinedButton.icon(
                       onPressed: widget.onWhitelist,
                       icon: const Icon(Icons.favorite_border, size: 20),
-                      label: Text(context.l10n.whitelist),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: _actionBorder),
-                        backgroundColor: _actionBackground,
-                        minimumSize: const Size(0, 50),
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        textStyle: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      label: Text(strings.whitelist),
+                      style: _whitelistButtonStyle,
                     ),
                   ),
                 ],

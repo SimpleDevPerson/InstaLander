@@ -107,7 +107,7 @@ class _ScreenshotData extends AppProvider {
   Map<String, int> get stats =>
       DataService.getStats(followers, following, whitelist);
   @override
-  List<UnfollowInterval> get timeline {
+  List<UnfollowInterval> get debugTimeline {
     ImportSnapshot snapshot(int month, List<String> added) => ImportSnapshot(
       date: DateTime(2026, month, 13),
       followersImported: true,
