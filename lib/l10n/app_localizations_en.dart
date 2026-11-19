@@ -800,4 +800,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cannotOpenPrivacyPolicy => 'Unable to open the privacy policy.';
+
+  @override
+  String get whiteIcon => 'New white icon';
+
+  @override
+  String get whiteIconDescription =>
+      'White background and gradient colors · Default';
+
+  @override
+  String get glowDarkIcon => 'New dark icon';
+
+  @override
+  String get glowDarkIconDescription => 'Dark background with colorful glows';
 }

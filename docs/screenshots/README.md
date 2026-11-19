@@ -9,6 +9,7 @@ Le anteprime mostrano i widget reali di InstaLander nel tema Samsung One UI scur
 - [Whitelist](whitelist.png)
 - [Promemoria e impostazioni](reminders.png)
 - [Banner decorato](../images/instalander-banner.png)
+- [Grafica Play Store, PNG RGB 1024 × 500](../images/instalander-play-store-1024x500.png)
 
 ## Rigenerazione automatica
 
@@ -31,3 +32,5 @@ La [correzione di fedeltà](../images/banner-glow-repair-prompt.md) ripristina i
 La [correzione mirata del Report](../images/banner-report-repair-prompt.md) elimina i riquadri vuoti introdotti nella parte inferiore durante la composizione.
 
 La [correzione della continuità della griglia](../images/banner-grid-continuity-prompt.md) fa proseguire la quarta fila dietro la navbar, eliminando lo spazio vuoto tra le schede.
+
+L'[aggiornamento con la nuova icona](../images/banner-final-prompts.md) mantiene stile, telefoni e testi del banner originale, sostituisce il simbolo nel titolo e nel Report e mostra le impostazioni a partire da Comportamento. Lo script di cattura usa la lingua italiana e precarica le quattro icone. La grafica Play Store ha una composizione dedicata con due telefoni frontali, senza prospettiva, e il testo «Il tuo report, privato». Il PNG finale è esportato in RGB senza trasparenza a esattamente 1024 × 500 pixel, con un minimo ritaglio verticale dello sfondo per rispettare le proporzioni senza deformare il contenuto.

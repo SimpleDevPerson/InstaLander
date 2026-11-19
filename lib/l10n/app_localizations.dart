@@ -1507,6 +1507,30 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Impossibile aprire l’informativa sulla privacy.'**
   String get cannotOpenPrivacyPolicy;
+
+  /// No description provided for @whiteIcon.
+  ///
+  /// In it, this message translates to:
+  /// **'Nuova icona bianca'**
+  String get whiteIcon;
+
+  /// No description provided for @whiteIconDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Sfondo bianco e colori sfumati · Predefinita'**
+  String get whiteIconDescription;
+
+  /// No description provided for @glowDarkIcon.
+  ///
+  /// In it, this message translates to:
+  /// **'Nuova icona scura'**
+  String get glowDarkIcon;
+
+  /// No description provided for @glowDarkIconDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Sfondo scuro con bagliori colorati'**
+  String get glowDarkIconDescription;
 }
 
 class _AppLocalizationsDelegate

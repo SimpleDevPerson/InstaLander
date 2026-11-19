@@ -124,27 +124,26 @@ open class MainActivity : FlutterActivity() {
             val selectedAlias = when (call.arguments) {
                 "original" -> "OriginalIconAlias"
                 "dark" -> "DarkIconAlias"
+                "white" -> "WhiteIconAlias"
+                "glowDark" -> "GlowDarkIconAlias"
                 else -> {
                     result.error("invalid_icon", "Unknown app icon option", null)
                     return@setMethodCallHandler
                 }
             }
-            val otherAlias = if (selectedAlias == "OriginalIconAlias") {
-                "DarkIconAlias"
-            } else {
-                "OriginalIconAlias"
-            }
-
             packageManager.setComponentEnabledSetting(
                 ComponentName(this, "$packageName.$selectedAlias"),
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                 PackageManager.DONT_KILL_APP,
             )
-            packageManager.setComponentEnabledSetting(
-                ComponentName(this, "$packageName.$otherAlias"),
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP,
-            )
+            for (alias in listOf("OriginalIconAlias", "DarkIconAlias", "WhiteIconAlias", "GlowDarkIconAlias")) {
+                if (alias == selectedAlias) continue
+                packageManager.setComponentEnabledSetting(
+                    ComponentName(this, "$packageName.$alias"),
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP,
+                )
+            }
             result.success(null)
         }
     }

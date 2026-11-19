@@ -8,11 +8,16 @@ import '../l10n/app_strings.dart';
 
 enum AppIconStyle {
   original,
-  dark;
+  dark,
+  white,
+  glowDark;
 
-  String get label => this == original
-      ? AppStrings.current.originalIcon
-      : AppStrings.current.darkIcon;
+  String get label => switch (this) {
+    original => AppStrings.current.originalIcon,
+    dark => AppStrings.current.darkIcon,
+    white => AppStrings.current.whiteIcon,
+    glowDark => AppStrings.current.glowDarkIcon,
+  };
 }
 
 enum AppThemeStyle {
@@ -86,7 +91,7 @@ class ThemeProvider extends ChangeNotifier {
 
   AppThemeStyle _themeStyle = AppThemeStyle.samsungOneUi;
   AppBrightnessMode _brightnessMode = AppBrightnessMode.system;
-  AppIconStyle _appIconStyle = AppIconStyle.original;
+  AppIconStyle _appIconStyle = AppIconStyle.white;
   static const MethodChannel _appIconChannel = MethodChannel(
     'com.simpledevperson.instalander/app_icon',
   );
@@ -155,16 +160,24 @@ class ThemeProvider extends ChangeNotifier {
       _appIconStyle = AppIconStyle.values[iconIndex];
     }
 
+    try {
+      await _syncNativeIcon(_appIconStyle);
+    } on MissingPluginException {
+      // Widget tests and non-Android targets have no launcher aliases.
+    } on PlatformException {
+      // Keep the saved choice available if the launcher is temporarily unavailable.
+    }
     notifyListeners();
   }
 
-  Future<void> setAppIconStyle(AppIconStyle style) async {
+  Future<void> _syncNativeIcon(AppIconStyle style) async {
     if (defaultTargetPlatform == TargetPlatform.android) {
-      await _appIconChannel.invokeMethod<void>(
-        'setAppIcon',
-        style == AppIconStyle.dark ? 'dark' : 'original',
-      );
+      await _appIconChannel.invokeMethod<void>('setAppIcon', style.name);
     }
+  }
+
+  Future<void> setAppIconStyle(AppIconStyle style) async {
+    await _syncNativeIcon(style);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_appIconStyleKey, style.index);
@@ -190,7 +203,7 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> resetToDefaults() async {
     await setLanguage(null);
-    await setAppIconStyle(AppIconStyle.original);
+    await setAppIconStyle(AppIconStyle.white);
     _themeStyle = AppThemeStyle.samsungOneUi;
     _brightnessMode = AppBrightnessMode.system;
     notifyListeners();

@@ -273,6 +273,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             _buildAppIconOption(
                               context,
                               themeProvider,
+                              AppIconStyle.white,
+                              context.l10n.whiteIcon,
+                              context.l10n.whiteIconDescription,
+                              'assets/images/app_icon_white.jpg',
+                            ),
+                            _buildAppIconOption(
+                              context,
+                              themeProvider,
+                              AppIconStyle.glowDark,
+                              context.l10n.glowDarkIcon,
+                              context.l10n.glowDarkIconDescription,
+                              'assets/images/app_icon_glow_dark.jpg',
+                            ),
+                            _buildAppIconOption(
+                              context,
+                              themeProvider,
                               AppIconStyle.original,
                               context.l10n.lightIcon,
                               context.l10n.lightIconDescription,
@@ -480,7 +496,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildInfoTile(
                         context,
                         context.l10n.version,
-                        '0.7.0',
+                        '0.7.3',
                         Icons.tag,
                         onTap: _onVersionTap,
                       ),

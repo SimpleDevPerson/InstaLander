@@ -807,4 +807,17 @@ class AppLocalizationsIt extends AppLocalizations {
   @override
   String get cannotOpenPrivacyPolicy =>
       'Impossibile aprire l’informativa sulla privacy.';
+
+  @override
+  String get whiteIcon => 'Nuova icona bianca';
+
+  @override
+  String get whiteIconDescription =>
+      'Sfondo bianco e colori sfumati · Predefinita';
+
+  @override
+  String get glowDarkIcon => 'Nuova icona scura';
+
+  @override
+  String get glowDarkIconDescription => 'Sfondo scuro con bagliori colorati';
 }

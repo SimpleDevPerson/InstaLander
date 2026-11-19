@@ -234,5 +234,9 @@
   "debugHidden": "Debug options hidden.",
   "privacyPolicy": "Privacy policy",
   "privacyPolicyDescription": "How data is used and stored",
-  "cannotOpenPrivacyPolicy": "Unable to open the privacy policy."
+  "cannotOpenPrivacyPolicy": "Unable to open the privacy policy.",
+  "whiteIcon": "New white icon",
+  "whiteIconDescription": "White background and gradient colors · Default",
+  "glowDarkIcon": "New dark icon",
+  "glowDarkIconDescription": "Dark background with colorful glows"
 }

@@ -49,3 +49,4 @@ import_history.json.tmp
 *.apk
 *.aab
 *.apks
+!docs/play-store/screenshot-cellulari-1080x1920.zip

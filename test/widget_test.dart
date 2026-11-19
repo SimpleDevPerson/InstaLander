@@ -73,17 +73,54 @@ void main() {
     themeProvider.dispose();
   });
 
-  test('App icon choice is persisted', () async {
+  test('New installs and reset use the white app icon', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
     addTearDown(() => debugDefaultTargetPlatformOverride = null);
     final themeProvider = ThemeProvider();
-    await themeProvider.setAppIconStyle(AppIconStyle.dark);
-
-    final restoredProvider = ThemeProvider();
     await Future<void>.delayed(Duration.zero);
-
-    expect(restoredProvider.appIconStyle, AppIconStyle.dark);
+    expect(themeProvider.appIconStyle, AppIconStyle.white);
+    await themeProvider.setAppIconStyle(AppIconStyle.dark);
+    await themeProvider.resetToDefaults();
+    expect(themeProvider.appIconStyle, AppIconStyle.white);
+    themeProvider.dispose();
   });
+
+  test('All four app icon choices persist, including legacy indices', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    for (final style in AppIconStyle.values) {
+      SharedPreferences.setMockInitialValues({'app_icon_style': style.index});
+      final themeProvider = ThemeProvider();
+      await Future<void>.delayed(Duration.zero);
+      expect(themeProvider.appIconStyle, style);
+      await themeProvider.setAppIconStyle(style);
+      final restoredProvider = ThemeProvider();
+      await Future<void>.delayed(Duration.zero);
+      expect(restoredProvider.appIconStyle, style);
+      themeProvider.dispose();
+      restoredProvider.dispose();
+    }
+  });
+
+  testWidgets('App icon choices reach the Android launcher', (tester) async {
+    const channel = MethodChannel('com.simpledevperson.instalander/app_icon');
+    final calls = <MethodCall>[];
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      channel,
+      (call) async => calls.add(call),
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final themeProvider = ThemeProvider();
+    await tester.pumpAndSettle();
+    expect(calls.last.arguments, 'white');
+    for (final style in AppIconStyle.values) {
+      await themeProvider.setAppIconStyle(style);
+      expect(calls.last.method, 'setAppIcon');
+      expect(calls.last.arguments, style.name);
+    }
+    themeProvider.dispose();
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 
   testWidgets('App builds without crashing', (tester) async {
     await tester.pumpWidget(
@@ -1036,7 +1073,7 @@ void main() {
     expect(openCount, 2);
   });
 
-  testWidgets('Main title icon follows app brightness, not icon preference', (
+  testWidgets('Main title uses the new dark icon in both brightness modes', (
     tester,
   ) async {
     const appIconChannel = MethodChannel(
@@ -1073,7 +1110,7 @@ void main() {
     }
 
     Image appIcon = tester.widget<Image>(find.byType(Image).first);
-    expect(assetName(appIcon), 'assets/images/app_icon_original.png');
+    expect(assetName(appIcon), 'assets/images/app_icon_glow_dark.jpg');
     expect(appIcon.width, 44);
     expect(appIcon.height, 44);
     final header = tester.widget<Container>(
@@ -1085,7 +1122,7 @@ void main() {
     await tester.pumpAndSettle();
 
     appIcon = tester.widget<Image>(find.byType(Image).first);
-    expect(assetName(appIcon), 'assets/images/app_icon_dark.jpg');
+    expect(assetName(appIcon), 'assets/images/app_icon_glow_dark.jpg');
   });
 
   testWidgets('Holding a profile card expands its details', (tester) async {
@@ -1192,7 +1229,7 @@ void main() {
     expect(find.text('Dettagli del profilo'), findsNothing);
   });
 
-  testWidgets('Settings show both app icon previews', (tester) async {
+  testWidgets('Settings show all four app icon previews', (tester) async {
     await tester.pumpWidget(
       MultiProvider(
         providers: [
@@ -1236,18 +1273,20 @@ void main() {
       containsAll({
         'assets/images/app_icon_original.png',
         'assets/images/app_icon_dark.jpg',
+        'assets/images/app_icon_white.jpg',
+        'assets/images/app_icon_glow_dark.jpg',
       }),
     );
     final previewClips = tester
         .widgetList<ClipRRect>(find.byType(ClipRRect))
         .toList();
-    expect(previewClips, hasLength(2));
+    expect(previewClips, hasLength(4));
     expect(
       previewClips.map((clip) => clip.borderRadius),
       everyElement(BorderRadius.circular(14)),
     );
     final previewImages = tester.widgetList<Image>(find.byType(Image)).toList();
-    expect(previewImages, hasLength(2));
+    expect(previewImages, hasLength(4));
     expect(previewImages.map((image) => image.width), everyElement(53));
     expect(previewImages.map((image) => image.height), everyElement(53));
     final previewContainers = tester
@@ -1258,7 +1297,7 @@ void main() {
               container.constraints?.maxHeight == 56,
         )
         .toList();
-    expect(previewContainers, hasLength(2));
+    expect(previewContainers, hasLength(4));
     expect(
       previewContainers.map(
         (container) => (container.decoration! as BoxDecoration).border,

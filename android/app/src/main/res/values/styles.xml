@@ -11,6 +11,18 @@
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_dark_splash</item>
     </style>
 
+    <style name="LaunchThemeWhite" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background_white</item>
+        <item name="android:windowSplashScreenBackground">@android:color/white</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_white_splash</item>
+    </style>
+
+    <style name="LaunchThemeGlowDark" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background_dark</item>
+        <item name="android:windowSplashScreenBackground">@color/launcher_dark_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_glow_dark_splash</item>
+    </style>
+
     <style name="NormalTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@android:color/white</item>
     </style>

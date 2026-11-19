@@ -11,7 +11,7 @@
     <application
         android:label="InstaLander"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/ic_launcher_white"
         android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
         android:supportsRtl="true">
@@ -60,10 +60,38 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalThemeDark" />
         </activity>
+        <activity
+            android:name=".WhiteIconActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:icon="@drawable/ic_launcher_white"
+            android:theme="@style/LaunchThemeWhite"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+        </activity>
+        <activity
+            android:name=".GlowDarkIconActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:icon="@drawable/ic_launcher_glow_dark"
+            android:theme="@style/LaunchThemeGlowDark"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalThemeDark" />
+        </activity>
         <activity-alias
             android:name=".OriginalIconAlias"
             android:targetActivity=".MainActivity"
-            android:enabled="true"
+            android:enabled="false"
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:roundIcon="@mipmap/ic_launcher_round"
@@ -82,6 +110,30 @@
             android:icon="@drawable/ic_launcher_dark"
             android:label="InstaLander"
             android:theme="@style/LaunchThemeDark">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".WhiteIconAlias"
+            android:targetActivity=".WhiteIconActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_white"
+            android:label="InstaLander">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".GlowDarkIconAlias"
+            android:targetActivity=".GlowDarkIconActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher_glow_dark"
+            android:label="InstaLander">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

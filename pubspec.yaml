@@ -1,7 +1,7 @@
 name: instalander
 description: "InstaLander - Instagram follower report"
 publish_to: 'none'
-version: 0.7.2+2009
+version: 0.7.3+2010
 
 environment:
   sdk: '>=3.10.0 <4.0.0'

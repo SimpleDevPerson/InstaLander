@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:instalander/l10n/app_localizations.dart';
 import 'package:instalander/models/import_snapshot.dart';
 import 'package:instalander/models/user.dart';
 import 'package:instalander/providers/app_provider.dart';
@@ -166,6 +167,7 @@ Future<void> _loadFonts() async {
 }
 
 void main() {
+  const playStore = bool.fromEnvironment('PLAY_STORE_SCREENSHOTS');
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(_loadFonts);
   testWidgets('capture public screenshots using synthetic data', (
@@ -174,8 +176,10 @@ void main() {
     final previousShadows = debugDisableShadows;
     debugDisableShadows = false;
     addTearDown(() => debugDisableShadows = previousShadows);
-    tester.view.physicalSize = const Size(412, 912);
-    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = playStore
+        ? const Size(1080, 1920)
+        : const Size(1236, 2736);
+    tester.view.devicePixelRatio = playStore ? 2.5 : 3;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     // This widget-test runner lives outside test/ to keep normal tests read-only.
@@ -184,6 +188,7 @@ void main() {
       'app_theme_style': 0,
       'app_brightness_mode': 2,
       'app_icon_style': 1,
+      'app_language': 'it',
       'ads_enabled': false,
     });
     AdsService.instance.adsEnabled.value = false;
@@ -205,6 +210,10 @@ void main() {
                     ChangeNotifierProvider<ThemeProvider>.value(value: theme),
                   ],
                   child: MaterialApp(
+                    locale: const Locale('it'),
+                    localizationsDelegates:
+                        AppLocalizations.localizationsDelegates,
+                    supportedLocales: AppLocalizations.supportedLocales,
                     debugShowCheckedModeBanner: false,
                     theme: AppTheme.samsungDarkTheme,
                     home: const MainScreen(),
@@ -217,18 +226,16 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.runAsync(
-      () => precacheImage(
-        const AssetImage('assets/images/app_icon_dark.jpg'),
-        boundaryKey.currentContext!,
-      ),
-    );
-    await tester.runAsync(
-      () => precacheImage(
-        const AssetImage('assets/images/app_icon_original.png'),
-        boundaryKey.currentContext!,
-      ),
-    );
+    for (final asset in [
+      'assets/images/app_icon_original.png',
+      'assets/images/app_icon_dark.jpg',
+      'assets/images/app_icon_white.jpg',
+      'assets/images/app_icon_glow_dark.jpg',
+    ]) {
+      await tester.runAsync(
+        () => precacheImage(AssetImage(asset), boundaryKey.currentContext!),
+      );
+    }
     await tester.pumpAndSettle();
 
     Future<void> capture(String name) async {
@@ -262,9 +269,11 @@ void main() {
       useAndroidFont(boundary);
       await tester.pump();
       await tester.runAsync(() async {
-        final image = await boundary.toImage(pixelRatio: 3);
+        final image = await boundary.toImage(pixelRatio: playStore ? 2.5 : 3);
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-        final directory = Directory('docs/screenshots');
+        final directory = Directory(
+          playStore ? 'docs/play-store/screenshots' : 'docs/screenshots',
+        );
         await directory.create(recursive: true);
         await File(
           '${directory.path}/$name.png',
@@ -281,24 +290,21 @@ void main() {
     await capture('whitelist');
     await tester.tap(find.byIcon(Icons.settings_outlined).hitTestable());
     await tester.pumpAndSettle();
+    const sectionTitle = 'Comportamento';
     await tester.scrollUntilVisible(
-      find.text('Icona dell’app'),
+      find.text(sectionTitle),
       200,
-      scrollable: find
-          .descendant(
-            of: find.byType(ListView),
-            matching: find.byType(Scrollable),
-          )
-          .first,
+      scrollable: find.byType(Scrollable).last,
     );
     // Begin at a complete section heading, without a cropped row above it.
-    final iconSection = tester.element(find.text('Icona dell’app'));
-    await Scrollable.of(
-      iconSection,
-    ).position.ensureVisible(iconSection.findRenderObject()!, alignment: 0.03);
+    final behaviorSection = tester.element(find.text(sectionTitle));
+    await Scrollable.of(behaviorSection).position.ensureVisible(
+      behaviorSection.findRenderObject()!,
+      alignment: 0.03,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Impostazioni').hitTestable(), findsOneWidget);
-    await capture('reminders');
+    await capture(playStore ? 'settings' : 'reminders');
     await tester.pumpWidget(const SizedBox.shrink());
     data.dispose();
     theme.dispose();

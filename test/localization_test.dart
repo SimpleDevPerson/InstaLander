@@ -78,6 +78,8 @@ void main() {
     await tester.pumpWidget(app(theme));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.byType(LanguageSelector), 150);
+    await tester.ensureVisible(find.byKey(const ValueKey('language-system')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('language-system')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('English').last);
@@ -97,6 +99,8 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(restored.languageCode, 'en');
     await tester.scrollUntilVisible(find.byType(LanguageSelector), 150);
+    await tester.ensureVisible(find.byKey(const ValueKey('language-en')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('language-en')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('System (automatic)').last);

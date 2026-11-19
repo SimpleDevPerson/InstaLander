@@ -411,5 +411,9 @@
   "debugHidden": "Opzioni di debug nascoste.",
   "privacyPolicy": "Informativa sulla privacy",
   "privacyPolicyDescription": "Come vengono utilizzati e conservati i dati",
-  "cannotOpenPrivacyPolicy": "Impossibile aprire l’informativa sulla privacy."
+  "cannotOpenPrivacyPolicy": "Impossibile aprire l’informativa sulla privacy.",
+  "whiteIcon": "Nuova icona bianca",
+  "whiteIconDescription": "Sfondo bianco e colori sfumati · Predefinita",
+  "glowDarkIcon": "Nuova icona scura",
+  "glowDarkIconDescription": "Sfondo scuro con bagliori colorati"
 }

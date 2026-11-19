@@ -414,14 +414,11 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildAppIcon(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     const size = 44.0;
     return ClipRRect(
       borderRadius: BorderRadius.circular(11),
       child: Image.asset(
-        isDark
-            ? 'assets/images/app_icon_dark.jpg'
-            : 'assets/images/app_icon_original.png',
+        'assets/images/app_icon_glow_dark.jpg',
         width: size,
         height: size,
         cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
