@@ -227,6 +227,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     for (final asset in [
+      'assets/images/app_logo_transparent.png',
       'assets/images/app_icon_original.png',
       'assets/images/app_icon_dark.jpg',
       'assets/images/app_icon_white.jpg',

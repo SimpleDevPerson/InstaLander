@@ -15,8 +15,14 @@ class AppStrings {
   }
 
   static AppLocalizations current = lookupAppLocalizations(const Locale('it'));
+  static bool isSupportedLanguage(String code) => AppLocalizations
+      .supportedLocales
+      .any((locale) => locale.languageCode == code);
+
   static void useLanguage(String code) {
-    current = lookupAppLocalizations(Locale(code == 'it' ? 'it' : 'en'));
+    current = lookupAppLocalizations(
+      Locale(isSupportedLanguage(code) ? code : 'en'),
+    );
   }
 }
 

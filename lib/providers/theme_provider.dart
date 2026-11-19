@@ -58,7 +58,7 @@ class ThemeProvider extends ChangeNotifier {
   Locale? get locale => _languageCode == null ? null : Locale(_languageCode!);
 
   Future<void> setLanguage(String? code) async {
-    if (code != null && code != 'it' && code != 'en') {
+    if (code != null && !AppStrings.isSupportedLanguage(code)) {
       throw ArgumentError.value(code);
     }
     final prefs = await SharedPreferences.getInstance();
@@ -114,7 +114,9 @@ class ThemeProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
 
     final language = prefs.getString(_languageKey);
-    _languageCode = language == 'it' || language == 'en' ? language : null;
+    _languageCode = language != null && AppStrings.isSupportedLanguage(language)
+        ? language
+        : null;
     _applyLanguage();
     unawaited(_syncNativeLanguage());
 

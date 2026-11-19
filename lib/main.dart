@@ -33,7 +33,7 @@ class InstagramFollowerCheckerApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             locale: themeProvider.locale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: const [Locale('en'), Locale('it')],
+            supportedLocales: AppLocalizations.supportedLocales,
             localeListResolutionCallback: AppStrings.resolveLocale,
             theme: isSamsung ? AppTheme.samsungLightTheme : AppTheme.lightTheme,
             darkTheme: isSamsung

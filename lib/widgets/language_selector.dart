@@ -19,6 +19,7 @@ class LanguageSelector extends StatelessWidget {
       'system': context.l10n.languageSystem,
       'it': 'Italiano',
       'en': 'English',
+      'es': 'Español',
     };
     final selected = value ?? 'system';
     return Container(

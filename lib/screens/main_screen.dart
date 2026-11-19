@@ -414,16 +414,13 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _buildAppIcon(BuildContext context) {
-    const size = 44.0;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(11),
-      child: Image.asset(
-        'assets/images/app_icon_glow_dark.jpg',
-        width: size,
-        height: size,
-        cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
-        fit: BoxFit.cover,
-      ),
+    const size = 64.0;
+    return Image.asset(
+      'assets/images/app_logo_transparent.png',
+      width: size,
+      height: size,
+      cacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
+      fit: BoxFit.contain,
     );
   }
 

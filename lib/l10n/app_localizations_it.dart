@@ -49,10 +49,10 @@ class AppLocalizationsIt extends AppLocalizations {
   }
 
   @override
-  String get originalIcon => 'Originale';
+  String get originalIcon => 'Instander chiara';
 
   @override
-  String get darkIcon => 'Scura';
+  String get darkIcon => 'Instander scura';
 
   @override
   String get systemDefault => 'Predefinito di sistema';
@@ -313,16 +313,16 @@ class AppLocalizationsIt extends AppLocalizations {
   String get appIcon => 'Icona dell’app';
 
   @override
-  String get lightIcon => 'Icona chiara';
+  String get lightIcon => 'Instander chiara';
 
   @override
-  String get lightIconDescription => 'Icona originale con sfondo chiaro';
+  String get lightIconDescription => 'Un volto familiare.';
 
   @override
-  String get darkIconTitle => 'Icona scura';
+  String get darkIconTitle => 'Instander scura';
 
   @override
-  String get darkIconDescription => 'Variante con sfondo scuro';
+  String get darkIconDescription => 'Black is the new black';
 
   @override
   String get behavior => 'Comportamento';
@@ -809,15 +809,14 @@ class AppLocalizationsIt extends AppLocalizations {
       'Impossibile aprire l’informativa sulla privacy.';
 
   @override
-  String get whiteIcon => 'Nuova icona bianca';
+  String get whiteIcon => 'Smiley face chiara';
 
   @override
-  String get whiteIconDescription =>
-      'Sfondo bianco e colori sfumati · Predefinita';
+  String get whiteIconDescription => 'Sorridere fa bene.';
 
   @override
-  String get glowDarkIcon => 'Nuova icona scura';
+  String get glowDarkIcon => 'Smiley face scura';
 
   @override
-  String get glowDarkIconDescription => 'Sfondo scuro con bagliori colorati';
+  String get glowDarkIconDescription => 'Passa al lato oscuro.';
 }

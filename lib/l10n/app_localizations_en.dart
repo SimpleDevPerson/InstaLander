@@ -49,10 +49,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get originalIcon => 'Original';
+  String get originalIcon => 'Instander light';
 
   @override
-  String get darkIcon => 'Dark';
+  String get darkIcon => 'Instander dark';
 
   @override
   String get systemDefault => 'System default';
@@ -311,16 +311,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appIcon => 'App icon';
 
   @override
-  String get lightIcon => 'Light icon';
+  String get lightIcon => 'Instander light';
 
   @override
-  String get lightIconDescription => 'Original icon with a light background';
+  String get lightIconDescription => 'A familiar face.';
 
   @override
-  String get darkIconTitle => 'Dark icon';
+  String get darkIconTitle => 'Instander dark';
 
   @override
-  String get darkIconDescription => 'Variant with a dark background';
+  String get darkIconDescription => 'Black is the new black';
 
   @override
   String get behavior => 'Behavior';
@@ -802,15 +802,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cannotOpenPrivacyPolicy => 'Unable to open the privacy policy.';
 
   @override
-  String get whiteIcon => 'New white icon';
+  String get whiteIcon => 'Smiley face light';
 
   @override
-  String get whiteIconDescription =>
-      'White background and gradient colors · Default';
+  String get whiteIconDescription => 'Smiling is good for you.';
 
   @override
-  String get glowDarkIcon => 'New dark icon';
+  String get glowDarkIcon => 'Smiley face dark';
 
   @override
-  String get glowDarkIconDescription => 'Dark background with colorful glows';
+  String get glowDarkIconDescription => 'Come to the dark side.';
 }

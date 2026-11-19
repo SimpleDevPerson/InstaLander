@@ -18,7 +18,7 @@
     </style>
 
     <style name="LaunchThemeGlowDark" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">@drawable/launch_background_dark</item>
+        <item name="android:windowBackground">@drawable/launch_background_glow_dark</item>
         <item name="android:windowSplashScreenBackground">@color/launcher_dark_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_glow_dark_splash</item>
     </style>

@@ -45,8 +45,8 @@
       }
     }
   },
-  "originalIcon": "Originale",
-  "darkIcon": "Scura",
+  "originalIcon": "Instander chiara",
+  "darkIcon": "Instander scura",
   "systemDefault": "Predefinito di sistema",
   "light": "Chiaro",
   "dark": "Scuro",
@@ -160,10 +160,10 @@
   "brightnessDescription": "Scegli una luminosità fissa oppure segui il dispositivo.",
   "system": "Sistema",
   "appIcon": "Icona dell’app",
-  "lightIcon": "Icona chiara",
-  "lightIconDescription": "Icona originale con sfondo chiaro",
-  "darkIconTitle": "Icona scura",
-  "darkIconDescription": "Variante con sfondo scuro",
+  "lightIcon": "Instander chiara",
+  "lightIconDescription": "Un volto familiare.",
+  "darkIconTitle": "Instander scura",
+  "darkIconDescription": "Black is the new black",
   "behavior": "Comportamento",
   "openProfilesInBrowser": "Apri i profili nel browser",
   "showProfilePhotos": "Mostra le foto profilo",
@@ -412,8 +412,8 @@
   "privacyPolicy": "Informativa sulla privacy",
   "privacyPolicyDescription": "Come vengono utilizzati e conservati i dati",
   "cannotOpenPrivacyPolicy": "Impossibile aprire l’informativa sulla privacy.",
-  "whiteIcon": "Nuova icona bianca",
-  "whiteIconDescription": "Sfondo bianco e colori sfumati · Predefinita",
-  "glowDarkIcon": "Nuova icona scura",
-  "glowDarkIconDescription": "Sfondo scuro con bagliori colorati"
+  "whiteIcon": "Smiley face chiara",
+  "whiteIconDescription": "Sorridere fa bene.",
+  "glowDarkIcon": "Smiley face scura",
+  "glowDarkIconDescription": "Passa al lato oscuro."
 }

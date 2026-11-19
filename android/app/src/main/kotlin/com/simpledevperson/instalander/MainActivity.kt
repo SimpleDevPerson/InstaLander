@@ -41,7 +41,7 @@ open class MainActivity : FlutterActivity() {
             "com.simpledevperson.instalander/locale").setMethodCallHandler { call, result ->
             if (call.method == "setLanguage") {
                 val language = call.arguments as? String
-                if (language != null && language !in listOf("it", "en")) {
+                if (language != null && language !in listOf("it", "en", "es")) {
                     result.error("invalid_language", "Unsupported language", null)
                 } else {
                     AppLanguage.set(this, language)

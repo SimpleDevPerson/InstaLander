@@ -1073,9 +1073,13 @@ void main() {
     expect(openCount, 2);
   });
 
-  testWidgets('Main title uses the new dark icon in both brightness modes', (
+  testWidgets('Main title uses the transparent logo in both brightness modes', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     const appIconChannel = MethodChannel(
       'com.simpledevperson.instalander/app_icon',
     );
@@ -1110,9 +1114,9 @@ void main() {
     }
 
     Image appIcon = tester.widget<Image>(find.byType(Image).first);
-    expect(assetName(appIcon), 'assets/images/app_icon_glow_dark.jpg');
-    expect(appIcon.width, 44);
-    expect(appIcon.height, 44);
+    expect(assetName(appIcon), 'assets/images/app_logo_transparent.png');
+    expect(appIcon.width, 64);
+    expect(appIcon.height, 64);
     final header = tester.widget<Container>(
       find.byKey(const Key('main-title-header')),
     );
@@ -1122,7 +1126,7 @@ void main() {
     await tester.pumpAndSettle();
 
     appIcon = tester.widget<Image>(find.byType(Image).first);
-    expect(assetName(appIcon), 'assets/images/app_icon_glow_dark.jpg');
+    expect(assetName(appIcon), 'assets/images/app_logo_transparent.png');
   });
 
   testWidgets('Holding a profile card expands its details', (tester) async {
@@ -1239,7 +1243,7 @@ void main() {
         child: const MaterialApp(home: SettingsScreen()),
       ),
     );
-    await tester.scrollUntilVisible(find.text('Icona chiara'), 150);
+    await tester.scrollUntilVisible(find.text('Instander chiara'), 150);
     await tester.pumpAndSettle();
 
     final settingsScaffold = tester.widget<Scaffold>(
@@ -1259,9 +1263,11 @@ void main() {
     expect(settingsTitle.style?.fontWeight, FontWeight.w700);
     expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
 
-    expect(find.text('Icona scura'), findsOneWidget);
-    expect(find.text('Icona originale con sfondo chiaro'), findsOneWidget);
-    expect(find.text('Variante con sfondo scuro'), findsOneWidget);
+    expect(find.text('Instander scura'), findsOneWidget);
+    expect(find.text('Smiley face chiara'), findsOneWidget);
+    expect(find.text('Smiley face scura'), findsOneWidget);
+    expect(find.text('Un volto familiare.'), findsOneWidget);
+    expect(find.text('Black is the new black'), findsOneWidget);
     final previewAssets = tester
         .widgetList<Image>(find.byType(Image))
         .map((image) => image.image)

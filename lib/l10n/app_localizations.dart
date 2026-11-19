@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
 import 'app_localizations_it.dart';
 
 // ignore_for_file: type=lint
@@ -95,6 +96,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
+    Locale('es'),
     Locale('it'),
   ];
 
@@ -161,13 +163,13 @@ abstract class AppLocalizations {
   /// No description provided for @originalIcon.
   ///
   /// In it, this message translates to:
-  /// **'Originale'**
+  /// **'Instander chiara'**
   String get originalIcon;
 
   /// No description provided for @darkIcon.
   ///
   /// In it, this message translates to:
-  /// **'Scura'**
+  /// **'Instander scura'**
   String get darkIcon;
 
   /// No description provided for @systemDefault.
@@ -641,25 +643,25 @@ abstract class AppLocalizations {
   /// No description provided for @lightIcon.
   ///
   /// In it, this message translates to:
-  /// **'Icona chiara'**
+  /// **'Instander chiara'**
   String get lightIcon;
 
   /// No description provided for @lightIconDescription.
   ///
   /// In it, this message translates to:
-  /// **'Icona originale con sfondo chiaro'**
+  /// **'Un volto familiare.'**
   String get lightIconDescription;
 
   /// No description provided for @darkIconTitle.
   ///
   /// In it, this message translates to:
-  /// **'Icona scura'**
+  /// **'Instander scura'**
   String get darkIconTitle;
 
   /// No description provided for @darkIconDescription.
   ///
   /// In it, this message translates to:
-  /// **'Variante con sfondo scuro'**
+  /// **'Black is the new black'**
   String get darkIconDescription;
 
   /// No description provided for @behavior.
@@ -1511,25 +1513,25 @@ abstract class AppLocalizations {
   /// No description provided for @whiteIcon.
   ///
   /// In it, this message translates to:
-  /// **'Nuova icona bianca'**
+  /// **'Smiley face chiara'**
   String get whiteIcon;
 
   /// No description provided for @whiteIconDescription.
   ///
   /// In it, this message translates to:
-  /// **'Sfondo bianco e colori sfumati · Predefinita'**
+  /// **'Sorridere fa bene.'**
   String get whiteIconDescription;
 
   /// No description provided for @glowDarkIcon.
   ///
   /// In it, this message translates to:
-  /// **'Nuova icona scura'**
+  /// **'Smiley face scura'**
   String get glowDarkIcon;
 
   /// No description provided for @glowDarkIconDescription.
   ///
   /// In it, this message translates to:
-  /// **'Sfondo scuro con bagliori colorati'**
+  /// **'Passa al lato oscuro.'**
   String get glowDarkIconDescription;
 }
 
@@ -1544,7 +1546,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'it'].contains(locale.languageCode);
+      <String>['en', 'es', 'it'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1555,6 +1557,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
     case 'it':
       return AppLocalizationsIt();
   }

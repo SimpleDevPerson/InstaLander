@@ -145,18 +145,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.asset(
-                      Theme.of(context).brightness == Brightness.dark
-                          ? 'assets/images/app_icon_dark.jpg'
-                          : 'assets/images/app_icon_original.png',
-                      width: 52,
-                      height: 52,
-                      cacheWidth: (52 * MediaQuery.devicePixelRatioOf(context))
-                          .ceil(),
-                      fit: BoxFit.cover,
-                    ),
+                  Image.asset(
+                    'assets/images/app_logo_transparent.png',
+                    width: 64,
+                    height: 64,
+                    cacheWidth: (64 * MediaQuery.devicePixelRatioOf(context))
+                        .ceil(),
+                    fit: BoxFit.contain,
                   ),
                   const SizedBox(width: 12),
                   Expanded(

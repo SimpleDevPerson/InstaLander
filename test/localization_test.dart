@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:instalander/l10n/app_localizations.dart';
 import 'package:instalander/l10n/app_strings.dart';
@@ -20,7 +21,7 @@ Widget app(ThemeProvider theme) => MultiProvider(
   child: Consumer<ThemeProvider>(
     builder: (context, value, _) => MaterialApp(
       locale: value.locale,
-      supportedLocales: const [Locale('en'), Locale('it')],
+      supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       localeListResolutionCallback: AppStrings.resolveLocale,
       home: const SettingsScreen(),
@@ -31,45 +32,115 @@ Widget app(ThemeProvider theme) => MultiProvider(
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  test('English covers every Italian message and preserves placeholders', () {
-    Map<String, dynamic> catalog(String code) =>
-        jsonDecode(File('lib/l10n/app_$code.arb').readAsStringSync())
-            as Map<String, dynamic>;
-    final italian = catalog('it');
-    final english = catalog('en');
-    final keys = italian.keys.where((key) => !key.startsWith('@')).toSet();
-    expect(english.keys.where((key) => !key.startsWith('@')).toSet(), keys);
-    for (final key in keys) {
-      expect(english[key], isNotEmpty, reason: key);
-      Set<String?> placeholders(String text) => RegExp(
-        r'\{(arg\d+)\}',
-      ).allMatches(text).map((m) => m.group(1)).toSet();
-      expect(
-        placeholders(english[key] as String),
-        placeholders(italian[key] as String),
-        reason: key,
-      );
-    }
-  });
+  for (final translation in ['en', 'es']) {
+    test(
+      '$translation covers every Italian message and preserves placeholders',
+      () {
+        Map<String, dynamic> catalog(String code) =>
+            jsonDecode(File('lib/l10n/app_$code.arb').readAsStringSync())
+                as Map<String, dynamic>;
+        final italian = catalog('it');
+        final english = catalog(translation);
+        final keys = italian.keys.where((key) => !key.startsWith('@')).toSet();
+        expect(english.keys.where((key) => !key.startsWith('@')).toSet(), keys);
+        for (final key in keys) {
+          expect(english[key], isNotEmpty, reason: key);
+          Set<String?> placeholders(String text) => RegExp(
+            r'\{(arg\d+)\}',
+          ).allMatches(text).map((m) => m.group(1)).toSet();
+          expect(
+            placeholders(english[key] as String),
+            placeholders(italian[key] as String),
+            reason: key,
+          );
+        }
+      },
+    );
+  }
 
-  for (final code in ['it', 'en', 'fr']) {
-    testWidgets('system language $code resolves correctly', (tester) async {
-      tester.platformDispatcher.localeTestValue = Locale(code);
-      tester.platformDispatcher.localesTestValue = [Locale(code)];
+  for (final locale in [
+    const Locale('it'),
+    const Locale('en'),
+    const Locale('es'),
+    const Locale('es', 'MX'),
+    const Locale('fr'),
+  ]) {
+    testWidgets('system language $locale resolves correctly', (tester) async {
+      final code = locale.languageCode;
+      tester.platformDispatcher.localeTestValue = locale;
+      tester.platformDispatcher.localesTestValue = [locale];
       final theme = ThemeProvider();
       await tester.pumpWidget(app(theme));
       await tester.pumpAndSettle();
       expect(
-        find.text(code == 'it' ? 'Impostazioni' : 'Settings'),
+        find.text(
+          code == 'it'
+              ? 'Impostazioni'
+              : code == 'es'
+              ? 'Ajustes'
+              : 'Settings',
+        ),
         findsOneWidget,
       );
       expect(theme.languageCode, isNull);
-      expect(AppStrings.current.localeName, code == 'it' ? 'it' : 'en');
+      expect(
+        AppStrings.current.localeName,
+        code == 'it' || code == 'es' ? code : 'en',
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       theme.dispose();
     });
   }
+
+  test('Spanish covers every native notification and chooser message', () {
+    Set<String?> names(String path) => RegExp(r'<string name="([^"]+)"')
+        .allMatches(File(path).readAsStringSync())
+        .map((match) => match.group(1))
+        .toSet();
+    expect(
+      names('android/app/src/main/res/values-es/strings.xml'),
+      names('android/app/src/main/res/values/strings.xml'),
+    );
+  });
+
+  testWidgets('Spanish can be selected and persists across restart', (
+    tester,
+  ) async {
+    const channel = MethodChannel('com.simpledevperson.instalander/locale');
+    final languages = <String?>[];
+    final messenger = tester.binding.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      languages.add(call.arguments as String?);
+      return null;
+    });
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    final theme = ThemeProvider();
+    await tester.pumpWidget(app(theme));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byType(LanguageSelector), 150);
+    await tester.ensureVisible(find.byKey(const ValueKey('language-system')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('language-system')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Español').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Ajustes'), findsOneWidget);
+    expect(find.text('Idioma'), findsWidgets);
+    expect(theme.languageCode, 'es');
+    expect(AppStrings.current.localeName, 'es');
+    expect(languages, contains('es'));
+    await tester.pumpWidget(const SizedBox.shrink());
+    theme.dispose();
+    final restored = ThemeProvider();
+    await tester.pumpWidget(app(restored));
+    await tester.pumpAndSettle();
+    expect(restored.languageCode, 'es');
+    expect(find.text('Ajustes'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    restored.dispose();
+  });
 
   testWidgets('language switch updates UI immediately and survives a restart', (
     tester,

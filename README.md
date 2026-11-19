@@ -19,8 +19,8 @@ Scarica l' APK per il tuo dispositvo dalla [release più recente](https://github
 - Apertura dei profili nell'app Instagram o nel browser predefinito, a scelta dalle impostazioni, con indicazione di quelli già visitati.
 - Promemoria periodici per richiedere una nuova esportazione.
 - Temi Samsung One UI e Material Design Expressive, con modalità chiara e scura.
-- Quattro icone selezionabili nelle impostazioni: nuova bianca (predefinita), nuova scura e le due varianti originali. Le scelte già salvate vengono mantenute.
-- Interfaccia in italiano e inglese, con rilevamento della lingua del telefono e selezione manuale nelle impostazioni.
+- Quattro icone selezionabili nelle impostazioni: Smiley face chiara (predefinita), Smiley face scura, Instander chiara e Instander scura. Le scelte già salvate vengono mantenute.
+- Interfaccia in italiano, inglese e spagnolo, con rilevamento della lingua del telefono e selezione manuale nelle impostazioni.
 
 ## Esportazione Instagram
 
