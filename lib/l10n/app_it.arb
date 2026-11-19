@@ -408,5 +408,8 @@
   },
   "hideDebug": "Nascondi opzioni di debug",
   "hideDebugDescription": "Puoi mostrarle di nuovo con 10 tocchi sulla versione.",
-  "debugHidden": "Opzioni di debug nascoste."
+  "debugHidden": "Opzioni di debug nascoste.",
+  "privacyPolicy": "Informativa sulla privacy",
+  "privacyPolicyDescription": "Come vengono utilizzati e conservati i dati",
+  "cannotOpenPrivacyPolicy": "Impossibile aprire l’informativa sulla privacy."
 }

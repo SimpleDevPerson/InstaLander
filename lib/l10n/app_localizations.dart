@@ -1489,6 +1489,24 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Opzioni di debug nascoste.'**
   String get debugHidden;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In it, this message translates to:
+  /// **'Informativa sulla privacy'**
+  String get privacyPolicy;
+
+  /// No description provided for @privacyPolicyDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Come vengono utilizzati e conservati i dati'**
+  String get privacyPolicyDescription;
+
+  /// No description provided for @cannotOpenPrivacyPolicy.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile aprire l’informativa sulla privacy.'**
+  String get cannotOpenPrivacyPolicy;
 }
 
 class _AppLocalizationsDelegate

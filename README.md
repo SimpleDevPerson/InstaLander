@@ -38,6 +38,10 @@ La sezione Promemoria nelle impostazioni permette di scegliere ogni mese, ogni 3
 
 I pulsanti della sezione **Debug** aggiungono profili di prova con prefisso `debug_` alla sessione corrente. Ogni sezione può essere popolata separatamente. I dati di prova non vengono salvati nei file importati o nella whitelist persistente e scompaiono al riavvio o alla successiva importazione riuscita. **Cancella tutti i dati**, in fondo alla sezione, continua a richiedere conferma ed elimina anche i dati reali e le preferenze.
 
+## Privacy
+
+L'[informativa sulla privacy](https://simpledevperson.github.io/InstaLander/) è disponibile in italiano e inglese, anche dalle impostazioni dell'app. La pagina è pubblicata con GitHub Pages dalla cartella `docs/` del branch `main`; il testo si aggiorna modificando `docs/index.html`.
+
 ## Requisiti
 
 - Flutter 3.38.1 o successivo e Dart SDK compatibile con `pubspec.yaml`.

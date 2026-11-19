@@ -231,5 +231,8 @@
   "removeWhitelistConfirmation": "Remove \"{arg0}\" from your whitelist?\nIt will appear in the non-follower list again.",
   "hideDebug": "Hide debug options",
   "hideDebugDescription": "You can show them again by tapping the version 10 times.",
-  "debugHidden": "Debug options hidden."
+  "debugHidden": "Debug options hidden.",
+  "privacyPolicy": "Privacy policy",
+  "privacyPolicyDescription": "How data is used and stored",
+  "cannotOpenPrivacyPolicy": "Unable to open the privacy policy."
 }

@@ -796,4 +796,15 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get debugHidden => 'Opzioni di debug nascoste.';
+
+  @override
+  String get privacyPolicy => 'Informativa sulla privacy';
+
+  @override
+  String get privacyPolicyDescription =>
+      'Come vengono utilizzati e conservati i dati';
+
+  @override
+  String get cannotOpenPrivacyPolicy =>
+      'Impossibile aprire l’informativa sulla privacy.';
 }

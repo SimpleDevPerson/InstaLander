@@ -493,6 +493,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       _buildActionTile(
                         context,
+                        context.l10n.privacyPolicy,
+                        context.l10n.privacyPolicyDescription,
+                        Icons.policy_outlined,
+                        () => unawaited(_openPrivacyPolicy(context)),
+                      ),
+                      _buildActionTile(
+                        context,
                         context.l10n.advertisingPrivacy,
                         context.l10n.manageConsent,
                         Icons.privacy_tip_outlined,
@@ -571,6 +578,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.savePreferenceError)));
     }
+  }
+
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    try {
+      final opened = await launchUrl(
+        Uri.parse('https://simpledevperson.github.io/InstaLander/'),
+        mode: LaunchMode.externalApplication,
+      );
+      if (opened) return;
+    } catch (_) {
+      // Report both launch failures and unavailable URL handlers below.
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.cannotOpenPrivacyPolicy)),
+    );
   }
 
   Future<void> _openProject(BuildContext context) async {
