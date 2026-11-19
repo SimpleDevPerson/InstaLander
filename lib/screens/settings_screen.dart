@@ -496,7 +496,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildInfoTile(
                         context,
                         context.l10n.version,
-                        '0.7.3',
+                        '0.7.4',
                         Icons.tag,
                         onTap: _onVersionTap,
                       ),

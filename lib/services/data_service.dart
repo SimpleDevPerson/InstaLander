@@ -91,6 +91,14 @@ class AppDataSnapshot {
 }
 
 class DataService {
+  // Imports need only temporary read access to documents selected by the user.
+  static const _importPickerOptions = FilePickerAndroidOptions(
+    safOptions: AndroidSAFOptions(
+      accessMode: AndroidSAFAccessMode.readOnly,
+      grant: AndroidSAFGrant.transient,
+      persistGrant: false,
+    ),
+  );
   static const String _whitelistFile = 'whitelist.txt';
   static const _fileMetadata = MethodChannel(
     'com.simpledevperson.instalander/file_metadata',
@@ -457,9 +465,7 @@ class DataService {
   // Pick JSON files
   static Future<List<PlatformFile>?> pickJsonFiles() async {
     final files = await FilePicker.pickFiles(
-      androidOptions: const FilePickerAndroidOptions(
-        safOptions: AndroidSAFOptions(persistGrant: false),
-      ),
+      androidOptions: _importPickerOptions,
       type: FileType.custom,
       allowedExtensions: ['json'],
       dialogTitle: AppStrings.current.pickJsonTitle,
@@ -470,6 +476,7 @@ class DataService {
 
   static Future<PlatformFile?> pickInstagramArchive() async {
     return FilePicker.pickFile(
+      androidOptions: _importPickerOptions,
       type: FileType.custom,
       allowedExtensions: ['zip'],
       dialogTitle: AppStrings.current.pickArchiveTitle,

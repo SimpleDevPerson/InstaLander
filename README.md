@@ -11,6 +11,7 @@ Scarica l' APK per il tuo dispositvo dalla [release più recente](https://github
 ## Funzionalità
 
 - Importazione delle esportazioni Instagram da file JSON o archivi ZIP, con elaborazione locale e senza accesso all'account.
+- Selezione dei JSON o dello ZIP tramite il selettore documenti Android, senza permessi di accesso a tutti i file: l'app riceve solo l'accesso temporaneo in lettura ai documenti scelti.
 - Report dei profili che segui e che non ricambiano il follow, con ricerca e ordinamento.
 - Storico delle importazioni e timeline degli unfollow rilevati tra esportazioni successive.
 - Whitelist manuale e automatica per escludere profili dal report.
