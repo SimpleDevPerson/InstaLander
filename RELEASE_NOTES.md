@@ -3,7 +3,8 @@
 Novità rispetto a 0.8.1.
 
 - Abilitati R8 e la rimozione delle risorse inutilizzate nelle build Android release, per ridurre il codice DEX e ottimizzarlo.
-- Nel bundle verificato, il DEX non compresso passa da **21,35 MB a 5,15 MB** (circa **76% in meno**). La riduzione delle dimensioni non equivale alle tre percentuali di ottimizzazione misurate da Play Console, da verificare sul bundle caricato.
+- Preservato il costruttore del database WorkManager usato tramite reflection, per evitare un arresto all'avvio con R8 in modalità completa.
+- Nel bundle verificato, il DEX non compresso passa da **21,35 MB a 5,21 MB** (circa **76% in meno**). La riduzione delle dimensioni non equivale alle tre percentuali di ottimizzazione misurate da Play Console, da verificare sul bundle caricato.
 - Il cambiamento prepara l'app al requisito Google Play previsto da **febbraio 2027**: almeno **25% di ottimizzazione, shrinking e offuscamento** per le app che superano la soglia di **10 MB di DEX non compresso**. Il bundle 0.8.1 conteneva circa 21,35 MB di DEX non compresso.
 - L'offuscamento riguarda il codice compilato distribuito: i sorgenti Dart e Kotlin su GitHub restano leggibili.
 - La build genera `mapping.txt`, da conservare per ogni versione per interpretare i report di crash; il bundle include i metadati di offuscamento generati da Android Gradle Plugin.
