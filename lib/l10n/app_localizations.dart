@@ -466,11 +466,11 @@ abstract class AppLocalizations {
   /// **'Il report si aggiorna quando importi nuovi file. Nelle Impostazioni puoi attivare un promemoria ogni mese, ogni 3 mesi o ogni 6 mesi per richiedere una nuova esportazione. La notifica è locale e non richiede di mantenere l’app attiva.'**
   String get reminderIntroDescription;
 
-  /// No description provided for @exportStep1of4.
+  /// No description provided for @exportStep1of5.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 1 DI 4'**
-  String get exportStep1of4;
+  /// **'PASSAGGIO 1 DI 5'**
+  String get exportStep1of5;
 
   /// No description provided for @accountsCenterTitle.
   ///
@@ -484,11 +484,11 @@ abstract class AppLocalizations {
   /// **'Apri Instagram, vai sul tuo profilo e tocca il menu ≡ in alto. Entra nel Centro gestione account.'**
   String get accountsCenterDescription;
 
-  /// No description provided for @exportStep2of4.
+  /// No description provided for @exportStep2of5.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 2 DI 4'**
-  String get exportStep2of4;
+  /// **'PASSAGGIO 2 DI 5'**
+  String get exportStep2of5;
 
   /// No description provided for @requestDataTitle.
   ///
@@ -502,11 +502,11 @@ abstract class AppLocalizations {
   /// **'Apri “Le tue informazioni e autorizzazioni” e scegli “Esporta le tue informazioni”, poi “Crea esportazione”. Seleziona il tuo account Instagram.'**
   String get requestDataDescription;
 
-  /// No description provided for @exportStep3of4.
+  /// No description provided for @exportStep3of5.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 3 DI 4'**
-  String get exportStep3of4;
+  /// **'PASSAGGIO 3 DI 5'**
+  String get exportStep3of5;
 
   /// No description provided for @chooseJsonTitle.
   ///
@@ -520,11 +520,11 @@ abstract class AppLocalizations {
   /// **'Seleziona “Esporta sul dispositivo”. Nelle opzioni dell’esportazione scegli il formato JSON e invia la richiesta. I nomi delle voci possono variare leggermente in base alla versione di Instagram.'**
   String get chooseJsonDescription;
 
-  /// No description provided for @exportStep4of4.
+  /// No description provided for @exportStep4of5.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 4 DI 4'**
-  String get exportStep4of4;
+  /// **'PASSAGGIO 4 DI 5'**
+  String get exportStep4of5;
 
   /// No description provided for @downloadArchiveTitle.
   ///
@@ -1533,6 +1533,30 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Passa al lato oscuro.'**
   String get glowDarkIconDescription;
+
+  /// No description provided for @exportStep5of5.
+  ///
+  /// In it, this message translates to:
+  /// **'PASSAGGIO 5 DI 5'**
+  String get exportStep5of5;
+
+  /// No description provided for @selectFollowDataTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona solo follower e seguiti'**
+  String get selectFollowDataTitle;
+
+  /// No description provided for @selectFollowDataDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Deseleziona tutte le voci, quindi seleziona solo la categoria relativa a follower e seguiti. Non servono messaggi, foto, video o altre informazioni: InstaLander usa solo questi elenchi per creare il report.'**
+  String get selectFollowDataDescription;
+
+  /// No description provided for @skip.
+  ///
+  /// In it, this message translates to:
+  /// **'Salta'**
+  String get skip;
 }
 
 class _AppLocalizationsDelegate

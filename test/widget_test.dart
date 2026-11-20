@@ -278,15 +278,23 @@ void main() {
       find.text('Apri il Centro gestione account').hitTestable(),
       findsOneWidget,
     );
-    expect(find.text('1/4'), findsOneWidget);
+    expect(find.text('1/5'), findsOneWidget);
     for (final title in [
       'Richiedi una copia dei dati',
+      'Seleziona solo follower e seguiti',
       'Scegli il formato JSON',
       'Scarica ed estrai l’archivio',
     ]) {
       await tester.tap(find.text('Avanti').hitTestable());
       await tester.pumpAndSettle();
       expect(find.text(title).hitTestable(), findsOneWidget);
+      if (title == 'Seleziona solo follower e seguiti') {
+        expect(find.text('3/5'), findsOneWidget);
+        expect(
+          find.textContaining('Deseleziona tutte le voci'),
+          findsOneWidget,
+        );
+      }
     }
 
     await tester.tap(find.text('Torna al report'));
@@ -300,6 +308,39 @@ void main() {
       isNull,
     );
   });
+
+  for (final step in [0, 2]) {
+    testWidgets('Export guide can be skipped from step ${step + 1}', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(_mainScreen(_TestAppProvider()));
+      await tester.pumpAndSettle();
+      final guide = find.text('Come esportare le informazioni da Instagram');
+      await tester.ensureVisible(guide);
+      await tester.tap(guide);
+      await tester.pumpAndSettle();
+      for (var page = 0; page < step; page++) {
+        await tester.tap(find.text('Avanti').hitTestable());
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('${step + 1}/5'), findsOneWidget);
+      await tester.tap(find.text('Salta').hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.byType(OnboardingScreen), findsNothing);
+      expect(find.text('Configura il report'), findsOneWidget);
+      expect(
+        (await SharedPreferences.getInstance()).getBool(
+          'onboarding_completed_v2',
+        ),
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('Finishing onboarding after a settings reset opens the report', (
     tester,

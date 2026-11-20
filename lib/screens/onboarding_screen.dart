@@ -55,25 +55,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   List<_OnboardingStep> get _exportSteps => [
     _OnboardingStep(
       icon: Icons.account_circle_outlined,
-      eyebrow: context.l10n.exportStep1of4,
+      eyebrow: context.l10n.exportStep1of5,
       title: context.l10n.accountsCenterTitle,
       description: context.l10n.accountsCenterDescription,
     ),
     _OnboardingStep(
       icon: Icons.folder_open_outlined,
-      eyebrow: context.l10n.exportStep2of4,
+      eyebrow: context.l10n.exportStep2of5,
       title: context.l10n.requestDataTitle,
       description: context.l10n.requestDataDescription,
     ),
     _OnboardingStep(
+      icon: Icons.checklist_rounded,
+      eyebrow: context.l10n.exportStep3of5,
+      title: context.l10n.selectFollowDataTitle,
+      description: context.l10n.selectFollowDataDescription,
+    ),
+    _OnboardingStep(
       icon: Icons.data_object,
-      eyebrow: context.l10n.exportStep3of4,
+      eyebrow: context.l10n.exportStep4of5,
       title: context.l10n.chooseJsonTitle,
       description: context.l10n.chooseJsonDescription,
     ),
     _OnboardingStep(
       icon: Icons.download_done_outlined,
-      eyebrow: context.l10n.exportStep4of4,
+      eyebrow: context.l10n.exportStep5of5,
       title: context.l10n.downloadArchiveTitle,
       description: context.l10n.downloadArchiveDescription,
     ),
@@ -98,27 +104,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _advance() async {
-    if (_currentStep == _steps.length - 1) {
-      setState(() => _isCompleting = true);
-      try {
-        await widget.onComplete();
-      } catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                context.l10n.saveOnboardingError((error).toString()),
-              ),
-            ),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isCompleting = false);
+  Future<void> _complete() async {
+    if (_isCompleting) return;
+    setState(() => _isCompleting = true);
+    try {
+      await widget.onComplete();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(context.l10n.saveOnboardingError(error.toString())),
+          ),
+        );
       }
-      return;
+    } finally {
+      if (mounted) setState(() => _isCompleting = false);
     }
+  }
 
+  Future<void> _advance() async {
+    if (_currentStep == _steps.length - 1) return _complete();
     await _pageController.nextPage(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
@@ -182,6 +187,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 value: (_currentStep + 1) / _steps.length,
                 borderRadius: BorderRadius.circular(4),
               ),
+              if (widget.mode == OnboardingMode.instagramExport)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _isCompleting ? null : _complete,
+                    child: Text(context.l10n.skip),
+                  ),
+                ),
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,

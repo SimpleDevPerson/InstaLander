@@ -214,7 +214,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your report updates when you import new files. In Settings, you can enable a reminder every month, every 3 months or every 6 months to request a new export. The notification is local and works without keeping the app open.';
 
   @override
-  String get exportStep1of4 => 'STEP 1 OF 4';
+  String get exportStep1of5 => 'STEP 1 OF 5';
 
   @override
   String get accountsCenterTitle => 'Open Accounts Center';
@@ -224,7 +224,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open Instagram, go to your profile and tap the ≡ menu at the top. Open Accounts Center.';
 
   @override
-  String get exportStep2of4 => 'STEP 2 OF 4';
+  String get exportStep2of5 => 'STEP 2 OF 5';
 
   @override
   String get requestDataTitle => 'Request a copy of your data';
@@ -234,7 +234,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open “Your information and permissions” and choose “Export your information”, then “Create export”. Select your Instagram account.';
 
   @override
-  String get exportStep3of4 => 'STEP 3 OF 4';
+  String get exportStep3of5 => 'STEP 3 OF 5';
 
   @override
   String get chooseJsonTitle => 'Choose JSON format';
@@ -244,7 +244,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Select “Export to device”. In the export options, choose JSON format and submit the request. Menu names may vary slightly depending on your Instagram version.';
 
   @override
-  String get exportStep4of4 => 'STEP 4 OF 4';
+  String get exportStep4of5 => 'STEP 4 OF 5';
 
   @override
   String get downloadArchiveTitle => 'Download and extract the archive';
@@ -812,4 +812,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get glowDarkIconDescription => 'Come to the dark side.';
+
+  @override
+  String get exportStep5of5 => 'STEP 5 OF 5';
+
+  @override
+  String get selectFollowDataTitle => 'Choose only followers and following';
+
+  @override
+  String get selectFollowDataDescription =>
+      'Deselect every category, then select only the one for followers and following. You do not need messages, photos, videos or other information: InstaLander only uses these lists to create your report.';
+
+  @override
+  String get skip => 'Skip';
 }

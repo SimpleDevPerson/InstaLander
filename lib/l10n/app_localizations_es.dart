@@ -216,7 +216,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Tu informe se actualiza al importar archivos nuevos. En Ajustes puedes activar un recordatorio cada mes, cada 3 meses o cada 6 meses para solicitar otra exportación. La notificación es local y funciona sin mantener abierta la app.';
 
   @override
-  String get exportStep1of4 => 'PASO 1 DE 4';
+  String get exportStep1of5 => 'PASO 1 DE 5';
 
   @override
   String get accountsCenterTitle => 'Abre el Centro de cuentas';
@@ -226,7 +226,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Abre Instagram, ve a tu perfil y toca el menú ≡ de la parte superior. Abre el Centro de cuentas.';
 
   @override
-  String get exportStep2of4 => 'PASO 2 DE 4';
+  String get exportStep2of5 => 'PASO 2 DE 5';
 
   @override
   String get requestDataTitle => 'Solicita una copia de tus datos';
@@ -236,7 +236,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Abre «Tu información y permisos» y elige «Exportar tu información» y después «Crear exportación». Selecciona tu cuenta de Instagram.';
 
   @override
-  String get exportStep3of4 => 'PASO 3 DE 4';
+  String get exportStep3of5 => 'PASO 3 DE 5';
 
   @override
   String get chooseJsonTitle => 'Elige el formato JSON';
@@ -246,7 +246,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Selecciona «Exportar al dispositivo». En las opciones de exportación, elige el formato JSON y envía la solicitud. Los nombres de los menús pueden variar ligeramente según la versión de Instagram.';
 
   @override
-  String get exportStep4of4 => 'PASO 4 DE 4';
+  String get exportStep4of5 => 'PASO 4 DE 5';
 
   @override
   String get downloadArchiveTitle => 'Descarga y extrae el archivo';
@@ -825,4 +825,17 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get glowDarkIconDescription => 'Pásate al lado oscuro.';
+
+  @override
+  String get exportStep5of5 => 'PASO 5 DE 5';
+
+  @override
+  String get selectFollowDataTitle => 'Selecciona solo seguidores y seguidos';
+
+  @override
+  String get selectFollowDataDescription =>
+      'Desmarca todas las categorías y selecciona solo la de seguidores y seguidos. No necesitas mensajes, fotos, vídeos ni otra información: InstaLander solo utiliza estas listas para crear tu informe.';
+
+  @override
+  String get skip => 'Omitir';
 }

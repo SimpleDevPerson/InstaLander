@@ -214,7 +214,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Il report si aggiorna quando importi nuovi file. Nelle Impostazioni puoi attivare un promemoria ogni mese, ogni 3 mesi o ogni 6 mesi per richiedere una nuova esportazione. La notifica è locale e non richiede di mantenere l’app attiva.';
 
   @override
-  String get exportStep1of4 => 'PASSAGGIO 1 DI 4';
+  String get exportStep1of5 => 'PASSAGGIO 1 DI 5';
 
   @override
   String get accountsCenterTitle => 'Apri il Centro gestione account';
@@ -224,7 +224,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Apri Instagram, vai sul tuo profilo e tocca il menu ≡ in alto. Entra nel Centro gestione account.';
 
   @override
-  String get exportStep2of4 => 'PASSAGGIO 2 DI 4';
+  String get exportStep2of5 => 'PASSAGGIO 2 DI 5';
 
   @override
   String get requestDataTitle => 'Richiedi una copia dei dati';
@@ -234,7 +234,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Apri “Le tue informazioni e autorizzazioni” e scegli “Esporta le tue informazioni”, poi “Crea esportazione”. Seleziona il tuo account Instagram.';
 
   @override
-  String get exportStep3of4 => 'PASSAGGIO 3 DI 4';
+  String get exportStep3of5 => 'PASSAGGIO 3 DI 5';
 
   @override
   String get chooseJsonTitle => 'Scegli il formato JSON';
@@ -244,7 +244,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Seleziona “Esporta sul dispositivo”. Nelle opzioni dell’esportazione scegli il formato JSON e invia la richiesta. I nomi delle voci possono variare leggermente in base alla versione di Instagram.';
 
   @override
-  String get exportStep4of4 => 'PASSAGGIO 4 DI 4';
+  String get exportStep4of5 => 'PASSAGGIO 4 DI 5';
 
   @override
   String get downloadArchiveTitle => 'Scarica ed estrai l’archivio';
@@ -819,4 +819,17 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get glowDarkIconDescription => 'Passa al lato oscuro.';
+
+  @override
+  String get exportStep5of5 => 'PASSAGGIO 5 DI 5';
+
+  @override
+  String get selectFollowDataTitle => 'Seleziona solo follower e seguiti';
+
+  @override
+  String get selectFollowDataDescription =>
+      'Deseleziona tutte le voci, quindi seleziona solo la categoria relativa a follower e seguiti. Non servono messaggi, foto, video o altre informazioni: InstaLander usa solo questi elenchi per creare il report.';
+
+  @override
+  String get skip => 'Salta';
 }
