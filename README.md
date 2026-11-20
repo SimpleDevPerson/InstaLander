@@ -79,6 +79,14 @@ Per creare un Android App Bundle:
 flutter build appbundle --release
 ```
 
+### Ottimizzazione delle release Android
+
+Le build release abilitano R8 e la rimozione delle risorse inutilizzate. Flutter aggiunge il profilo `proguard-android-optimize.txt` e le regole per i plugin; il profilo Android preserva anche i nomi necessari ai metodi JNI della lettura delle date. Le build debug e i sorgenti pubblicati su GitHub restano leggibili.
+
+Questa configurazione prepara l'app ai [requisiti Google Play da febbraio 2027](https://support.google.com/googleplay/android-developer/answer/17492799): almeno il 25% di ottimizzazione, shrinking e offuscamento quando il codice DEX non compresso supera la soglia di 10 MB. La conformità va verificata sul bundle effettivamente distribuito, tramite i metadati R8 e Android vitals; non si deduce solo dall'attivazione di R8.
+
+Conserva `build/app/outputs/mapping/release/mapping.txt` insieme ai pacchetti di ogni release: serve a interpretare i report di crash. Android Gradle Plugin include automaticamente la mappatura nel bundle. Per misurare dimensioni DEX e percentuali secondo Android vitals, usa `android analyze --format=json percorso/app.aab`, se Android CLI è disponibile, oppure l'analisi del bundle nella Play Console. Vedi la [documentazione DEX](https://developer.android.com/google/play/vitals/code-optimization).
+
 ## Struttura
 
 - `lib/models/`: modelli utente e opzioni di ordinamento.

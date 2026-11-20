@@ -65,8 +65,11 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // Google Play requires at least 25% DEX optimization, shrinking and
+            // obfuscation for apps with substantial DEX code from February 2027.
+            // Flutter supplies proguard-android-optimize.txt and plugin/JNI rules.
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
     }
 

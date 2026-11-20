@@ -1,18 +1,16 @@
-# InstaLander 0.8.1 Gyllenhaal
+# Prossima release — Gyllenhaal
 
-Novità rispetto a 0.8.0 · build 2013.
+Novità rispetto a 0.8.1.
 
-- La guida «Come esportare le informazioni da Instagram» include un nuovo passaggio: deselezionare tutte le categorie e lasciare solo follower e seguiti.
-- La guida ora ha cinque pagine, con numerazione e avanzamento aggiornati.
-- Il pulsante «Salta» permette di chiudere la guida da qualsiasi pagina e tornare al report.
-- Nuovi testi disponibili in italiano, inglese e spagnolo.
-- Le release della serie 0.8.x prendono il nome Gyllenhaal; quelle della serie 0.7.x, Gosling.
+- Abilitati R8 e la rimozione delle risorse inutilizzate nelle build Android release, per ridurre il codice DEX e ottimizzarlo.
+- Nel bundle verificato, il DEX non compresso passa da **21,35 MB a 5,15 MB** (circa **76% in meno**). La riduzione delle dimensioni non equivale alle tre percentuali di ottimizzazione misurate da Play Console, da verificare sul bundle caricato.
+- Il cambiamento prepara l'app al requisito Google Play previsto da **febbraio 2027**: almeno **25% di ottimizzazione, shrinking e offuscamento** per le app che superano la soglia di **10 MB di DEX non compresso**. Il bundle 0.8.1 conteneva circa 21,35 MB di DEX non compresso.
+- L'offuscamento riguarda il codice compilato distribuito: i sorgenti Dart e Kotlin su GitHub restano leggibili.
+- La build genera `mapping.txt`, da conservare per ogni versione per interpretare i report di crash; il bundle include i metadati di offuscamento generati da Android Gradle Plugin.
 
-## Download
+## Riferimenti
 
-- InstaLander-0.8.1-universal.apk per tutti i dispositivi supportati.
-- APK dedicati per ARM64, ARM a 32 bit e x86 a 64 bit.
-- InstaLander-0.8.1.aab per la distribuzione tramite store.
-- SHA256SUMS.txt con i checksum dei cinque pacchetti.
+- [Requisiti tecnici di Google Play](https://support.google.com/googleplay/android-developer/answer/17492799)
+- [Misurazione e ottimizzazione del codice DEX](https://developer.android.com/google/play/vitals/code-optimization)
 
 Android minimo: 8.0 (API 26).
