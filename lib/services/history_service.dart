@@ -186,6 +186,7 @@ class HistoryService {
     final next = ImportSnapshot(
       date: date,
       followersImported: hasFollowers,
+      followingImported: hasFollowing,
       hasFollowers: hasFollowers || (previous?.hasFollowers ?? false),
       hasFollowing: hasFollowing || (previous?.hasFollowing ?? false),
       followers: hasFollowers ? followers : previous?.followers ?? {},
@@ -194,45 +195,70 @@ class HistoryService {
     );
     final whitelistFile = File('$path/whitelist.txt');
     final state = File('$path/$fileName');
-    final whitelist = await state.exists()
-        ? Set<String>.from(
-            jsonDecode(await state.readAsString())['whitelist'] as List,
-          )
+    final saved = await state.exists()
+        ? jsonDecode(await state.readAsString()) as Map<String, dynamic>
+        : null;
+    final whitelist = saved != null
+        ? Set<String>.from(saved['whitelist'] as List)
         : await whitelistFile.exists()
         ? (await whitelistFile.readAsLines())
               .where((s) => s.trim().isNotEmpty)
               .map((s) => s.trim())
               .toSet()
         : <String>{};
+    final automatic = Set<String>.from(
+      saved?['automaticWhitelist'] as List? ?? [],
+    ).intersection(whitelist);
     if (hasFollowers && previous != null && previous.hasFollowers) {
       for (final entry in changes.entries) {
-        if (whitelist.remove(entry.key)) whitelist.add(entry.value);
+        if (!whitelist.remove(entry.key)) continue;
+        if (!automatic.remove(entry.key)) {
+          automatic.remove(entry.value);
+        } else if (!whitelist.contains(entry.value)) {
+          automatic.add(entry.value);
+        }
+        whitelist.add(entry.value);
       }
+      // Following back ends an automatic exclusion. Explicit and legacy
+      // whitelist entries stay in place.
+      final followingBack = automatic.where(followers.containsKey).toSet();
+      automatic.removeAll(followingBack);
+      whitelist.removeAll(followingBack);
       if (autoWhitelistOnImport) {
-        final intersection = previous.followers.keys
-            .map((name) => changes[name] ?? name)
-            .toSet()
-            .intersection(followers.keys.toSet());
-        whitelist.addAll(
-          next.following.keys.where((name) => !intersection.contains(name)),
-        );
+        final candidates = next.following.keys
+            .where(
+              (name) =>
+                  previous.following.containsKey(name) &&
+                  !followers.containsKey(name) &&
+                  !whitelist.contains(name),
+            )
+            .toSet();
+        // A detected unfollow stays in the report on later imports too.
+        for (final snapshot in history.reversed) {
+          if (candidates.isEmpty) break;
+          candidates.removeWhere(snapshot.followers.containsKey);
+        }
+        automatic.addAll(candidates);
+        whitelist.addAll(candidates);
       }
     }
     history.add(next);
     final pending = File('$path/$fileName.tmp');
     await pending.writeAsString(
-      await compute(_encode, (history, whitelist)),
+      await compute(_encode, (history, whitelist, automatic)),
       flush: true,
     );
     // The state is authoritative; legacy raw JSONs remain untouched.
     await pending.rename(state.path);
   }
 
-  static String _encode((List<ImportSnapshot>, Set<String>) data) =>
-      jsonEncode({
-        'snapshots': data.$1.map((s) => s.toJson()).toList(),
-        'whitelist': data.$2.toList(),
-      });
+  static String _encode(
+    (List<ImportSnapshot>, Set<String>, Set<String>) data,
+  ) => jsonEncode({
+    'snapshots': data.$1.map((s) => s.toJson()).toList(),
+    'whitelist': data.$2.toList(),
+    'automaticWhitelist': data.$3.toList(),
+  });
 
   static DateTime _day(DateTime date) =>
       DateTime(date.year, date.month, date.day);

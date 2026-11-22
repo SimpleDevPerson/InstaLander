@@ -12,6 +12,7 @@ import 'profile_photo.dart';
 class UserCard extends StatefulWidget {
   final InstagramUser user;
   final bool isViewed;
+  final bool inWhitelist;
   final Future<void> Function() onTap;
   final VoidCallback onWhitelist;
 
@@ -19,6 +20,7 @@ class UserCard extends StatefulWidget {
     super.key,
     required this.user,
     required this.isViewed,
+    this.inWhitelist = false,
     required this.onTap,
     required this.onWhitelist,
   });
@@ -84,6 +86,7 @@ class _UserCardState extends State<UserCard> {
       builder: (context) => _ExpandedUserCardOverlay(
         key: overlayKey,
         user: widget.user,
+        inWhitelist: widget.inWhitelist,
         origin: cardRect,
         onOpenProfile: widget.onTap,
         onWhitelist: widget.onWhitelist,
@@ -138,6 +141,7 @@ class _UserCardState extends State<UserCard> {
           _finishExpandedCardPointer(details.globalPosition),
       child: Card(
         margin: const EdgeInsets.only(bottom: 12),
+        color: theme.cardTheme.color,
         elevation: 3,
         shadowColor: colorScheme.shadow.withValues(alpha: 0.22),
         shape: RoundedRectangleBorder(
@@ -172,6 +176,11 @@ class _UserCardState extends State<UserCard> {
                             ),
                           ),
                           builder: (avatar, glowColor) => Container(
+                            key: widget.inWhitelist
+                                ? ValueKey(
+                                    'whitelist-avatar-${widget.user.username}',
+                                  )
+                                : null,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               boxShadow: [
@@ -277,12 +286,34 @@ class _UserCardState extends State<UserCard> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: widget.onWhitelist,
-                      icon: const Icon(Icons.favorite_border, size: 20),
-                      label: Text(strings.whitelist),
-                      style: _whitelistButtonStyle,
-                    ),
+                    child: widget.inWhitelist
+                        ? Tooltip(
+                            message: strings.removeFromWhitelist,
+                            child: OutlinedButton(
+                              onPressed: widget.onWhitelist,
+                              style: _whitelistButtonStyle,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.delete_outline, size: 18),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      strings.remove,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : OutlinedButton.icon(
+                            onPressed: widget.onWhitelist,
+                            icon: const Icon(Icons.favorite_border, size: 20),
+                            label: Text(strings.whitelist),
+                            style: _whitelistButtonStyle,
+                          ),
                   ),
                 ],
               ),
@@ -321,6 +352,7 @@ class _UserCardState extends State<UserCard> {
 
 class _ExpandedUserCardOverlay extends StatefulWidget {
   final InstagramUser user;
+  final bool inWhitelist;
   final Rect origin;
   final Future<void> Function() onOpenProfile;
   final VoidCallback onWhitelist;
@@ -329,6 +361,7 @@ class _ExpandedUserCardOverlay extends StatefulWidget {
   const _ExpandedUserCardOverlay({
     super.key,
     required this.user,
+    required this.inWhitelist,
     required this.origin,
     required this.onOpenProfile,
     required this.onWhitelist,
@@ -693,8 +726,12 @@ class _ExpandedUserCardOverlayState extends State<_ExpandedUserCardOverlay> {
                         child: _buildActionButton(
                           context,
                           index: 1,
-                          icon: Icons.favorite_border,
-                          label: context.l10n.whitelist,
+                          icon: widget.inWhitelist
+                              ? Icons.delete_outline
+                              : Icons.favorite_border,
+                          label: widget.inWhitelist
+                              ? context.l10n.remove
+                              : context.l10n.whitelist,
                         ),
                       ),
                     ],

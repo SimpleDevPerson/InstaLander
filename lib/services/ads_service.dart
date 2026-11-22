@@ -32,6 +32,9 @@ class AdsService {
     return kReleaseMode ? '' : _testNativeAdUnitId;
   }
 
+  static bool get isAvailable =>
+      isSupportedPlatform && nativeAdUnitId.isNotEmpty;
+
   Future<void> initialize() async {
     final preferences = await SharedPreferences.getInstance();
     adsEnabled.value = preferences.getBool(_adsEnabledKey) ?? false;
@@ -48,7 +51,7 @@ class AdsService {
   Future<void> _initializeSdk() => _initialization ??= _initialize();
 
   Future<void> _initialize() async {
-    if (!isSupportedPlatform) return;
+    if (!isAvailable) return;
 
     try {
       await MobileAds.instance.initialize();
@@ -96,7 +99,7 @@ class AdsService {
   }
 
   Future<void> showPrivacyOptions() async {
-    if (!isSupportedPlatform || !privacyOptionsRequired.value) return;
+    if (!isAvailable || !privacyOptionsRequired.value) return;
 
     try {
       await ConsentForm.showPrivacyOptionsForm((error) {

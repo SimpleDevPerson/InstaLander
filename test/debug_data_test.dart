@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:instalander/models/import_snapshot.dart';
 import 'package:instalander/providers/app_provider.dart';
 import 'package:instalander/providers/theme_provider.dart';
 import 'package:instalander/screens/settings_screen.dart';
@@ -206,6 +207,7 @@ void main() {
     await tester.pumpAndSettle();
     for (final label in [
       'Popola timeline',
+      'Popola cambi di profilo',
       'Popola whitelist',
       'Popola report',
     ]) {
@@ -230,6 +232,10 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect(app.debugTimeline, isNotEmpty);
+    expect(app.debugTimeline.first.profiles.map((profile) => profile.kind), [
+      TimelineProfileKind.renamed,
+      TimelineProfileKind.possiblyDeleted,
+    ]);
     expect(app.whitelist, isNotEmpty);
     expect(app.nonFollowers, isNotEmpty);
     final reset = find.text('Cancella tutti i dati');

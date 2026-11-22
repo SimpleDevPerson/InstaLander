@@ -9,6 +9,47 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
+  String get exportArtifacts => 'Artefatti dell’esportazione di Instagram';
+
+  @override
+  String get addToWhitelist => 'Aggiungi alla whitelist';
+
+  @override
+  String get pickInstagramFilesTitle =>
+      'Seleziona file JSON o un archivio ZIP di Instagram';
+
+  @override
+  String get pickOneArchiveOrJson =>
+      'Seleziona un solo archivio ZIP oppure uno o più file JSON.';
+
+  @override
+  String get followerWhitelistTitle => 'Filtro per numero di follower';
+
+  @override
+  String get followerWhitelistDescription =>
+      'permette di inserire automaticamente nella whitelist tutti i profili con un numero di follower superiore alla soglia impostata. Potrebbe richiedere qualche minuto';
+
+  @override
+  String get followerWhitelistThreshold => 'Soglia follower';
+
+  @override
+  String get followerWhitelistStart => 'Controlla e aggiungi';
+
+  @override
+  String followerWhitelistProgress(String arg0, String arg1) {
+    return 'Profili controllati: $arg0 di $arg1';
+  }
+
+  @override
+  String followerWhitelistResult(String arg0, String arg1) {
+    return 'Aggiunti alla whitelist: $arg0. Conteggio non disponibile: $arg1.';
+  }
+
+  @override
+  String get followerWhitelistRateLimited =>
+      'Instagram ha limitato le richieste. Il controllo si è fermato e ha salvato le corrispondenze già trovate.';
+
+  @override
   String get sortDateDescendingLong => 'Data decrescente (Più recenti prima)';
 
   @override
@@ -353,7 +394,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get autoWhitelistDescription =>
-      'Dalla seconda esportazione dei follower, considera già controllati i profili che non ricambiano il follow e aggiungili alla whitelist.';
+      'Dalla seconda esportazione dei follower, aggiunge i profili che seguivi già e che non risultano mai tra i follower importati. Chi smette di seguirti resta nel Report.';
 
   @override
   String get reminders => 'Promemoria';
@@ -500,7 +541,25 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get timelineDescription =>
-      'Chi non compare più nei follower, tra le date delle esportazioni. L’intervallo non indica il giorno esatto dell’unfollow. Include i profili in whitelist.';
+      'Confronto tra esportazioni. Le schede mostrano follower mancanti e cambi di nome confermati. Se un profilo sparisce anche dai seguiti, potrebbe essere stato cancellato.';
+
+  @override
+  String get populateProfileChanges => 'Popola cambi di profilo';
+
+  @override
+  String get populateProfileChangesDescription =>
+      'Aggiungi alla timeline profili rinominati e possibilmente cancellati';
+
+  @override
+  String get timelineRenamed => 'Nome cambiato';
+
+  @override
+  String get timelinePossiblyDeleted => 'Possibile cancellazione';
+
+  @override
+  String timelinePreviousUsername(String arg0) {
+    return 'Prima: $arg0';
+  }
 
   @override
   String get timelineEmpty =>

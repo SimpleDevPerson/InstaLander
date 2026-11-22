@@ -50,6 +50,34 @@ void main() {
   );
 
   test(
+    'export artifacts remain available without contributing to counters',
+    () async {
+      await File(
+        '${directory.path}/whitelist.txt',
+      ).writeAsString('saved\nsaved__deleted__\n');
+      await import({
+        'followers.json': profiles(['mutual']),
+        'following.json': profiles([
+          'mutual',
+          'visible',
+          'visible__deleted__',
+          'saved',
+          'saved__deleted__',
+        ]),
+      }, 1);
+      final data = load();
+      expect(data.stats['visibleCount'], 1);
+      expect(data.stats['notFollowingBackTotal'], 2);
+      expect(data.stats['whitelist'], 1);
+      expect(data.nonFollowers.map((user) => user.username), [
+        'visible',
+        'visible__deleted__',
+      ]);
+      expect(data.whitelist, {'saved', 'saved__deleted__'});
+    },
+  );
+
+  test(
     'matches URL-only followers to following usernames after saving',
     () async {
       await import({
@@ -110,6 +138,11 @@ void main() {
       expect(data.following.keys, ['never', 'new']);
       expect(data.whitelist, {'never'});
       expect((await loadTimeline()).single.users, isEmpty);
+      final rename = (await loadTimeline()).single.profiles.single;
+      expect(rename.kind, TimelineProfileKind.renamed);
+      expect(rename.previousUsername, 'old');
+      expect(rename.user.username, 'new');
+      expect(rename.user.timestamp, 123);
       final restored = await HistoryService.load(path: directory.path);
       expect(restored.first.followers.containsKey('old'), isTrue);
       expect(restored.last.usernameChanges, {'old': 'new'});
@@ -119,6 +152,34 @@ void main() {
       final timeline = await loadTimeline();
       expect(timeline.first.users.single.username, 'new');
       expect(timeline.last.users, isEmpty);
+    },
+  );
+
+  test(
+    'only a fresh following list can corroborate a possible deletion',
+    () async {
+      await import({
+        'followers.json': profiles(['gone', 'unfollowed', 'later']),
+        'following.json': profiles(['gone', 'unfollowed', 'later']),
+      }, 1);
+      await import({
+        'followers.json': profiles(['later']),
+        'following.json': profiles(['unfollowed', 'later']),
+      }, 2);
+      await import({'followers.json': profiles([])}, 3);
+
+      final timeline = await loadTimeline();
+      expect(timeline.first.profiles.single.kind, TimelineProfileKind.missing);
+      expect(
+        {
+          for (final profile in timeline.last.profiles)
+            profile.user.username: profile.kind,
+        },
+        {
+          'gone': TimelineProfileKind.possiblyDeleted,
+          'unfollowed': TimelineProfileKind.missing,
+        },
+      );
     },
   );
 
@@ -138,10 +199,7 @@ void main() {
         autoWhitelistOnImport: enabled,
       );
       final data = load();
-      expect(
-        data.whitelist,
-        enabled ? {'manual', 'lost', 'never'} : {'manual'},
-      );
+      expect(data.whitelist, enabled ? {'manual', 'never'} : {'manual'});
       expect(data.followerSnapshotCount, 2);
       expect(data.followers.keys, ['kept']);
       expect(
@@ -150,10 +208,43 @@ void main() {
           data.following,
           data.whitelist,
         ).map((user) => user.username).toSet(),
-        enabled ? isEmpty : {'lost', 'never'},
+        enabled ? {'lost'} : {'lost', 'never'},
       );
     });
   }
+
+  test(
+    'detected unfollows stay visible across later imports unless excluded manually',
+    () async {
+      await File('${directory.path}/whitelist.txt').writeAsString('manual\n');
+      await import({
+        'followers.json': profiles(['lost', 'manual']),
+        'following.json': profiles(['lost', 'manual', 'never']),
+      }, 1);
+      await import({'followers.json': profiles([])}, 2);
+      await import({'followers.json': profiles([])}, 3);
+      expect(load().nonFollowers.map((user) => user.username), ['lost']);
+      expect(load().whitelist, {'manual', 'never'});
+    },
+  );
+
+  test(
+    'a former automatic exclusion expires when that account follows back',
+    () async {
+      await import({
+        'followers.json': profiles([]),
+        'following.json': profiles(['account']),
+      }, 1);
+      await import({'followers.json': profiles([])}, 2);
+      expect(load().whitelist, {'account'});
+      await import({
+        'followers.json': profiles(['account']),
+      }, 3);
+      expect(load().whitelist, isEmpty);
+      await import({'followers.json': profiles([])}, 4);
+      expect(load().nonFollowers.map((user) => user.username), ['account']);
+    },
+  );
 
   test('confirmed rename moves a manual whitelist entry', () async {
     await File('${directory.path}/whitelist.txt').writeAsString('old\n');
@@ -270,7 +361,7 @@ void main() {
   );
 
   test(
-    'persists old profiles, compares the intersection and restores everything',
+    'persists old profiles and only excludes previously nonreciprocal accounts',
     () async {
       await import({
         'followers_1.json': profiles(['kept', 'lost', 'not_followed']),
@@ -294,7 +385,8 @@ void main() {
       }, 2);
       final data = load();
       expect(data.followers.keys, ['kept', 'new_follower']);
-      expect(data.whitelist, {'lost', 'never_followed', 'new_follower'});
+      expect(data.whitelist, {'never_followed'});
+      expect(data.nonFollowers.map((user) => user.username), ['lost']);
       final interval = (await loadTimeline()).single;
       expect(interval.users.map((u) => u.username), ['lost', 'not_followed']);
       expect(interval.previousDate, DateTime(2026, 1, 1));
@@ -337,7 +429,8 @@ void main() {
     await import({'followers_1.json': profiles([])}, 3);
     expect(load().followers, isEmpty);
     expect(load().following.keys, ['lost', 'other']);
-    expect(load().whitelist, {'lost', 'other'});
+    expect(load().whitelist, {'other'});
+    expect(load().nonFollowers.map((user) => user.username), ['lost']);
     final interval = (await loadTimeline()).single;
     expect(interval.previousDate, DateTime(2026, 1, 1));
     expect(interval.currentDate, DateTime(2026, 3, 1));
@@ -428,6 +521,7 @@ void main() {
     expect(interval.estimatedDate, isTrue);
     expect(interval.users.single.username, 'legacy');
     expect(data.followers.keys, ['current']);
-    expect(data.whitelist, {'legacy', 'manual'});
+    expect(data.whitelist, {'manual'});
+    expect(data.nonFollowers.map((user) => user.username), ['legacy']);
   });
 }

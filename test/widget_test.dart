@@ -17,6 +17,7 @@ import 'package:instalander/screens/settings_screen.dart';
 import 'package:instalander/screens/whitelist_screen.dart';
 import 'package:instalander/services/ads_service.dart';
 import 'package:instalander/theme/app_theme.dart';
+import 'package:instalander/widgets/export_artifact.dart';
 import 'package:instalander/widgets/native_ad_card.dart';
 import 'package:instalander/widgets/one_ui_brightness_selector.dart';
 import 'package:instalander/widgets/stats_counter.dart';
@@ -521,6 +522,31 @@ void main() {
     expect(find.text('InstaLander'), findsOneWidget);
   });
 
+  testWidgets('Report shows a red card for possible deletions from Debug', (
+    tester,
+  ) async {
+    final provider = _TestAppProvider()..populateDebugProfileChanges();
+    final removed = provider.debugTimeline.single.users.single;
+    await tester.pumpWidget(_mainScreen(provider));
+    await tester.pumpAndSettle();
+
+    final card = find.byKey(ValueKey('possible-deletion-${removed.username}'));
+    expect(
+      find.descendant(of: card, matching: find.text('@${removed.username}')),
+      findsOneWidget,
+    );
+    final tag = find.descendant(of: card, matching: find.byType(Chip));
+    expect(
+      find.descendant(of: tag, matching: find.text('Possibile cancellazione')),
+      findsOneWidget,
+    );
+    expect(
+      tester.widget<Chip>(tag).backgroundColor,
+      Theme.of(tester.element(tag)).colorScheme.error,
+    );
+    expect(find.byType(StatsCounter), findsNothing);
+  });
+
   testWidgets('Loaded report shows its descriptive title', (tester) async {
     await tester.pumpWidget(
       _mainScreen(
@@ -545,9 +571,13 @@ void main() {
     final sortLabel = tester.widget<Text>(find.text('Più recenti'));
     expect(sortLabel.maxLines, 1);
     expect(sortLabel.overflow, TextOverflow.ellipsis);
-    expect(find.text('JSON'), findsOneWidget);
-    expect(find.text('ZIP'), findsOneWidget);
+    expect(find.text('JSON'), findsNothing);
+    expect(find.text('ZIP'), findsNothing);
     final sortDropdown = find.byType(PopupMenuButton<SortOption>);
+    expect(
+      find.descendant(of: sortDropdown, matching: find.byIcon(Icons.sort)),
+      findsOneWidget,
+    );
     final sortBox = find.ancestor(
       of: sortDropdown,
       matching: find.byType(SizedBox),
@@ -565,12 +595,126 @@ void main() {
     expect(titleSpan.children![1].style?.fontWeight, FontWeight.w700);
     expect(titleSpan.children![0].style?.fontWeight, isNull);
     expect(titleSpan.children![2].style?.fontWeight, isNull);
-    final jsonButton = find.widgetWithText(OutlinedButton, 'JSON');
-    final zipButton = find.widgetWithText(OutlinedButton, 'ZIP');
-    expect(tester.getSize(jsonButton).height, lessThanOrEqualTo(56));
-    expect(tester.getSize(zipButton).height, lessThanOrEqualTo(56));
+    final importButton = find.widgetWithText(OutlinedButton, 'Importa');
+    final filterButton = find.widgetWithIcon(
+      IconButton,
+      Icons.filter_alt_outlined,
+    );
+    expect(
+      find.descendant(
+        of: importButton,
+        matching: find.byIcon(Icons.cloud_upload_outlined),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.getSize(importButton).height, 56);
+    expect(
+      tester.getTopLeft(filterButton).dy,
+      tester.getTopLeft(importButton).dy,
+    );
+    expect(
+      tester.getTopLeft(filterButton).dx,
+      lessThan(tester.getTopLeft(importButton).dx),
+    );
+    final shape = tester
+        .widget<OutlinedButton>(importButton)
+        .style!
+        .shape!
+        .resolve({});
+    expect(
+      (shape as RoundedRectangleBorder).borderRadius,
+      BorderRadius.circular(20),
+    );
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Report follower filter opens from the toolbar', (tester) async {
+    await tester.pumpWidget(
+      _mainScreen(
+        _TestReportAppProvider([
+          InstagramUser(username: 'profile', timestamp: 1),
+        ]),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithIcon(IconButton, Icons.filter_alt_outlined),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Filtro per numero di follower'), findsOneWidget);
+    expect(
+      find.text(
+        'permette di inserire automaticamente nella whitelist tutti i profili '
+        'con un numero di follower superiore alla soglia impostata. '
+        'Potrebbe richiedere qualche minuto',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Soglia follower'), findsOneWidget);
+  });
+
+  testWidgets('Report moves export artifacts below ordinary profile cards', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _mainScreen(
+        _TestReportAppProvider([
+          InstagramUser(username: 'prefix__deleted__1', timestamp: 2),
+          InstagramUser(username: 'regular', timestamp: 1),
+        ]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final heading = find.text('Artefatti dell’esportazione di Instagram');
+    final artifact = find.byType(ExportArtifactCard);
+    expect(
+      tester.widget<UserCard>(find.byType(UserCard)).user.username,
+      'regular',
+    );
+    expect(
+      tester.widget<ExportArtifactCard>(artifact).username,
+      'prefix__deleted__1',
+    );
+    expect(
+      tester.getTopLeft(heading).dy,
+      greaterThan(tester.getTopLeft(find.text('@regular')).dy),
+    );
+    expect(
+      tester.getTopLeft(artifact).dy,
+      greaterThan(tester.getTopLeft(heading).dy),
+    );
+  });
+
+  testWidgets(
+    'Whitelist keeps matching artifacts below profiles in both views',
+    (tester) async {
+      await tester.pumpWidget(
+        _mainScreen(
+          _TestWhitelistAppProvider({'regular', 'prefix__DELETED__1'}),
+          home: const WhitelistScreen(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final heading = find.text('Artefatti dell’esportazione di Instagram');
+      expect(tester.widget<StatsCounter>(find.byType(StatsCounter)).count, 1);
+      expect(
+        tester.getTopLeft(heading).dy,
+        greaterThan(tester.getTopLeft(find.text('regular')).dy),
+      );
+      await tester.tap(find.text('Griglia'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getTopLeft(heading).dy,
+        greaterThan(tester.getTopLeft(find.text('@regular')).dy),
+      );
+      await tester.enterText(find.byType(TextField), '__deleted__');
+      await tester.pumpAndSettle();
+      expect(heading, findsOneWidget);
+      expect(find.text('@prefix__DELETED__1'), findsOneWidget);
+      expect(find.text('@regular'), findsNothing);
+    },
+  );
 
   testWidgets('Scrolling reuses already built profile cards', (tester) async {
     final users = List.generate(
@@ -1416,7 +1560,22 @@ void main() {
     expect(find.byType(ListView), findsOneWidget);
     expect(find.text('@first_profile'), findsOneWidget);
     expect(find.text('@second'), findsOneWidget);
-    _expectWhitelistAvatarGlow(tester, 'first_profile');
+    expect(find.byType(UserCard), findsNWidgets(2));
+    expect(
+      find.descendant(of: find.byType(UserCard), matching: find.byType(Divider)),
+      findsNWidgets(2),
+    );
+    expect(
+      tester
+          .widgetList<UserCard>(find.byType(UserCard))
+          .every((card) => card.inWhitelist),
+      isTrue,
+    );
+    await tester.tap(find.byTooltip('Rimuovi dalla whitelist').first);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.text('Annulla'));
+    await tester.pumpAndSettle();
     final profileCards = tester.widgetList<Card>(find.byType(Card)).toList();
     expect(profileCards, hasLength(2));
     for (final card in profileCards) {
@@ -1585,6 +1744,7 @@ void _expectWhitelistAvatarGlow(WidgetTester tester, String username) {
 Widget _mainScreen(
   _TestAppProvider appProvider, {
   ThemeProvider? themeProvider,
+  Widget home = const MainScreen(),
 }) {
   return MultiProvider(
     providers: [
@@ -1593,7 +1753,7 @@ Widget _mainScreen(
       ),
       ChangeNotifierProvider<AppProvider>.value(value: appProvider),
     ],
-    child: const MaterialApp(home: MainScreen()),
+    child: MaterialApp(home: home),
   );
 }
 

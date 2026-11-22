@@ -1,6 +1,9 @@
 import '../l10n/app_strings.dart';
 
 class InstagramUser {
+  static bool isExportArtifact(String username) =>
+      username.toLowerCase().contains('__deleted__');
+
   final String username;
   final int timestamp;
   final DateTime? followedAt;

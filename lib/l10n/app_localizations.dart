@@ -100,6 +100,72 @@ abstract class AppLocalizations {
     Locale('it'),
   ];
 
+  /// No description provided for @exportArtifacts.
+  ///
+  /// In it, this message translates to:
+  /// **'Artefatti dell’esportazione di Instagram'**
+  String get exportArtifacts;
+
+  /// No description provided for @addToWhitelist.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiungi alla whitelist'**
+  String get addToWhitelist;
+
+  /// No description provided for @pickInstagramFilesTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona file JSON o un archivio ZIP di Instagram'**
+  String get pickInstagramFilesTitle;
+
+  /// No description provided for @pickOneArchiveOrJson.
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona un solo archivio ZIP oppure uno o più file JSON.'**
+  String get pickOneArchiveOrJson;
+
+  /// No description provided for @followerWhitelistTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Filtro per numero di follower'**
+  String get followerWhitelistTitle;
+
+  /// No description provided for @followerWhitelistDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'permette di inserire automaticamente nella whitelist tutti i profili con un numero di follower superiore alla soglia impostata. Potrebbe richiedere qualche minuto'**
+  String get followerWhitelistDescription;
+
+  /// No description provided for @followerWhitelistThreshold.
+  ///
+  /// In it, this message translates to:
+  /// **'Soglia follower'**
+  String get followerWhitelistThreshold;
+
+  /// No description provided for @followerWhitelistStart.
+  ///
+  /// In it, this message translates to:
+  /// **'Controlla e aggiungi'**
+  String get followerWhitelistStart;
+
+  /// No description provided for @followerWhitelistProgress.
+  ///
+  /// In it, this message translates to:
+  /// **'Profili controllati: {arg0} di {arg1}'**
+  String followerWhitelistProgress(String arg0, String arg1);
+
+  /// No description provided for @followerWhitelistResult.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiunti alla whitelist: {arg0}. Conteggio non disponibile: {arg1}.'**
+  String followerWhitelistResult(String arg0, String arg1);
+
+  /// No description provided for @followerWhitelistRateLimited.
+  ///
+  /// In it, this message translates to:
+  /// **'Instagram ha limitato le richieste. Il controllo si è fermato e ha salvato le corrispondenze già trovate.'**
+  String get followerWhitelistRateLimited;
+
   /// No description provided for @sortDateDescendingLong.
   ///
   /// In it, this message translates to:
@@ -715,7 +781,7 @@ abstract class AppLocalizations {
   /// No description provided for @autoWhitelistDescription.
   ///
   /// In it, this message translates to:
-  /// **'Dalla seconda esportazione dei follower, considera già controllati i profili che non ricambiano il follow e aggiungili alla whitelist.'**
+  /// **'Dalla seconda esportazione dei follower, aggiunge i profili che seguivi già e che non risultano mai tra i follower importati. Chi smette di seguirti resta nel Report.'**
   String get autoWhitelistDescription;
 
   /// No description provided for @reminders.
@@ -961,8 +1027,38 @@ abstract class AppLocalizations {
   /// No description provided for @timelineDescription.
   ///
   /// In it, this message translates to:
-  /// **'Chi non compare più nei follower, tra le date delle esportazioni. L’intervallo non indica il giorno esatto dell’unfollow. Include i profili in whitelist.'**
+  /// **'Confronto tra esportazioni. Le schede mostrano follower mancanti e cambi di nome confermati. Se un profilo sparisce anche dai seguiti, potrebbe essere stato cancellato.'**
   String get timelineDescription;
+
+  /// No description provided for @populateProfileChanges.
+  ///
+  /// In it, this message translates to:
+  /// **'Popola cambi di profilo'**
+  String get populateProfileChanges;
+
+  /// No description provided for @populateProfileChangesDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiungi alla timeline profili rinominati e possibilmente cancellati'**
+  String get populateProfileChangesDescription;
+
+  /// No description provided for @timelineRenamed.
+  ///
+  /// In it, this message translates to:
+  /// **'Nome cambiato'**
+  String get timelineRenamed;
+
+  /// No description provided for @timelinePossiblyDeleted.
+  ///
+  /// In it, this message translates to:
+  /// **'Possibile cancellazione'**
+  String get timelinePossiblyDeleted;
+
+  /// No description provided for @timelinePreviousUsername.
+  ///
+  /// In it, this message translates to:
+  /// **'Prima: {arg0}'**
+  String timelinePreviousUsername(String arg0);
 
   /// No description provided for @timelineEmpty.
   ///

@@ -1,6 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class AppTheme {
+  static const toolbarControlRadius = BorderRadius.all(Radius.circular(20));
+
+  static List<Color> redGradientColors(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? const [Color(0xFF542326), Color(0xFFAD3942)]
+      : const [Color(0xFFC62828), Color(0xFFEF5350)];
+
+  static SystemUiOverlayStyle systemBarStyle(Brightness brightness) {
+    final icons = brightness == Brightness.dark
+        ? Brightness.light
+        : Brightness.dark;
+    return SystemUiOverlayStyle(
+      statusBarBrightness: brightness,
+      statusBarIconBrightness: icons,
+      systemNavigationBarIconBrightness: icons,
+    );
+  }
+
   static Color readableForeground(Color background, Color preferred) {
     final backgroundLuminance = background.computeLuminance();
     final foregroundLuminance = preferred.computeLuminance();
@@ -145,6 +164,7 @@ class AppTheme {
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: cardBg,
+        systemOverlayStyle: systemBarStyle(brightness),
         foregroundColor: text,
         elevation: elevation,
         surfaceTintColor: isDark ? Colors.transparent : Colors.white,

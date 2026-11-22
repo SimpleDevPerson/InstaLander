@@ -443,13 +443,8 @@ class DataService {
     }
     final file = File('${directory.path}/$_whitelistFile');
 
-    try {
-      final content = whitelist.map((u) => '$u\n').join();
-      await file.writeAsString(content);
-      debugPrint('✅ Whitelist salvata (${whitelist.length} utenti)');
-    } catch (e) {
-      debugPrint('❌ Errore salvataggio whitelist: $e');
-    }
+    final content = whitelist.map((u) => '$u\n').join();
+    await file.writeAsString(content);
   }
 
   static void _saveHistoryWhitelist((String, Set<String>) update) {
@@ -457,6 +452,10 @@ class DataService {
     final data =
         jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
     data['whitelist'] = whitelist.toList();
+    final automatic = data['automaticWhitelist'] as List?;
+    if (automatic != null) {
+      data['automaticWhitelist'] = automatic.where(whitelist.contains).toList();
+    }
     final pending = File('$path.tmp');
     pending.writeAsStringSync(jsonEncode(data), flush: true);
     pending.renameSync(path);
@@ -482,6 +481,14 @@ class DataService {
       dialogTitle: AppStrings.current.pickArchiveTitle,
     );
   }
+
+  static Future<List<PlatformFile>> pickInstagramFiles() =>
+      FilePicker.pickFiles(
+        androidOptions: _importPickerOptions,
+        type: FileType.custom,
+        allowedExtensions: ['json', 'zip'],
+        dialogTitle: AppStrings.current.pickInstagramFilesTitle,
+      );
 
   @visibleForTesting
   static Map<String, List<int>> decodeInstagramArchive(List<int> bytes) =>
@@ -533,7 +540,10 @@ class DataService {
     var notFollowingBack = 0;
     var visibleCount = 0;
     for (final username in following.keys) {
-      if (followers.containsKey(username)) continue;
+      if (followers.containsKey(username) ||
+          InstagramUser.isExportArtifact(username)) {
+        continue;
+      }
       notFollowingBack++;
       if (!whitelist.contains(username)) visibleCount++;
     }
@@ -541,7 +551,9 @@ class DataService {
     return {
       'following': following.length,
       'followers': followers.length,
-      'whitelist': whitelist.length,
+      'whitelist': whitelist
+          .where((username) => !InstagramUser.isExportArtifact(username))
+          .length,
       'notFollowingBackTotal': notFollowingBack,
       'visibleCount': visibleCount,
     };

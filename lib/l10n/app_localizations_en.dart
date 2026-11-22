@@ -9,6 +9,47 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get exportArtifacts => 'Instagram export artifacts';
+
+  @override
+  String get addToWhitelist => 'Add to whitelist';
+
+  @override
+  String get pickInstagramFilesTitle =>
+      'Select Instagram JSON files or a ZIP archive';
+
+  @override
+  String get pickOneArchiveOrJson =>
+      'Select one ZIP archive or one or more JSON files.';
+
+  @override
+  String get followerWhitelistTitle => 'Filter by follower count';
+
+  @override
+  String get followerWhitelistDescription =>
+      'Automatically adds all profiles with more followers than the set threshold to the whitelist. This may take a few minutes.';
+
+  @override
+  String get followerWhitelistThreshold => 'Follower threshold';
+
+  @override
+  String get followerWhitelistStart => 'Check and add';
+
+  @override
+  String followerWhitelistProgress(String arg0, String arg1) {
+    return 'Profiles checked: $arg0 of $arg1';
+  }
+
+  @override
+  String followerWhitelistResult(String arg0, String arg1) {
+    return 'Added to the whitelist: $arg0. Count unavailable: $arg1.';
+  }
+
+  @override
+  String get followerWhitelistRateLimited =>
+      'Instagram limited requests. The scan stopped and saved the matches it had already found.';
+
+  @override
   String get sortDateDescendingLong => 'Date descending (Newest first)';
 
   @override
@@ -350,7 +391,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get autoWhitelistDescription =>
-      'From the second follower export, treat accounts that don\'t follow you back as already reviewed and add them to the whitelist.';
+      'From the second follower export, adds accounts you already followed that have never appeared in your imported followers. Accounts that unfollow you stay in the Report.';
 
   @override
   String get reminders => 'Reminders';
@@ -496,7 +537,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timelineDescription =>
-      'Accounts no longer in your followers between export dates. The interval does not indicate the exact day of an unfollow. Includes whitelisted profiles.';
+      'Comparison between exports. Cards show missing followers and confirmed username changes. An account that also disappears from following may have been deleted.';
+
+  @override
+  String get populateProfileChanges => 'Populate profile changes';
+
+  @override
+  String get populateProfileChangesDescription =>
+      'Add renamed and possibly deleted profiles to the timeline';
+
+  @override
+  String get timelineRenamed => 'Username changed';
+
+  @override
+  String get timelinePossiblyDeleted => 'Possibly deleted';
+
+  @override
+  String timelinePreviousUsername(String arg0) {
+    return 'Previously: $arg0';
+  }
 
   @override
   String get timelineEmpty =>

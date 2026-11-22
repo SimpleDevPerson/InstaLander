@@ -10,9 +10,11 @@ import '../providers/app_provider.dart';
 import '../services/ads_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ad_placement.dart';
+import '../widgets/export_artifact.dart';
 import '../widgets/native_ad_card.dart';
 import '../widgets/profile_photo.dart';
 import '../widgets/stats_counter.dart';
+import '../widgets/user_card.dart';
 
 enum _WhitelistView { list, grid }
 
@@ -121,6 +123,9 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
     return Consumer<AppProvider>(
       builder: (context, provider, child) {
         final whitelist = provider.whitelist.toList();
+        final profileCount = whitelist
+            .where((username) => !InstagramUser.isExportArtifact(username))
+            .length;
         _sortWhitelist(whitelist, provider.currentSort);
         final normalizedQuery = _searchQuery
             .trim()
@@ -172,7 +177,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                   ),
                 ),
                 StatsCounter(
-                  count: whitelist.length,
+                  count: profileCount,
                   label: context.l10n.whitelistCountLabel,
                   semanticsLabel: context.l10n.whitelistCountSemantics,
                   indicatorIcon: Icons.favorite,
@@ -203,16 +208,11 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
                       ? _buildEmptyState(context)
                       : filteredWhitelist.isEmpty
                       ? _buildNoSearchResults(context)
-                      : _view == _WhitelistView.list
-                      ? _buildWhitelistContent(
+                      : _buildWhitelistFeed(
                           context,
                           provider,
                           filteredWhitelist,
-                        )
-                      : _buildWhitelistGrid(
-                          context,
-                          provider,
-                          filteredWhitelist,
+                          grid: _view == _WhitelistView.grid,
                         ),
                 ),
               ],
@@ -250,7 +250,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
         border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: AppTheme.toolbarControlRadius,
       ),
       child: Row(
         children: [
@@ -279,15 +279,16 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final selected = _view == view;
+    const segmentRadius = BorderRadius.all(Radius.circular(16));
 
     return Expanded(
       child: Material(
         color: selected
             ? colorScheme.primary.withValues(alpha: 0.16)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: segmentRadius,
         child: InkWell(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: segmentRadius,
           onTap: () => setState(() => _view = view),
           child: SizedBox(
             height: double.infinity,
@@ -322,7 +323,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
         border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: AppTheme.toolbarControlRadius,
       ),
       child: PopupMenuButton<SortOption>(
         onSelected: provider.setSortOption,
@@ -470,7 +471,7 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
       height: 56,
       decoration: BoxDecoration(
         border: Border.all(color: errorColor, width: 1.5),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: AppTheme.toolbarControlRadius,
       ),
       child: IconButton(
         onPressed: () => _showClearDialog(context, provider),
@@ -478,6 +479,11 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
         tooltip: context.l10n.clearWhitelist,
         color: errorColor,
         padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppTheme.toolbarControlRadius,
+          ),
+        ),
       ),
     );
   }
@@ -578,165 +584,136 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
     );
   }
 
-  Widget _buildWhitelistContent(
-    BuildContext context,
-    AppProvider provider,
-    List<String> whitelist,
-  ) {
-    return _buildWhitelistFeed(context, provider, whitelist, grid: false);
-  }
-
-  Widget _buildWhitelistGrid(
-    BuildContext context,
-    AppProvider provider,
-    List<String> whitelist,
-  ) {
-    return _buildWhitelistFeed(context, provider, whitelist, grid: true);
-  }
-
   Widget _buildWhitelistFeed(
     BuildContext context,
     AppProvider provider,
-    List<String> whitelist, {
+    List<String> entries, {
     required bool grid,
-  }) => LayoutBuilder(
-    builder: (context, constraints) {
-      final columns = grid
-          ? (constraints.maxWidth / 180).floor().clamp(2, 4)
-          : 1;
-      if (_adColumns != columns || !listEquals(_adUsers, whitelist)) {
-        _adColumns = columns;
-        _adUsers = List.of(whitelist);
-        final adOffsets = calculateAdInsertionOffsets(
-          userCount: whitelist.length,
-          crossAxisCount: columns,
-          random: _adRandom,
-        );
-        final adRows = {
-          for (var index = 0; index < adOffsets.length; index++)
-            adOffsets[index] ~/ columns: index,
-        };
-        _feedRows = [
-          for (
-            var row = 0;
-            row < (whitelist.length + columns - 1) ~/ columns;
-            row++
-          ) ...[if (adRows.containsKey(row)) -(adRows[row]! + 1), row],
-        ];
-      }
-      final width = (constraints.maxWidth - 32 - 12 * (columns - 1)) / columns;
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _feedRows.length,
-        itemBuilder: (context, index) {
-          final row = _feedRows[index];
-          if (row < 0) {
-            return ValueListenableBuilder<bool>(
-              key: ValueKey('whitelist-native-ad-${-row - 1}'),
-              valueListenable: AdsService.instance.adsEnabled,
-              builder: (context, enabled, _) =>
-                  enabled ? const NativeAdCard() : const SizedBox.shrink(),
-            );
-          }
-          if (!grid) {
-            final username = whitelist[row];
-            return Padding(
-              key: ValueKey(username),
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _buildWhitelistItem(context, provider, username),
-            );
-          }
-          final start = row * columns;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (
-                  var i = start;
-                  i < min(start + columns, whitelist.length);
-                  i++
-                ) ...[
-                  if (i > start) const SizedBox(width: 12),
-                  SizedBox(
-                    width: width,
-                    height: width / 1.05,
-                    child: _buildWhitelistGridCard(
-                      context,
-                      provider,
-                      whitelist[i],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
+  }) {
+    final whitelist = <String>[];
+    final artifacts = <String>[];
+    for (final username in entries) {
+      (InstagramUser.isExportArtifact(username) ? artifacts : whitelist).add(
+        username,
       );
-    },
-  );
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = grid
+            ? (constraints.maxWidth / 180).floor().clamp(2, 4)
+            : 1;
+        if (_adColumns != columns || !listEquals(_adUsers, whitelist)) {
+          _adColumns = columns;
+          _adUsers = List.of(whitelist);
+          final adOffsets = calculateAdInsertionOffsets(
+            userCount: whitelist.length,
+            crossAxisCount: columns,
+            random: _adRandom,
+          );
+          final adRows = {
+            for (var index = 0; index < adOffsets.length; index++)
+              adOffsets[index] ~/ columns: index,
+          };
+          _feedRows = [
+            for (
+              var row = 0;
+              row < (whitelist.length + columns - 1) ~/ columns;
+              row++
+            ) ...[if (adRows.containsKey(row)) -(adRows[row]! + 1), row],
+          ];
+        }
+        final width =
+            (constraints.maxWidth - 32 - 12 * (columns - 1)) / columns;
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount:
+              _feedRows.length + (artifacts.isEmpty ? 0 : 1 + artifacts.length),
+          itemBuilder: (context, index) {
+            if (index == _feedRows.length) return const ExportArtifactsHeader();
+            if (index > _feedRows.length) {
+              final username = artifacts[index - _feedRows.length - 1];
+              return ExportArtifactCard(
+                key: ValueKey(username),
+                username: username,
+                action: IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  tooltip: context.l10n.removeFromWhitelist,
+                  onPressed: () async {
+                    if (await _showRemoveDialog(context, username) == true) {
+                      provider.removeFromWhitelist(username);
+                    }
+                  },
+                ),
+              );
+            }
+            final row = _feedRows[index];
+            if (row < 0) {
+              return ValueListenableBuilder<bool>(
+                key: ValueKey('whitelist-native-ad-${-row - 1}'),
+                valueListenable: AdsService.instance.adsEnabled,
+                builder: (context, enabled, _) =>
+                    enabled ? const NativeAdCard() : const SizedBox.shrink(),
+              );
+            }
+            if (!grid) {
+              final username = whitelist[row];
+              return Padding(
+                key: ValueKey(username),
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _buildWhitelistItem(context, provider, username),
+              );
+            }
+            final start = row * columns;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (
+                    var i = start;
+                    i < min(start + columns, whitelist.length);
+                    i++
+                  ) ...[
+                    if (i > start) const SizedBox(width: 12),
+                    SizedBox(
+                      width: width,
+                      height: width / 1.05,
+                      child: _buildWhitelistGridCard(
+                        context,
+                        provider,
+                        whitelist[i],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildWhitelistGridCard(
     BuildContext context,
     AppProvider provider,
     String username,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      margin: EdgeInsets.zero,
-      color: Theme.of(context).cardTheme.color,
-      elevation: 3,
-      shadowColor: colorScheme.shadow.withValues(alpha: 0.22),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: colorScheme.outlineVariant, width: 1.5),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const SizedBox(height: 4),
-            _buildWhitelistAvatar(username, radius: 28),
-            Text(
-              '@$username',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildFramedActionButton(
-                  context,
-                  icon: Icons.open_in_new_rounded,
-                  color: colorScheme.primary,
-                  tooltip: context.l10n.openProfile,
-                  onPressed: () => _openInstagramProfile(username),
-                ),
-                const SizedBox(width: 8),
-                _buildFramedActionButton(
-                  context,
-                  icon: Icons.delete_outline,
-                  color: colorScheme.onSurfaceVariant,
-                  tooltip: context.l10n.removeFromWhitelist,
-                  onPressed: () async {
-                    final confirmed = await _showRemoveDialog(
-                      context,
-                      username,
-                    );
-                    if (confirmed == true) {
-                      provider.removeFromWhitelist(username);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    final user =
+        provider.following[username] ??
+        provider.followers[username] ??
+        InstagramUser(username: username, timestamp: 0);
+    return UserCard(
+      key: ValueKey(username),
+      user: user,
+      isViewed: provider.isProfileViewed(username),
+      inWhitelist: true,
+      onTap: () => _openInstagramProfile(username),
+      onWhitelist: () async {
+        if (await _showRemoveDialog(context, username) == true) {
+          provider.removeFromWhitelist(username);
+        }
+      },
     );
   }
 
@@ -745,9 +722,8 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
     AppProvider provider,
     String username,
   ) {
-    final swipeGradient = statsCounterGradientColors(
-      context,
-      provider.whitelist.length,
+    final swipeGradient = AppTheme.redGradientColors(
+      Theme.of(context).brightness,
     );
     return Dismissible(
       key: Key(username),

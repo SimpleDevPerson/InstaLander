@@ -44,4 +44,26 @@ void main() {
       });
     });
   }
+
+  test(
+    'Report picker accepts both extensions and multiple selection',
+    () async {
+      final calls = <MethodCall>[];
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return <Map<String, Object?>>[];
+      });
+
+      expect(await DataService.pickInstagramFiles(), isEmpty);
+      expect(calls.single.method, 'custom');
+      final args = calls.single.arguments as Map;
+      expect(args['allowedExtensions'], ['json', 'zip']);
+      expect(args['allowMultipleSelection'], isTrue);
+      expect(args['androidSafOptions'], {
+        'grant': 'transient',
+        'access': 'readOnly',
+        'autoPersist': false,
+      });
+    },
+  );
 }

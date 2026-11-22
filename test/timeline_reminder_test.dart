@@ -8,6 +8,7 @@ import 'package:instalander/providers/app_provider.dart';
 import 'package:instalander/providers/theme_provider.dart';
 import 'package:instalander/screens/settings_screen.dart';
 import 'package:instalander/screens/timeline_screen.dart';
+import 'package:instalander/services/debug_data_service.dart';
 import 'package:instalander/services/reminder_service.dart';
 import 'package:instalander/theme/app_theme.dart';
 import 'package:instalander/widgets/reminder_interval_selector.dart';
@@ -42,6 +43,41 @@ class TimelineProvider extends AppProvider {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('timeline groups both usernames in the tagged rename card', (
+    tester,
+  ) async {
+    final interval = DebugDataService().profileChanges();
+    final rename = interval.profiles.first;
+    final app = TimelineProvider([interval]);
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppProvider>.value(value: app),
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ],
+        child: const MaterialApp(home: Scaffold(body: TimelineScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final card = find.ancestor(
+      of: find.text('Nome cambiato'),
+      matching: find.byType(InkWell),
+    );
+    for (final label in [
+      '@${rename.user.username}',
+      'Prima: @${rename.previousUsername}',
+    ]) {
+      expect(
+        find.descendant(of: card, matching: find.text(label)),
+        findsOneWidget,
+      );
+    }
+    expect(find.text('Possibile cancellazione'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    app.dispose();
+  });
 
   testWidgets(
     'reminder section offers all three frequencies without enabling notifications',

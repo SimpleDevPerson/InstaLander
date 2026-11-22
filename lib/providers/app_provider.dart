@@ -93,6 +93,12 @@ class AppProvider extends ChangeNotifier {
   Set<String> _debugWhitelist = {};
   final Set<String> _debugViewedProfiles = {};
   List<UnfollowInterval> _debugTimeline = [];
+  UnfollowInterval? _debugProfileChanges;
+
+  void populateDebugProfileChanges() {
+    _debugProfileChanges = DebugDataService().profileChanges();
+    notifyListeners();
+  }
 
   void populateDebugTimeline() {
     _debugTimeline = DebugDataService().timeline();
@@ -118,6 +124,7 @@ class AppProvider extends ChangeNotifier {
     _debugFollowing = {};
     _debugWhitelist = {};
     _debugTimeline = [];
+    _debugProfileChanges = null;
     _debugViewedProfiles.clear();
   }
 
@@ -131,7 +138,10 @@ class AppProvider extends ChangeNotifier {
   }
 
   bool get monthlyReminder => _monthlyReminder;
-  List<UnfollowInterval> get debugTimeline => _debugTimeline;
+  List<UnfollowInterval> get debugTimeline => [
+    ?_debugProfileChanges,
+    ..._debugTimeline,
+  ];
 
   Future<List<UnfollowInterval>>? get savedTimeline =>
       _followerSnapshotCount < 2
@@ -384,6 +394,24 @@ class AppProvider extends ChangeNotifier {
   }
 
   // Add user to whitelist
+  Future<int> addReportProfilesToWhitelist(Set<String> usernames) async {
+    final added = usernames
+        .where(
+          (name) =>
+              _following.containsKey(name) &&
+              !_followers.containsKey(name) &&
+              !_whitelist.contains(name),
+        )
+        .toSet();
+    if (added.isEmpty) return 0;
+
+    final updated = {..._whitelist, ...added};
+    await DataService.saveWhitelist(updated);
+    _whitelist = updated;
+    _recomputeData();
+    return added.length;
+  }
+
   void addToWhitelist(String username) {
     if (_debugFollowing.containsKey(username)) {
       _debugWhitelist.add(username);

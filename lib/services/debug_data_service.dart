@@ -65,4 +65,39 @@ class DebugDataService {
         UnfollowInterval(snapshots[i - 1], snapshots[i]),
     ];
   }
+
+  UnfollowInterval profileChanges() {
+    final previousDate = _now.subtract(const Duration(days: 30));
+    final before = DebugDataService(
+      random: _random,
+      now: previousDate,
+    ).profiles('profile_change', 2);
+    final old = before.values.first;
+    final renamed = InstagramUser(
+      username: '${old.username}_new',
+      timestamp: old.timestamp,
+    );
+    final after = {renamed.username: renamed};
+    return UnfollowInterval(
+      ImportSnapshot(
+        date: previousDate,
+        followersImported: true,
+        followingImported: true,
+        hasFollowers: true,
+        hasFollowing: true,
+        followers: before,
+        following: before,
+      ),
+      ImportSnapshot(
+        date: _now,
+        followersImported: true,
+        followingImported: true,
+        hasFollowers: true,
+        hasFollowing: true,
+        followers: after,
+        following: after,
+        usernameChanges: {old.username: renamed.username},
+      ),
+    );
+  }
 }

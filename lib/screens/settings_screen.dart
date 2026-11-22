@@ -496,7 +496,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildInfoTile(
                         context,
                         context.l10n.version,
-                        '0.8.2',
+                        '0.9.0',
                         Icons.tag,
                         onTap: _onVersionTap,
                       ),
@@ -684,34 +684,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         Text(context.l10n.debugDataDescription),
         const SizedBox(height: 12),
-        Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ValueListenableBuilder<bool>(
-            valueListenable: AdsService.instance.adsEnabled,
-            builder: (context, enabled, _) => SettingsToggleTile(
-              title: context.l10n.advertising,
-              subtitle: context.l10n.advertisingDescription,
-              value: enabled,
-              isSamsung: context.watch<ThemeProvider>().isSamsungTheme,
-              onChanged: (value) async {
-                try {
-                  await AdsService.instance.setAdsEnabled(value);
-                } catch (_) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.l10n.savePreferenceError)),
-                  );
-                }
-              },
+        if (AdsService.isAvailable)
+          Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ValueListenableBuilder<bool>(
+              valueListenable: AdsService.instance.adsEnabled,
+              builder: (context, enabled, _) => SettingsToggleTile(
+                title: context.l10n.advertising,
+                subtitle: context.l10n.advertisingDescription,
+                value: enabled,
+                isSamsung: context.watch<ThemeProvider>().isSamsungTheme,
+                onChanged: (value) async {
+                  try {
+                    await AdsService.instance.setAdsEnabled(value);
+                  } catch (_) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(context.l10n.savePreferenceError)),
+                    );
+                  }
+                },
+              ),
             ),
           ),
-        ),
         _buildActionTile(
           context,
           context.l10n.populateTimeline,
           context.l10n.populateTimelineDescription,
           Icons.timeline,
           () => populate(app.populateDebugTimeline, 'timeline'),
+          showChevron: false,
+        ),
+        _buildActionTile(
+          context,
+          context.l10n.populateProfileChanges,
+          context.l10n.populateProfileChangesDescription,
+          Icons.manage_accounts_outlined,
+          () =>
+              populate(app.populateDebugProfileChanges, context.l10n.timeline),
           showChevron: false,
         ),
         _buildActionTile(

@@ -1,19 +1,13 @@
-# InstaLander 0.8.2 — Gyllenhaal
+# InstaLander 0.9.0 McConaughey
 
-Novità rispetto a 0.8.1 · build 2014.
+Novità rispetto alla 0.8.2 · build 2028.
 
-- Corretto il confronto tra followers e following quando i JSON rappresentano lo stesso profilo con uno username o con un URL Instagram (anche con percorso `/_u/`). Gli identificativi vengono uniformati anche per maiuscole, spazi esterni e prefisso `@`, evitando falsi profili da controllare.
-- Per ricalcolare il report con la correzione, reimportare tutti i file followers e following della stessa esportazione dopo l'aggiornamento.
-- Abilitati R8 e la rimozione delle risorse inutilizzate nelle build Android release, per ridurre il codice DEX e ottimizzarlo.
-- Preservato il costruttore del database WorkManager usato tramite reflection, per evitare un arresto all'avvio con R8 in modalità completa.
-- Nel bundle verificato, il DEX non compresso passa da **21,35 MB a 5,21 MB** (circa **76% in meno**). La riduzione delle dimensioni non equivale alle tre percentuali di ottimizzazione misurate da Play Console, da verificare sul bundle caricato.
-- Il cambiamento prepara l'app al requisito Google Play previsto da **febbraio 2027**: almeno **25% di ottimizzazione, shrinking e offuscamento** per le app che superano la soglia di **10 MB di DEX non compresso**. Il bundle 0.8.1 conteneva circa 21,35 MB di DEX non compresso.
-- L'offuscamento riguarda il codice compilato distribuito: i sorgenti Dart e Kotlin su GitHub restano leggibili.
-- La build genera `mapping.txt`, da conservare per ogni versione per interpretare i report di crash; il bundle include i metadati di offuscamento generati da Android Gradle Plugin.
+- Il Report ha un solo pulsante **Importa** per selezionare più file JSON o un archivio ZIP.
+- Il **Filtro per numero di follower** aggiunge alla Whitelist i profili sopra la soglia impostata. Legge i conteggi dalle pagine pubbliche di Instagram, converte le abbreviazioni e riprende quando torni nell’app dopo lo standby.
+- Chi smette di seguirti resta nel Report anche con la Whitelist automatica attiva. Le voci salvate dalle versioni precedenti si gestiscono dalla scheda Whitelist.
+- La Timeline raggruppa il vecchio e il nuovo username dei cambi confermati. I profili mancanti da entrambe le liste aggiornate possono ricevere il tag **Possibile cancellazione**, visibile anche nel Report.
+- Le voci con `__deleted__` sono raccolte in fondo al Report e alla Whitelist come artefatti dell’esportazione ed escluse dai contatori.
+- La griglia della Whitelist adotta il layout del Report. Lo swipe di rimozione usa sempre il gradiente rosso.
+- Migliorato il contrasto delle icone delle barre di sistema nei temi chiaro e scuro.
 
-## Riferimenti
-
-- [Requisiti tecnici di Google Play](https://support.google.com/googleplay/android-developer/answer/17492799)
-- [Misurazione e ottimizzazione del codice DEX](https://developer.android.com/google/play/vitals/code-optimization)
-
-Android minimo: 8.0 (API 26).
+Android minimo 8.0 (API 26).

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
+import '../theme/app_theme.dart';
 
 List<Color> statsCounterGradientColors(BuildContext context, int count) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
+  final brightness = Theme.of(context).brightness;
+  final isDark = brightness == Brightness.dark;
   return count < 10
       ? isDark
             ? const [Color(0xFF1B5E20), Color(0xFF43A047)]
@@ -11,9 +13,7 @@ List<Color> statsCounterGradientColors(BuildContext context, int count) {
       ? isDark
             ? const [Color(0xFF0D47A1), Color(0xFF1976D2)]
             : const [Color(0xFF1565C0), Color(0xFF42A5F5)]
-      : isDark
-      ? const [Color(0xFF542326), Color(0xFFAD3942)]
-      : const [Color(0xFFC62828), Color(0xFFEF5350)];
+      : AppTheme.redGradientColors(brightness);
 }
 
 class StatsCounter extends StatelessWidget {

@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
@@ -10,8 +12,11 @@ import 'screens/settings_screen.dart';
 import 'screens/whitelist_screen.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  }
   runApp(const InstagramFollowerCheckerApp());
 }
 
@@ -40,6 +45,10 @@ class InstagramFollowerCheckerApp extends StatelessWidget {
                 ? AppTheme.samsungDarkTheme
                 : AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
+            builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+              value: AppTheme.systemBarStyle(Theme.of(context).brightness),
+              child: child!,
+            ),
             home: const MainScreen(),
             routes: {
               '/settings': (context) => const SettingsScreen(),

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/import_snapshot.dart';
-import '../models/user.dart';
 import '../providers/app_provider.dart';
 import '../providers/theme_provider.dart';
 
@@ -122,10 +121,10 @@ class TimelineScreen extends StatelessWidget {
       );
     }
 
-    final rows = <(UnfollowInterval, InstagramUser?)>[
+    final rows = <(UnfollowInterval, TimelineProfile?)>[
       for (final interval in intervals) ...[
         (interval, null),
-        for (final user in interval.users) (interval, user),
+        for (final profile in interval.profiles) (interval, profile),
       ],
     ];
     return LayoutBuilder(
@@ -140,7 +139,7 @@ class TimelineScreen extends StatelessWidget {
           itemBuilder: (context, index) => _TimelineRow(
             key: ValueKey('timeline-row-$index'),
             interval: rows[index].$1,
-            user: rows[index].$2,
+            profile: rows[index].$2,
             dateWidth: dateWidth,
             isFirst: index == 0,
             isLast: index == rows.length - 1,
@@ -158,10 +157,10 @@ class _TimelineRow extends StatelessWidget {
     required this.dateWidth,
     required this.isFirst,
     required this.isLast,
-    this.user,
+    this.profile,
   });
   final UnfollowInterval interval;
-  final InstagramUser? user;
+  final TimelineProfile? profile;
   final double dateWidth;
   final bool isFirst;
   final bool isLast;
@@ -170,7 +169,7 @@ class _TimelineRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final profile = user;
+    final profile = this.profile;
     final isHeader = profile == null;
     const railWidth = 32.0;
     final nodeY = isHeader ? 28.0 : 26.0;
@@ -243,7 +242,7 @@ class _TimelineRow extends StatelessWidget {
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
                             onTap: () =>
-                                _openProfile(context, profile.username),
+                                _openProfile(context, profile.user.username),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -252,14 +251,8 @@ class _TimelineRow extends StatelessWidget {
                               child: Row(
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                      '@${profile.username}',
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                    child: _TimelineProfileDetails(
+                                      profile: profile,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -321,6 +314,59 @@ class _TimelineRow extends StatelessWidget {
         context,
       ).showSnackBar(SnackBar(content: Text(context.l10n.cannotOpenProfile)));
     }
+  }
+}
+
+class _TimelineProfileDetails extends StatelessWidget {
+  const _TimelineProfileDetails({required this.profile});
+
+  final TimelineProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final previous = profile.previousUsername;
+    final tag = switch (profile.kind) {
+      TimelineProfileKind.missing => null,
+      TimelineProfileKind.renamed => context.l10n.timelineRenamed,
+      TimelineProfileKind.possiblyDeleted =>
+        context.l10n.timelinePossiblyDeleted,
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '@${profile.user.username}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (previous != null)
+          Text(
+            context.l10n.timelinePreviousUsername('@$previous'),
+            style: theme.textTheme.bodySmall,
+          ),
+        if (tag != null) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: colors.secondaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              tag,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: colors.onSecondaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 

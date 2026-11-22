@@ -59,4 +59,27 @@ void main() {
       );
     }
   });
+
+  test('reads exact and abbreviated counts from the matching profile', () {
+    int? followers(String description, {String profile = 'example'}) =>
+        ProfilePhotoService.extractFollowerCount('''
+          <link rel="canonical" href="https://www.instagram.com/$profile/">
+          <meta property="og:description" content="$description">
+        ''', 'Example');
+
+    expect(followers('12,345 Followers, 2 Following, 3 Posts'), 12345);
+    expect(followers('12&#8239;345 followers, 2 following'), 12345);
+    expect(followers('0 Followers, 2 Following, 3 Posts'), 0);
+    expect(followers('1 Follower, 2 Following, 3 Posts'), 1);
+    expect(followers('12.3K Followers, 2 Following, 3 Posts'), 12300);
+    expect(followers('12,3k Followers, 2 Following, 3 Posts'), 12300);
+    expect(followers('1.25 M Followers, 2 Following, 3 Posts'), 1250000);
+    expect(followers('2B Followers, 2 Following, 3 Posts'), 2000000000);
+    expect(followers('1.234K Followers'), 1234);
+    expect(followers('12.3 Followers'), isNull);
+    expect(followers('12 Following, 3 Posts'), isNull);
+    expect(followers('500 Followers', profile: 'other'), isNull);
+    expect(followers('500K Followers', profile: 'other'), isNull);
+    expect(followers('500 Followers', profile: 'accounts/login'), isNull);
+  });
 }

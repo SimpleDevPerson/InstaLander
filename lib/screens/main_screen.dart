@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:ui' show ImageFilter;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/app_strings.dart';
+import '../models/import_snapshot.dart';
 import '../models/user.dart';
 import '../models/username_change.dart';
 import '../providers/app_provider.dart';
@@ -18,6 +20,8 @@ import '../services/ads_service.dart';
 import '../services/data_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ad_placement.dart';
+import '../widgets/export_artifact.dart';
+import '../widgets/follower_whitelist_dialog.dart';
 import '../widgets/instagram_export_notice.dart';
 import '../widgets/native_ad_card.dart';
 import '../widgets/setup_panel.dart';
@@ -481,6 +485,11 @@ class _MainScreenState extends State<MainScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         children: [
+          for (final profile in _debugPossibleDeletions(provider))
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _buildPossibleDeletionCard(context, profile),
+            ),
           SetupPanel(
             onShowGuide: () => _openExportGuide(context),
             onLoadJson: () => _pickAndLoadFiles(provider),
@@ -590,30 +599,157 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildMainContent(BuildContext context, AppProvider provider) {
     final users = provider.sortedNonFollowers;
+    final currentArtifacts = {
+      for (final user in users)
+        if (InstagramUser.isExportArtifact(user.username)) user.username,
+    };
+    final profiles = currentArtifacts.isEmpty
+        ? users
+        : users
+              .where((user) => !currentArtifacts.contains(user.username))
+              .toList(growable: false);
 
-    return LayoutBuilder(
-      builder: (context, constraints) => CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: StatsCounter(
-              count: provider.stats['visibleCount'] ?? 0,
-              zeroCountLabel: context.l10n.allDone,
-            ),
+    return FutureBuilder<List<UnfollowInterval>>(
+      future: provider.savedTimeline,
+      builder: (context, snapshot) {
+        final latest = snapshot.connectionState == ConnectionState.done
+            ? snapshot.data?.firstOrNull
+            : null;
+        final followers = provider.followers;
+        final following = provider.following;
+        final possibleDeletions = <TimelineProfile>[];
+        final artifacts = {...currentArtifacts};
+        for (final profile in [
+          ..._debugPossibleDeletions(provider),
+          ...?latest?.profiles.where(
+            (profile) => profile.kind == TimelineProfileKind.possiblyDeleted,
           ),
-          SliverToBoxAdapter(child: _buildControls(context, provider)),
-          if (users.isNotEmpty)
-            _buildUserList(provider, users, constraints.maxWidth)
-          else
-            SliverToBoxAdapter(child: _buildEmptyState(context)),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
-        ],
+        ]) {
+          final username = profile.user.username;
+          if (followers.containsKey(username) ||
+              following.containsKey(username)) {
+            continue;
+          }
+          if (InstagramUser.isExportArtifact(username)) {
+            artifacts.add(username);
+          } else {
+            possibleDeletions.add(profile);
+          }
+        }
+        final artifactNames = artifacts.toList(growable: false);
+        return LayoutBuilder(
+          builder: (context, constraints) => CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: StatsCounter(
+                  count: provider.stats['visibleCount'] ?? 0,
+                  zeroCountLabel: context.l10n.allDone,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: _buildControls(context, provider, profiles),
+              ),
+              if (possibleDeletions.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList.builder(
+                    itemCount: possibleDeletions.length,
+                    itemBuilder: (context, index) => _buildPossibleDeletionCard(
+                      context,
+                      possibleDeletions[index],
+                    ),
+                  ),
+                ),
+              if (profiles.isNotEmpty)
+                _buildUserList(provider, profiles, constraints.maxWidth)
+              else if (artifactNames.isEmpty)
+                SliverToBoxAdapter(child: _buildEmptyState(context)),
+              if (artifactNames.isNotEmpty)
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  sliver: SliverList.builder(
+                    itemCount: artifactNames.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) return const ExportArtifactsHeader();
+                      final username = artifactNames[index - 1];
+                      return ExportArtifactCard(
+                        key: ValueKey(username),
+                        username: username,
+                        action: currentArtifacts.contains(username)
+                            ? IconButton(
+                                icon: const Icon(Icons.favorite_border),
+                                tooltip: context.l10n.addToWhitelist,
+                                onPressed: () =>
+                                    provider.addToWhitelist(username),
+                              )
+                            : null,
+                      );
+                    },
+                  ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Iterable<TimelineProfile> _debugPossibleDeletions(AppProvider provider) =>
+      provider.debugTimeline
+          .expand((interval) => interval.profiles)
+          .where(
+            (profile) => profile.kind == TimelineProfileKind.possiblyDeleted,
+          );
+
+  Widget _buildPossibleDeletionCard(
+    BuildContext context,
+    TimelineProfile profile,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+    final username = profile.user.username;
+    return Card(
+      key: ValueKey('possible-deletion-$username'),
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: Icon(Icons.person_off_outlined, color: colors.error),
+        title: Text('@$username'),
+        subtitle: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Chip(
+            label: Text(context.l10n.timelinePossiblyDeleted),
+            backgroundColor: colors.error,
+            labelStyle: TextStyle(color: colors.onError),
+            side: BorderSide.none,
+            visualDensity: VisualDensity.compact,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildControls(BuildContext context, AppProvider provider) {
+  Widget _buildControls(
+    BuildContext context,
+    AppProvider provider,
+    List<InstagramUser> users,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
+    final actionStyle = OutlinedButton.styleFrom(
+      minimumSize: const Size(0, 56),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      foregroundColor: colorScheme.onSurface,
+      side: BorderSide(color: colorScheme.outlineVariant),
+      backgroundColor: colorScheme.surfaceContainerHighest.withValues(
+        alpha: 0.72,
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: AppTheme.toolbarControlRadius,
+      ),
+      textStyle: const TextStyle(fontWeight: FontWeight.w700),
+    );
+    final canFilter = users.any((user) => !user.username.startsWith('debug_'));
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -629,7 +765,7 @@ class _MainScreenState extends State<MainScreen> {
                     alpha: 0.72,
                   ),
                   border: Border.all(color: colorScheme.outlineVariant),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: AppTheme.toolbarControlRadius,
                 ),
                 child: PopupMenuButton<SortOption>(
                   onSelected: provider.setSortOption,
@@ -759,6 +895,12 @@ class _MainScreenState extends State<MainScreen> {
                   }).toList(),
                   child: Row(
                     children: [
+                      Icon(
+                        Icons.sort,
+                        size: 18,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           switch (provider.currentSort) {
@@ -787,78 +929,75 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _pickAndLoadFiles(provider),
-              icon: const Icon(Icons.cloud_upload_outlined, size: 22),
-              label: const Text('JSON'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 54),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                foregroundColor: colorScheme.onSurface,
-                side: BorderSide(color: colorScheme.outlineVariant),
-                backgroundColor: colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.72,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(40),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+          const SizedBox(width: 8),
+          SizedBox.square(
+            dimension: 56,
+            child: IconButton.outlined(
+              tooltip: context.l10n.followerWhitelistTitle,
+              icon: const Icon(Icons.filter_alt_outlined, size: 22),
+              style: actionStyle,
+              onPressed: canFilter
+                  ? () => showDialog<void>(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => FollowerWhitelistDialog(
+                        usernames: users
+                            .map((user) => user.username)
+                            .where((name) => !name.startsWith('debug_'))
+                            .toList(growable: false),
+                        addProfiles: provider.addReportProfilesToWhitelist,
+                      ),
+                    )
+                  : null,
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _pickAndLoadArchive(provider),
-              icon: const Icon(Icons.folder_zip_outlined, size: 22),
-              label: const Text('ZIP'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(0, 54),
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                foregroundColor: colorScheme.onSurface,
-                side: BorderSide(color: colorScheme.outlineVariant),
-                backgroundColor: colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.72,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(40),
-                ),
-                textStyle: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
+          OutlinedButton.icon(
+            onPressed: () => _pickAndLoadFiles(provider, allowArchive: true),
+            icon: const Icon(Icons.cloud_upload_outlined, size: 22),
+            label: Text(context.l10n.importAction),
+            style: actionStyle,
           ),
         ],
       ),
     );
   }
 
-  Future<void> _pickAndLoadFiles(AppProvider provider) async {
+  Future<void> _pickAndLoadFiles(
+    AppProvider provider, {
+    bool allowArchive = false,
+  }) async {
     try {
-      final files = await DataService.pickJsonFiles();
-      if (files != null && files.isNotEmpty && mounted) {
-        final creationDate = await DataService.jsonFilesCreationDate(files);
-        if (!mounted) return;
-        final date = creationDate ?? await _pickExportDate();
-        if (date != null && mounted) {
-          await provider.loadJsonFiles(
-            files,
-            exportDate: date,
-            resolveUsernameChanges: _resolveUsernameChanges,
+      final files = allowArchive
+          ? await DataService.pickInstagramFiles()
+          : await DataService.pickJsonFiles();
+      if (!mounted || files == null || files.isEmpty) return;
+      if (allowArchive) {
+        if (files.length == 1 &&
+            files.single.name.toLowerCase().endsWith('.zip')) {
+          await _loadSelectedArchive(provider, files.single);
+          return;
+        }
+        if (!files.every((file) => file.name.toLowerCase().endsWith('.json'))) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.pickOneArchiveOrJson)),
           );
-          await _showExportNoticeAfterImport(provider);
+          return;
         }
       }
+      final creationDate = await DataService.jsonFilesCreationDate(files);
+      if (!mounted) return;
+      final date = creationDate ?? await _pickExportDate();
+      if (date == null || !mounted) return;
+      await provider.loadJsonFiles(
+        files,
+        exportDate: date,
+        resolveUsernameChanges: _resolveUsernameChanges,
+      );
+      await _showExportNoticeAfterImport(provider);
     } catch (e) {
       if (!mounted) return;
-      provider.setError(context.l10n.selectFilesError((e).toString()));
+      provider.setError(context.l10n.selectFilesError(e.toString()));
     }
   }
 
@@ -866,20 +1005,26 @@ class _MainScreenState extends State<MainScreen> {
     try {
       final archive = await DataService.pickInstagramArchive();
       if (archive != null && mounted) {
-        final date = await _pickExportDate();
-        if (date != null) {
-          await provider.loadInstagramArchive(
-            archive,
-            exportDate: date,
-            resolveUsernameChanges: _resolveUsernameChanges,
-          );
-          await _showExportNoticeAfterImport(provider);
-        }
+        await _loadSelectedArchive(provider, archive);
       }
     } catch (e) {
       if (!mounted) return;
-      provider.setError(context.l10n.selectArchiveError((e).toString()));
+      provider.setError(context.l10n.selectArchiveError(e.toString()));
     }
+  }
+
+  Future<void> _loadSelectedArchive(
+    AppProvider provider,
+    PlatformFile archive,
+  ) async {
+    final date = await _pickExportDate();
+    if (date == null || !mounted) return;
+    await provider.loadInstagramArchive(
+      archive,
+      exportDate: date,
+      resolveUsernameChanges: _resolveUsernameChanges,
+    );
+    await _showExportNoticeAfterImport(provider);
   }
 
   Future<void> _showExportNoticeAfterImport(AppProvider provider) async {
