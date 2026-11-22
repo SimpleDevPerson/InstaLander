@@ -1,7 +1,9 @@
-# Prossima release — Gyllenhaal
+# InstaLander 0.8.2 — Gyllenhaal
 
-Novità rispetto a 0.8.1.
+Novità rispetto a 0.8.1 · build 2014.
 
+- Corretto il confronto tra followers e following quando i JSON rappresentano lo stesso profilo con uno username o con un URL Instagram (anche con percorso `/_u/`). Gli identificativi vengono uniformati anche per maiuscole, spazi esterni e prefisso `@`, evitando falsi profili da controllare.
+- Per ricalcolare il report con la correzione, reimportare tutti i file followers e following della stessa esportazione dopo l'aggiornamento.
 - Abilitati R8 e la rimozione delle risorse inutilizzate nelle build Android release, per ridurre il codice DEX e ottimizzarlo.
 - Preservato il costruttore del database WorkManager usato tramite reflection, per evitare un arresto all'avvio con R8 in modalità completa.
 - Nel bundle verificato, il DEX non compresso passa da **21,35 MB a 5,21 MB** (circa **76% in meno**). La riduzione delle dimensioni non equivale alle tre percentuali di ottimizzazione misurate da Play Console, da verificare sul bundle caricato.

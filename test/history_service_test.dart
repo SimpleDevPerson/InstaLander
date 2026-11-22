@@ -50,6 +50,42 @@ void main() {
   );
 
   test(
+    'matches URL-only followers to following usernames after saving',
+    () async {
+      await import({
+        'followers_1.json': utf8.encode(
+          jsonEncode([
+            {
+              'title': '',
+              'string_list_data': [
+                {
+                  'href': 'https://www.instagram.com/_u/Mario/',
+                  'timestamp': 123,
+                },
+              ],
+            },
+          ]),
+        ),
+        'following.json': utf8.encode(
+          jsonEncode({
+            'relationships_following': [
+              {'title': 'mario'},
+              {'title': 'other'},
+            ],
+          }),
+        ),
+      }, 1);
+      final data = load();
+      expect(data.followers.keys, ['mario']);
+      expect(data.following.keys, ['mario', 'other']);
+      expect(data.nonFollowers.map((user) => user.username), ['other']);
+      expect(data.stats['notFollowingBackTotal'], 1);
+      expect(data.stats['followers'], 1);
+      expect(data.hasFollowersFile && data.hasFollowingFile, isTrue);
+    },
+  );
+
+  test(
     'confirmed rename preserves continuity and does not whitelist a mutual follower',
     () async {
       await import({

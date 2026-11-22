@@ -11,35 +11,48 @@ class InstagramUser {
           : null;
 
   factory InstagramUser.fromJson(Map<String, dynamic> json) {
-    String? username;
-    int timestamp = 0;
-
-    // Handle different JSON structures from Instagram export
-    // Priority 1: 'title' field (often contains username directly)
-    if (json['title'] != null) {
-      username = json['title'] as String?;
+    final list = json['string_list_data'];
+    final data = list is List && list.isNotEmpty && list.first is Map
+        ? list.first as Map
+        : const {};
+    var username = '';
+    // Exports can identify the same profile by a title, a value or a URL.
+    // Normalize each candidate before choosing it, so blank/invalid values
+    // do not prevent falling back to a usable profile link.
+    for (final candidate in [json['title'], data['value'], data['href']]) {
+      username = _normalizeUsername(candidate);
+      if (username.isNotEmpty) break;
     }
+    return InstagramUser(
+      username: username,
+      timestamp: data['timestamp'] is int ? data['timestamp'] as int : 0,
+    );
+  }
 
-    // Priority 2: 'string_list_data' array (may have 'value' or 'href')
-    if (username == null || username.isEmpty) {
-      if (json['string_list_data'] != null &&
-          json['string_list_data'].isNotEmpty) {
-        final data = json['string_list_data'][0];
-        // Try 'value' first (old format), then 'href' (new format)
-        username = (data['value'] ?? data['href']) as String?;
-        timestamp = data['timestamp'] as int? ?? 0;
+  static final _usernamePattern = RegExp(r'^[a-z0-9_.]+$');
+
+  static String _normalizeUsername(dynamic value) {
+    if (value is! String) return '';
+    var username = value.trim().toLowerCase();
+    if (username.contains('://')) {
+      final uri = Uri.tryParse(username);
+      if (uri == null ||
+          (uri.scheme != 'https' && uri.scheme != 'http') ||
+          (uri.host != 'instagram.com' && uri.host != 'www.instagram.com')) {
+        return '';
+      }
+      final segments = uri.pathSegments.toList();
+      if (segments.isNotEmpty && segments.last.isEmpty) segments.removeLast();
+      if (segments.length == 2 && segments.first == '_u') {
+        username = segments.last;
+      } else if (segments.length == 1 && segments.first != '_u') {
+        username = segments.single;
+      } else {
+        return '';
       }
     }
-
-    // If still no username but we have timestamp from string_list_data
-    if (timestamp == 0 &&
-        json['string_list_data'] != null &&
-        json['string_list_data'].isNotEmpty) {
-      final data = json['string_list_data'][0];
-      timestamp = data['timestamp'] as int? ?? 0;
-    }
-
-    return InstagramUser(username: username ?? '', timestamp: timestamp);
+    if (username.startsWith('@')) username = username.substring(1);
+    return _usernamePattern.hasMatch(username) ? username : '';
   }
 
   Map<String, dynamic> toJson() => {
