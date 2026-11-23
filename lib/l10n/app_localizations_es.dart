@@ -9,6 +9,48 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String timelineFileCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count archivos importados',
+      one: '1 archivo importado',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get duplicateFollowerTitle => 'Archivo de seguidores ya importado';
+
+  @override
+  String duplicateFollowerDescription(String arg0) {
+    return 'Ya has importado «$arg0». Se ha bloqueado la importación. Selecciona archivos de una nueva exportación.';
+  }
+
+  @override
+  String get timelineProfilesView => 'Perfiles';
+
+  @override
+  String get timelineFilesView => 'Archivos importados';
+
+  @override
+  String get timelineFilesEmpty => 'Todavía no has importado archivos.';
+
+  @override
+  String get timelineLegacyImport => 'Importación anterior';
+
+  @override
+  String get timelineRemoveFile => 'Eliminar importación';
+
+  @override
+  String timelineRemoveFileDescription(String arg0) {
+    return '¿Quieres quitar «$arg0» del historial? El Informe y la Cronología se volverán a calcular con los archivos restantes.';
+  }
+
+  @override
+  String get timelineRemoveFileError => 'No se pudo eliminar la importación.';
+
+  @override
   String get exportArtifacts => 'Artefactos de la exportación de Instagram';
 
   @override
@@ -257,7 +299,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Tu informe se actualiza al importar archivos nuevos. En Ajustes puedes activar un recordatorio cada mes, cada 3 meses o cada 6 meses para solicitar otra exportación. La notificación es local y funciona sin mantener abierta la app.';
 
   @override
-  String get exportStep1of5 => 'PASO 1 DE 5';
+  String get exportStep1of6 => 'PASO 1 DE 6';
 
   @override
   String get accountsCenterTitle => 'Abre el Centro de cuentas';
@@ -267,7 +309,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Abre Instagram, ve a tu perfil y toca el menú ≡ de la parte superior. Abre el Centro de cuentas.';
 
   @override
-  String get exportStep2of5 => 'PASO 2 DE 5';
+  String get exportStep2of6 => 'PASO 2 DE 6';
 
   @override
   String get requestDataTitle => 'Solicita una copia de tus datos';
@@ -277,17 +319,25 @@ class AppLocalizationsEs extends AppLocalizations {
       'Abre «Tu información y permisos» y elige «Exportar tu información» y después «Crear exportación». Selecciona tu cuenta de Instagram.';
 
   @override
-  String get exportStep3of5 => 'PASO 3 DE 5';
+  String get exportStep3of6 => 'PASO 3 DE 6';
 
   @override
   String get chooseJsonTitle => 'Elige el formato JSON';
 
   @override
   String get chooseJsonDescription =>
-      'Selecciona «Exportar al dispositivo». En las opciones de exportación, elige el formato JSON y envía la solicitud. Los nombres de los menús pueden variar ligeramente según la versión de Instagram.';
+      'En las opciones de exportación, elige el formato JSON y envía la solicitud.';
 
   @override
-  String get exportStep4of5 => 'PASO 4 DE 5';
+  String get exportStep4of6 => 'PASO 4 DE 6';
+
+  @override
+  String get exportDateRangeTitle =>
+      'Elige «Desde el principio» como intervalo';
+
+  @override
+  String get exportDateRangeDescription =>
+      'Selecciona «Exportar al dispositivo». En las opciones de exportación, abre «Intervalo de fechas» y selecciona «Desde el principio». Así se incluyen las listas completas de seguidores y cuentas seguidas.';
 
   @override
   String get downloadArchiveTitle => 'Descarga y extrae el archivo';
@@ -886,7 +936,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get glowDarkIconDescription => 'Pásate al lado oscuro.';
 
   @override
-  String get exportStep5of5 => 'PASO 5 DE 5';
+  String get exportStep5of6 => 'PASO 5 DE 6';
+
+  @override
+  String get exportStep6of6 => 'PASO 6 DE 6';
 
   @override
   String get selectFollowDataTitle => 'Selecciona solo seguidores y seguidos';

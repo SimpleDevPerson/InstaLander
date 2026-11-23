@@ -18,6 +18,7 @@ import '../screens/timeline_screen.dart';
 import '../screens/whitelist_screen.dart';
 import '../services/ads_service.dart';
 import '../services/data_service.dart';
+import '../services/history_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ad_placement.dart';
 import '../widgets/export_artifact.dart';
@@ -736,14 +737,14 @@ class _MainScreenState extends State<MainScreen> {
     List<InstagramUser> users,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
+    final controlFill = AppTheme.toolbarControlFill(context);
+    final controlBorder = BorderSide(color: colorScheme.outlineVariant);
     final actionStyle = OutlinedButton.styleFrom(
       minimumSize: const Size(0, 56),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       foregroundColor: colorScheme.onSurface,
-      side: BorderSide(color: colorScheme.outlineVariant),
-      backgroundColor: colorScheme.surfaceContainerHighest.withValues(
-        alpha: 0.72,
-      ),
+      side: controlBorder,
+      backgroundColor: controlFill,
       shape: const RoundedRectangleBorder(
         borderRadius: AppTheme.toolbarControlRadius,
       ),
@@ -761,17 +762,16 @@ class _MainScreenState extends State<MainScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(
-                    alpha: 0.72,
-                  ),
-                  border: Border.all(color: colorScheme.outlineVariant),
+                  color: controlFill,
+                  border: Border.fromBorderSide(controlBorder),
                   borderRadius: AppTheme.toolbarControlRadius,
                 ),
                 child: PopupMenuButton<SortOption>(
                   onSelected: provider.setSortOption,
                   position: PopupMenuPosition.under,
                   offset: const Offset(0, 4),
-                  color: colorScheme.surfaceContainerHighest,
+                  color: controlFill,
+                  surfaceTintColor: Colors.transparent,
                   elevation: 8,
                   constraints: const BoxConstraints(
                     minWidth: 240,
@@ -780,7 +780,7 @@ class _MainScreenState extends State<MainScreen> {
                   menuPadding: const EdgeInsets.all(8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
-                    side: BorderSide(color: colorScheme.outline, width: 1.5),
+                    side: controlBorder,
                   ),
                   itemBuilder: (context) => SortOption.values.map((option) {
                     final title = switch (option) {
@@ -995,6 +995,8 @@ class _MainScreenState extends State<MainScreen> {
         resolveUsernameChanges: _resolveUsernameChanges,
       );
       await _showExportNoticeAfterImport(provider);
+    } on DuplicateFollowerFileException catch (error) {
+      await _showDuplicateFollowerFile(error.name);
     } catch (e) {
       if (!mounted) return;
       provider.setError(context.l10n.selectFilesError(e.toString()));
@@ -1007,10 +1009,29 @@ class _MainScreenState extends State<MainScreen> {
       if (archive != null && mounted) {
         await _loadSelectedArchive(provider, archive);
       }
+    } on DuplicateFollowerFileException catch (error) {
+      await _showDuplicateFollowerFile(error.name);
     } catch (e) {
       if (!mounted) return;
       provider.setError(context.l10n.selectArchiveError(e.toString()));
     }
+  }
+
+  Future<void> _showDuplicateFollowerFile(String filename) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.duplicateFollowerTitle),
+        content: Text(context.l10n.duplicateFollowerDescription(filename)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(MaterialLocalizations.of(context).okButtonLabel),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadSelectedArchive(

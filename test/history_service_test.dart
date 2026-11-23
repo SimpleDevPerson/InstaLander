@@ -11,15 +11,18 @@ import 'package:instalander/services/data_service.dart';
 import 'package:instalander/services/history_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+int _fixtureVersion = 0;
+
+// Independent exports in these fixtures can have identical profiles while
+// differing in their JSON bytes. The duplicate test reuses the same bytes.
 List<int> profiles(List<String> names) => utf8.encode(
-  jsonEncode([
-    for (final name in names)
-      {
+  '${jsonEncode([
+    for (final name in names) {
         'string_list_data': [
           {'value': name, 'timestamp': 123},
         ],
       },
-  ]),
+  ])}\n${' ' * _fixtureVersion++}',
 );
 
 void main() {
@@ -47,6 +50,99 @@ void main() {
     date: DateTime(2026, month, 1),
     path: directory.path,
     resolveUsernameChanges: resolve,
+  );
+
+  test(
+    'rejects the same followers file under a different name atomically',
+    () async {
+      final original = profiles(['saved']);
+      await import({'followers_1.json': original}, 1);
+      final state = File('${directory.path}/${HistoryService.fileName}');
+      final before = await state.readAsString();
+      await expectLater(
+        import({
+          'followers_2.json': original,
+          'following.json': profiles(['ignored']),
+        }, 2),
+        throwsA(
+          isA<DuplicateFollowerFileException>().having(
+            (error) => error.name,
+            'name',
+            'followers_2.json',
+          ),
+        ),
+      );
+      expect(await state.readAsString(), before);
+      expect(load().hasFollowingFile, isFalse);
+    },
+  );
+
+  test(
+    'removes one file in a batch and rebuilds inherited snapshots',
+    () async {
+      final original = profiles(['keep']);
+      await import({
+        'followers_1.json': profiles(['remove']),
+        'followers_2.json': original,
+        'following.json': profiles(['keep', 'remove']),
+      }, 1);
+      await import({
+        'following.json': profiles(['keep', 'remove', 'new']),
+      }, 2);
+      Future<List<ImportFileEntry>> list() =>
+          HistoryService.listImportedFiles(path: directory.path);
+      Future<void> remove(ImportFileEntry entry) =>
+          HistoryService.removeImportedFile(entry, path: directory.path);
+      final files = await list();
+      expect(files.map((entry) => entry.name), [
+        'following.json',
+        'followers_1.json',
+        'followers_2.json',
+        'following.json',
+      ]);
+      await remove(files[1]);
+      expect(load().followers.keys, ['keep']);
+      expect(load().nonFollowers.map((user) => user.username), [
+        'remove',
+        'new',
+      ]);
+      while ((await list()).isNotEmpty) {
+        await remove((await list()).first);
+      }
+      expect(load().hasFollowersFile, isFalse);
+      expect(load().hasFollowingFile, isFalse);
+      await import({'followers_2.json': original}, 3);
+      expect(load().followers.keys, ['keep']);
+    },
+  );
+
+  test(
+    'identifies legacy follower data and can remove the grouped import',
+    () async {
+      final original = profiles(['legacy']);
+      await import({'followers.json': original}, 1);
+      final file = File('${directory.path}/${HistoryService.fileName}');
+      final state =
+          jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+      (state['snapshots'] as List).single.remove('files');
+      await file.writeAsString(jsonEncode(state));
+
+      await expectLater(
+        import({
+          'followers_1.json': profiles(['legacy']),
+        }, 2),
+        throwsA(isA<DuplicateFollowerFileException>()),
+      );
+      final entries = await HistoryService.listImportedFiles(
+        path: directory.path,
+      );
+      expect(entries.single.name, isNull);
+      await HistoryService.removeImportedFile(
+        entries.single,
+        path: directory.path,
+      );
+      expect(load().hasFollowersFile, isFalse);
+    },
   );
 
   test(

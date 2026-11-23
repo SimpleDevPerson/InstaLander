@@ -279,10 +279,11 @@ void main() {
       find.text('Apri il Centro gestione account').hitTestable(),
       findsOneWidget,
     );
-    expect(find.text('1/5'), findsOneWidget);
+    expect(find.text('1/6'), findsOneWidget);
     for (final title in [
       'Richiedi una copia dei dati',
       'Seleziona solo follower e seguiti',
+      'Scegli «Sempre» come intervallo',
       'Scegli il formato JSON',
       'Scarica ed estrai l’archivio',
     ]) {
@@ -290,11 +291,15 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text(title).hitTestable(), findsOneWidget);
       if (title == 'Seleziona solo follower e seguiti') {
-        expect(find.text('3/5'), findsOneWidget);
+        expect(find.text('3/6'), findsOneWidget);
         expect(
           find.textContaining('Deseleziona tutte le voci'),
           findsOneWidget,
         );
+      }
+      if (title == 'Scegli «Sempre» come intervallo') {
+        expect(find.text('4/6'), findsOneWidget);
+        expect(find.textContaining('Intervallo di date'), findsOneWidget);
       }
     }
 
@@ -328,7 +333,7 @@ void main() {
         await tester.tap(find.text('Avanti').hitTestable());
         await tester.pumpAndSettle();
       }
-      expect(find.text('${step + 1}/5'), findsOneWidget);
+      expect(find.text('${step + 1}/6'), findsOneWidget);
       await tester.tap(find.text('Salta').hitTestable());
       await tester.pumpAndSettle();
       expect(find.byType(OnboardingScreen), findsNothing);
@@ -644,9 +649,9 @@ void main() {
     expect(find.text('Filtro per numero di follower'), findsOneWidget);
     expect(
       find.text(
-        'permette di inserire automaticamente nella whitelist tutti i profili '
+        'Permette di inserire automaticamente nella whitelist tutti i profili '
         'con un numero di follower superiore alla soglia impostata. '
-        'Potrebbe richiedere qualche minuto',
+        'Potrebbe richiedere qualche minuto.',
       ),
       findsOneWidget,
     );
@@ -1562,7 +1567,10 @@ void main() {
     expect(find.text('@second'), findsOneWidget);
     expect(find.byType(UserCard), findsNWidgets(2));
     expect(
-      find.descendant(of: find.byType(UserCard), matching: find.byType(Divider)),
+      find.descendant(
+        of: find.byType(UserCard),
+        matching: find.byType(Divider),
+      ),
       findsNWidgets(2),
     );
     expect(

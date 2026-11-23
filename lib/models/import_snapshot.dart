@@ -1,5 +1,56 @@
 import 'user.dart';
 
+class ImportedExportFile {
+  const ImportedExportFile(
+    this.name,
+    this.fingerprint,
+    this.isFollowers,
+    this.users,
+  );
+
+  final String name;
+  final String fingerprint;
+  final bool isFollowers;
+  final Map<String, InstagramUser> users;
+
+  Map<String, dynamic> toJson({required bool includeUsers}) => {
+    'name': name,
+    'fingerprint': fingerprint,
+    'isFollowers': isFollowers,
+    if (includeUsers)
+      'users': users.values.map((user) => user.toJson()).toList(),
+  };
+
+  factory ImportedExportFile.fromJson(
+    Map<String, dynamic> json,
+    Map<String, InstagramUser> fallbackUsers,
+  ) => ImportedExportFile(
+    json['name'] as String,
+    json['fingerprint'] as String,
+    json['isFollowers'] as bool,
+    switch (json['users']) {
+      final List users => _decodeUsers(users),
+      _ => fallbackUsers,
+    },
+  );
+}
+
+typedef ImportFileEntry = ({
+  int snapshotIndex,
+  int? fileIndex,
+  DateTime date,
+  String? name,
+  String? fingerprint,
+});
+
+Map<String, InstagramUser> _decodeUsers(List users) => {
+  for (final item in users)
+    item['username'] as String: InstagramUser(
+      username: item['username'] as String,
+      timestamp: item['timestamp'] as int,
+    ),
+};
+
 /// A complete, immutable copy of the profiles at an import boundary.
 class ImportSnapshot {
   ImportSnapshot({
@@ -11,10 +62,12 @@ class ImportSnapshot {
     required Map<String, InstagramUser> following,
     this.estimatedDate = false,
     this.followingImported = false,
+    List<ImportedExportFile>? files,
     Map<String, String> usernameChanges = const {},
   }) : followers = Map.unmodifiable(followers),
        usernameChanges = Map.unmodifiable(usernameChanges),
-       following = Map.unmodifiable(following);
+       following = Map.unmodifiable(following),
+       files = files == null ? null : List.unmodifiable(files);
 
   final DateTime date;
   final bool followersImported;
@@ -22,6 +75,9 @@ class ImportSnapshot {
   final bool hasFollowers;
   final bool hasFollowing;
   final bool estimatedDate;
+
+  /// Null for snapshots made before individual files were recorded.
+  final List<ImportedExportFile>? files;
   final Map<String, InstagramUser> followers;
   final Map<String, InstagramUser> following;
 
@@ -36,18 +92,33 @@ class ImportSnapshot {
     'hasFollowing': hasFollowing,
     'estimatedDate': estimatedDate,
     'usernameChanges': usernameChanges,
+    if (files != null) 'files': _encodeFiles(files!),
     'followers': followers.values.map((u) => u.toJson()).toList(),
     'following': following.values.map((u) => u.toJson()).toList(),
   };
 
-  factory ImportSnapshot.fromJson(Map<String, dynamic> json) {
-    Map<String, InstagramUser> users(String key) => {
-      for (final item in json[key] as List)
-        item['username'] as String: InstagramUser(
-          username: item['username'] as String,
-          timestamp: item['timestamp'] as int,
+  List<Map<String, dynamic>> _encodeFiles(List<ImportedExportFile> sources) {
+    final followersCount = sources.where((file) => file.isFollowers).length;
+    final followingCount = sources.length - followersCount;
+    // A single file already has its profile data in the snapshot, unless
+    // the following list was rewritten by confirmed username changes.
+    return [
+      for (final file in sources)
+        file.toJson(
+          includeUsers: file.isFollowers
+              ? followersCount > 1
+              : followingCount > 1 || usernameChanges.isNotEmpty,
         ),
-    };
+    ];
+  }
+
+  factory ImportSnapshot.fromJson(
+    Map<String, dynamic> json, {
+    bool includeFiles = true,
+  }) {
+    final followers = _decodeUsers(json['followers'] as List);
+    final following = _decodeUsers(json['following'] as List);
+    final rawFiles = includeFiles ? json['files'] as List? : null;
     return ImportSnapshot(
       date: DateTime.parse(json['date'] as String),
       followersImported: json['followersImported'] as bool,
@@ -55,11 +126,20 @@ class ImportSnapshot {
       hasFollowers: json['hasFollowers'] as bool,
       hasFollowing: json['hasFollowing'] as bool,
       estimatedDate: json['estimatedDate'] as bool? ?? false,
+      files: rawFiles == null
+          ? null
+          : [
+              for (final file in rawFiles.cast<Map<String, dynamic>>())
+                ImportedExportFile.fromJson(
+                  file,
+                  file['isFollowers'] as bool ? followers : following,
+                ),
+            ],
       usernameChanges: Map<String, String>.from(
         json['usernameChanges'] as Map? ?? {},
       ),
-      followers: users('followers'),
-      following: users('following'),
+      followers: followers,
+      following: following,
     );
   }
 }

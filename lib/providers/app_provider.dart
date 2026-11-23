@@ -88,6 +88,7 @@ class AppProvider extends ChangeNotifier {
   Map<String, int> _stats = {};
   int _followerSnapshotCount = 0;
   Future<List<UnfollowInterval>>? _savedTimeline;
+  Future<List<ImportFileEntry>>? _savedImports;
   Map<String, InstagramUser> _debugFollowers = {};
   Map<String, InstagramUser> _debugFollowing = {};
   Set<String> _debugWhitelist = {};
@@ -147,6 +148,24 @@ class AppProvider extends ChangeNotifier {
       _followerSnapshotCount < 2
       ? null
       : _savedTimeline ??= HistoryService.loadTimeline();
+
+  Future<List<ImportFileEntry>> get savedImports =>
+      _savedImports ??= HistoryService.listImportedFiles();
+
+  void retryImports() {
+    _savedImports = null;
+    notifyListeners();
+  }
+
+  Future<void> removeImportedFile(ImportFileEntry entry) async {
+    _setLoading(true);
+    try {
+      await HistoryService.removeImportedFile(entry);
+      await _loadSavedFiles();
+    } finally {
+      _setLoading(false);
+    }
+  }
 
   void retryTimeline() {
     _savedTimeline = null;
@@ -286,6 +305,7 @@ class AppProvider extends ChangeNotifier {
       _stats = DataService.getStats(_followers, _following, _whitelist);
       _followerSnapshotCount = 0;
       _savedTimeline = null;
+      _savedImports = null;
       _clearDebugData();
       _monthlyReminder = false;
       _reminderIntervalMonths = 1;
@@ -326,6 +346,8 @@ class AppProvider extends ChangeNotifier {
       );
 
       await _loadSavedFiles();
+    } on DuplicateFollowerFileException {
+      rethrow;
     } catch (e) {
       _errorMessage = AppStrings.current.loadFilesError((e).toString());
     } finally {
@@ -348,13 +370,14 @@ class AppProvider extends ChangeNotifier {
         autoWhitelistOnImport: _autoWhitelistOnImport,
         resolveUsernameChanges: resolveUsernameChanges,
       );
+      await _loadSavedFiles();
+    } on DuplicateFollowerFileException {
+      rethrow;
     } catch (e) {
       _errorMessage = AppStrings.current.loadArchiveError((e).toString());
+    } finally {
       _setLoading(false);
-      return;
     }
-
-    await loadJsonFiles(const []);
   }
 
   Future<void> _loadSavedFiles() async {
@@ -367,6 +390,7 @@ class AppProvider extends ChangeNotifier {
     _whitelist = Set.of(snapshot.whitelist);
     _followerSnapshotCount = snapshot.followerSnapshotCount;
     _savedTimeline = null;
+    _savedImports = null;
     _nonFollowers = snapshot.nonFollowers;
     _sortedNonFollowers = snapshot.sortedNonFollowers;
     _stats = snapshot.stats;

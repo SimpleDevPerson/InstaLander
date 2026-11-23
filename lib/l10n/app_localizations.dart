@@ -100,6 +100,66 @@ abstract class AppLocalizations {
     Locale('it'),
   ];
 
+  /// No description provided for @timelineFileCount.
+  ///
+  /// In it, this message translates to:
+  /// **'{count, plural, =1{1 file caricato} other{{count} file caricati}}'**
+  String timelineFileCount(int count);
+
+  /// No description provided for @duplicateFollowerTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'File follower già importato'**
+  String get duplicateFollowerTitle;
+
+  /// No description provided for @duplicateFollowerDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Hai già importato «{arg0}». L’importazione è stata bloccata. Seleziona i file di una nuova esportazione.'**
+  String duplicateFollowerDescription(String arg0);
+
+  /// No description provided for @timelineProfilesView.
+  ///
+  /// In it, this message translates to:
+  /// **'Profili'**
+  String get timelineProfilesView;
+
+  /// No description provided for @timelineFilesView.
+  ///
+  /// In it, this message translates to:
+  /// **'File importati'**
+  String get timelineFilesView;
+
+  /// No description provided for @timelineFilesEmpty.
+  ///
+  /// In it, this message translates to:
+  /// **'Non hai ancora importato file.'**
+  String get timelineFilesEmpty;
+
+  /// No description provided for @timelineLegacyImport.
+  ///
+  /// In it, this message translates to:
+  /// **'Importazione precedente'**
+  String get timelineLegacyImport;
+
+  /// No description provided for @timelineRemoveFile.
+  ///
+  /// In it, this message translates to:
+  /// **'Rimuovi importazione'**
+  String get timelineRemoveFile;
+
+  /// No description provided for @timelineRemoveFileDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Vuoi rimuovere «{arg0}» dalla cronologia? Il Report e la Timeline verranno ricalcolati con i file rimasti.'**
+  String timelineRemoveFileDescription(String arg0);
+
+  /// No description provided for @timelineRemoveFileError.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile rimuovere l’importazione.'**
+  String get timelineRemoveFileError;
+
   /// No description provided for @exportArtifacts.
   ///
   /// In it, this message translates to:
@@ -133,7 +193,7 @@ abstract class AppLocalizations {
   /// No description provided for @followerWhitelistDescription.
   ///
   /// In it, this message translates to:
-  /// **'permette di inserire automaticamente nella whitelist tutti i profili con un numero di follower superiore alla soglia impostata. Potrebbe richiedere qualche minuto'**
+  /// **'Permette di inserire automaticamente nella whitelist tutti i profili con un numero di follower superiore alla soglia impostata. Potrebbe richiedere qualche minuto.'**
   String get followerWhitelistDescription;
 
   /// No description provided for @followerWhitelistThreshold.
@@ -532,11 +592,11 @@ abstract class AppLocalizations {
   /// **'Il report si aggiorna quando importi nuovi file. Nelle Impostazioni puoi attivare un promemoria ogni mese, ogni 3 mesi o ogni 6 mesi per richiedere una nuova esportazione. La notifica è locale e non richiede di mantenere l’app attiva.'**
   String get reminderIntroDescription;
 
-  /// No description provided for @exportStep1of5.
+  /// No description provided for @exportStep1of6.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 1 DI 5'**
-  String get exportStep1of5;
+  /// **'PASSAGGIO 1 DI 6'**
+  String get exportStep1of6;
 
   /// No description provided for @accountsCenterTitle.
   ///
@@ -550,11 +610,11 @@ abstract class AppLocalizations {
   /// **'Apri Instagram, vai sul tuo profilo e tocca il menu ≡ in alto. Entra nel Centro gestione account.'**
   String get accountsCenterDescription;
 
-  /// No description provided for @exportStep2of5.
+  /// No description provided for @exportStep2of6.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 2 DI 5'**
-  String get exportStep2of5;
+  /// **'PASSAGGIO 2 DI 6'**
+  String get exportStep2of6;
 
   /// No description provided for @requestDataTitle.
   ///
@@ -568,11 +628,11 @@ abstract class AppLocalizations {
   /// **'Apri “Le tue informazioni e autorizzazioni” e scegli “Esporta le tue informazioni”, poi “Crea esportazione”. Seleziona il tuo account Instagram.'**
   String get requestDataDescription;
 
-  /// No description provided for @exportStep3of5.
+  /// No description provided for @exportStep3of6.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 3 DI 5'**
-  String get exportStep3of5;
+  /// **'PASSAGGIO 3 DI 6'**
+  String get exportStep3of6;
 
   /// No description provided for @chooseJsonTitle.
   ///
@@ -583,14 +643,26 @@ abstract class AppLocalizations {
   /// No description provided for @chooseJsonDescription.
   ///
   /// In it, this message translates to:
-  /// **'Seleziona “Esporta sul dispositivo”. Nelle opzioni dell’esportazione scegli il formato JSON e invia la richiesta. I nomi delle voci possono variare leggermente in base alla versione di Instagram.'**
+  /// **'Nelle opzioni di esportazione scegli il formato JSON, poi invia la richiesta.'**
   String get chooseJsonDescription;
 
-  /// No description provided for @exportStep4of5.
+  /// No description provided for @exportStep4of6.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 4 DI 5'**
-  String get exportStep4of5;
+  /// **'PASSAGGIO 4 DI 6'**
+  String get exportStep4of6;
+
+  /// No description provided for @exportDateRangeTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Scegli «Sempre» come intervallo'**
+  String get exportDateRangeTitle;
+
+  /// No description provided for @exportDateRangeDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Seleziona «Esporta sul dispositivo». Nelle opzioni di esportazione, apri «Intervallo di date» e seleziona «Sempre». Così Instagram include l’intera lista dei follower e dei seguiti.'**
+  String get exportDateRangeDescription;
 
   /// No description provided for @downloadArchiveTitle.
   ///
@@ -1630,11 +1702,17 @@ abstract class AppLocalizations {
   /// **'Passa al lato oscuro.'**
   String get glowDarkIconDescription;
 
-  /// No description provided for @exportStep5of5.
+  /// No description provided for @exportStep5of6.
   ///
   /// In it, this message translates to:
-  /// **'PASSAGGIO 5 DI 5'**
-  String get exportStep5of5;
+  /// **'PASSAGGIO 5 DI 6'**
+  String get exportStep5of6;
+
+  /// No description provided for @exportStep6of6.
+  ///
+  /// In it, this message translates to:
+  /// **'PASSAGGIO 6 DI 6'**
+  String get exportStep6of6;
 
   /// No description provided for @selectFollowDataTitle.
   ///

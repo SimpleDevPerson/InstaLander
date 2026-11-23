@@ -6,9 +6,19 @@ import '../l10n/app_strings.dart';
 import '../models/import_snapshot.dart';
 import '../providers/app_provider.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/one_ui_segmented_selector.dart';
 
-class TimelineScreen extends StatelessWidget {
+enum _TimelineView { profiles, files }
+
+class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
+
+  @override
+  State<TimelineScreen> createState() => _TimelineScreenState();
+}
+
+class _TimelineScreenState extends State<TimelineScreen> {
+  _TimelineView _view = _TimelineView.profiles;
 
   @override
   Widget build(BuildContext context) {
@@ -52,23 +62,170 @@ class TimelineScreen extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Text(
-              context.l10n.timelineDescription,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: OneUiSegmentedSelector(
+              value: _view,
+              options: [
+                SelectorOption(
+                  _TimelineView.profiles,
+                  context.l10n.timelineProfilesView,
+                  icon: Icons.people_outline,
+                ),
+                SelectorOption(
+                  _TimelineView.files,
+                  context.l10n.timelineFilesView,
+                  icon: Icons.insert_drive_file_outlined,
+                ),
+              ],
+              onChanged: (view) => setState(() => _view = view),
             ),
           ),
+          if (_view == _TimelineView.profiles)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                context.l10n.timelineDescription,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
           const SizedBox(height: 16),
           Expanded(
             child: provider.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _buildTimeline(provider, bottomPadding),
+                : _view == _TimelineView.profiles
+                ? _buildTimeline(provider, bottomPadding)
+                : _buildFiles(provider, bottomPadding),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildFiles(AppProvider provider, double bottomPadding) {
+    return FutureBuilder<List<ImportFileEntry>>(
+      future: provider.savedImports,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: TextButton(
+              onPressed: provider.retryImports,
+              child: Text(context.l10n.retry),
+            ),
+          );
+        }
+        final files = snapshot.data ?? const <ImportFileEntry>[];
+        if (files.isEmpty) {
+          return Center(child: Text(context.l10n.timelineFilesEmpty));
+        }
+        // A following file can be reimported separately for the same export.
+        // Keep its original entry for removal, but display it with that day.
+        final byDay = <DateTime, List<ImportFileEntry>>{};
+        for (final file in files) {
+          byDay.putIfAbsent(DateUtils.dateOnly(file.date), () => []).add(file);
+        }
+        final rows = <(List<ImportFileEntry>, ImportFileEntry?)>[
+          for (final batch in byDay.values) ...[
+            (batch, null),
+            for (final file in batch)
+              if (_isFollowersFile(file)) (batch, file),
+            for (final file in batch)
+              if (!_isFollowersFile(file)) (batch, file),
+          ],
+        ];
+        return _buildRail(
+          const PageStorageKey('timeline-files'),
+          bottomPadding,
+          rows.length,
+          (context, index, dateWidth) {
+            final (batch, file) = rows[index];
+            final strings = context.l10n;
+            final colors = Theme.of(context).colorScheme;
+            final title = file?.name ?? strings.timelineLegacyImport;
+            return _TimelineRow(
+              key: file == null ? null : ValueKey(file),
+              dateWidth: dateWidth,
+              isFirst: index == 0,
+              isLast: index == rows.length - 1,
+              headerIcon: file == null ? Icons.file_upload_outlined : null,
+              date: file == null ? _ImportDate(batch.first.date) : null,
+              content: file == null
+                  ? _TimelineHeading(
+                      title: strings.timelineFileCount(batch.length),
+                    )
+                  : _TimelineCard(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              file.name == null
+                                  ? Icons.folder_outlined
+                                  : Icons.data_object,
+                              size: 22,
+                              color: colors.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(child: _TimelineItemTitle(title)),
+                            IconButton(
+                              tooltip: strings.timelineRemoveFile,
+                              icon: const Icon(Icons.close, size: 18),
+                              color: colors.onSurfaceVariant,
+                              onPressed: () =>
+                                  _confirmRemove(provider, file, title),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  bool _isFollowersFile(ImportFileEntry file) =>
+      file.name?.toLowerCase().startsWith('followers') ?? false;
+
+  Future<void> _confirmRemove(
+    AppProvider provider,
+    ImportFileEntry file,
+    String title,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.timelineRemoveFile),
+        content: Text(context.l10n.timelineRemoveFileDescription(title)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(context.l10n.remove),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await provider.removeImportedFile(file);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.timelineRemoveFileError)),
+      );
+    }
   }
 
   Widget _buildTimeline(AppProvider provider, double bottomPadding) {
@@ -127,50 +284,212 @@ class TimelineScreen extends StatelessWidget {
         for (final profile in interval.profiles) (interval, profile),
       ],
     ];
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final dateWidth = ((constraints.maxWidth - 32) * 0.25).clamp(
-          88.0,
-          112.0,
-        );
-        return ListView.builder(
-          padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
-          itemCount: rows.length,
-          itemBuilder: (context, index) => _TimelineRow(
-            key: ValueKey('timeline-row-$index'),
-            interval: rows[index].$1,
-            profile: rows[index].$2,
-            dateWidth: dateWidth,
-            isFirst: index == 0,
-            isLast: index == rows.length - 1,
-          ),
+    return _buildRail(
+      const PageStorageKey('timeline-profiles'),
+      bottomPadding,
+      rows.length,
+      (context, index, dateWidth) {
+        final (interval, profile) = rows[index];
+        final colors = Theme.of(context).colorScheme;
+        final strings = context.l10n;
+        return _TimelineRow(
+          key: ValueKey('timeline-row-$index'),
+          dateWidth: dateWidth,
+          isFirst: index == 0,
+          isLast: index == rows.length - 1,
+          headerIcon: profile == null
+              ? (interval.users.isEmpty
+                    ? Icons.check
+                    : Icons.person_remove_outlined)
+              : null,
+          date: profile == null ? _IntervalDates(interval: interval) : null,
+          content: profile == null
+              ? _TimelineHeading(
+                  title: switch (interval.users.length) {
+                    0 => strings.noUnfollows,
+                    1 => strings.oneLostFollower,
+                    final n => strings.lostFollowers('$n'),
+                  },
+                  subtitle: [
+                    strings.exportComparison,
+                    if (interval.estimatedDate) strings.estimatedDate,
+                  ],
+                  minHeight: 104,
+                )
+              : _TimelineCard(
+                  onTap: () => _openProfile(context, profile.user.username),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _TimelineProfileDetails(profile: profile),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.open_in_new,
+                          size: 16,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
         );
       },
     );
   }
+
+  Widget _buildRail(
+    PageStorageKey<String> key,
+    double bottomPadding,
+    int length,
+    Widget Function(BuildContext, int, double) rowBuilder,
+  ) => LayoutBuilder(
+    builder: (context, constraints) {
+      final dateWidth = ((constraints.maxWidth - 32) * 0.25).clamp(88.0, 112.0);
+      return ListView.builder(
+        key: key,
+        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
+        itemCount: length,
+        itemBuilder: (context, index) => rowBuilder(context, index, dateWidth),
+      );
+    },
+  );
+
+  Future<void> _openProfile(BuildContext context, String username) async {
+    try {
+      final opened = await context.read<AppProvider>().openProfile(username);
+      if (opened) return;
+    } on Exception {
+      // Report unavailable handlers in the UI.
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.cannotOpenProfile)));
+    }
+  }
+}
+
+class _TimelineHeading extends StatelessWidget {
+  const _TimelineHeading({
+    required this.title,
+    this.subtitle = const [],
+    this.minHeight = 56,
+  });
+
+  final String title;
+  final List<String> subtitle;
+  final double minHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: minHeight),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 14, bottom: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            for (final line in subtitle) ...[
+              const SizedBox(height: 6),
+              Text(
+                line,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TimelineCard extends StatelessWidget {
+  const _TimelineCard({required this.child, this.onTap});
+
+  final Widget child;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Material(
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: onTap == null ? child : InkWell(onTap: onTap, child: child),
+    ),
+  );
+}
+
+class _TimelineItemTitle extends StatelessWidget {
+  const _TimelineItemTitle(this.title);
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    title,
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+    style: Theme.of(
+      context,
+    ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+  );
+}
+
+class _ImportDate extends StatelessWidget {
+  const _ImportDate(this.date);
+  final DateTime date;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.fromSTEB(0, 18, 12, 8),
+    child: Text(
+      MaterialLocalizations.of(context).formatCompactDate(date),
+      textAlign: TextAlign.end,
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+    ),
+  );
 }
 
 class _TimelineRow extends StatelessWidget {
   const _TimelineRow({
     super.key,
-    required this.interval,
     required this.dateWidth,
     required this.isFirst,
     required this.isLast,
-    this.profile,
+    required this.content,
+    this.date,
+    this.headerIcon,
   });
-  final UnfollowInterval interval;
-  final TimelineProfile? profile;
+
   final double dateWidth;
   final bool isFirst;
   final bool isLast;
+  final Widget content;
+  final Widget? date;
+  final IconData? headerIcon;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final profile = this.profile;
-    final isHeader = profile == null;
+    final colors = Theme.of(context).colorScheme;
+    final isHeader = headerIcon != null;
     const railWidth = 32.0;
     final nodeY = isHeader ? 28.0 : 26.0;
     return CustomPaint(
@@ -186,88 +505,9 @@ class _TimelineRow extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: dateWidth,
-                child: isHeader ? _IntervalDates(interval: interval) : null,
-              ),
+              SizedBox(width: dateWidth, child: date),
               const SizedBox(width: railWidth + 12),
-              Expanded(
-                child: isHeader
-                    ? ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 104),
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 14, bottom: 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                interval.users.isEmpty
-                                    ? context.l10n.noUnfollows
-                                    : interval.users.length == 1
-                                    ? context.l10n.oneLostFollower
-                                    : context.l10n.lostFollowers(
-                                        (interval.users.length).toString(),
-                                      ),
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                context.l10n.exportComparison,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colors.onSurfaceVariant,
-                                ),
-                              ),
-                              if (interval.estimatedDate) ...[
-                                const SizedBox(height: 6),
-                                Text(
-                                  context.l10n.estimatedDate,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: colors.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                      )
-                    : Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Material(
-                          color: colors.surfaceContainerLow,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () =>
-                                _openProfile(context, profile.user.username),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 14,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: _TimelineProfileDetails(
-                                      profile: profile,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.open_in_new,
-                                    size: 16,
-                                    color: colors.onSurfaceVariant,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-              ),
+              Expanded(child: content),
             ],
           ),
           Positioned(
@@ -286,13 +526,7 @@ class _TimelineRow extends StatelessWidget {
                       : Border.all(color: colors.primary, width: 2),
                 ),
                 child: isHeader
-                    ? Icon(
-                        interval.users.isEmpty
-                            ? Icons.check
-                            : Icons.person_remove_outlined,
-                        size: 18,
-                        color: colors.onPrimary,
-                      )
+                    ? Icon(headerIcon, size: 18, color: colors.onPrimary)
                     : null,
               ),
             ),
@@ -300,20 +534,6 @@ class _TimelineRow extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Future<void> _openProfile(BuildContext context, String username) async {
-    try {
-      final opened = await context.read<AppProvider>().openProfile(username);
-      if (opened) return;
-    } on Exception {
-      // Report unavailable handlers in the UI.
-    }
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.l10n.cannotOpenProfile)));
-    }
   }
 }
 
@@ -336,14 +556,7 @@ class _TimelineProfileDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '@${profile.user.username}',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        _TimelineItemTitle('@${profile.user.username}'),
         if (previous != null)
           Text(
             context.l10n.timelinePreviousUsername('@$previous'),

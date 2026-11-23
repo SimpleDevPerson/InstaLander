@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -9,6 +10,12 @@ import '../models/import_snapshot.dart';
 import '../models/user.dart';
 import '../models/username_change.dart';
 import 'data_service.dart';
+
+class DuplicateFollowerFileException implements Exception {
+  const DuplicateFollowerFileException(this.name);
+
+  final String name;
+}
 
 class HistoryService {
   static const fileName = 'import_history.json';
@@ -37,6 +44,163 @@ class HistoryService {
           .map((item) => ImportSnapshot.fromJson(item as Map<String, dynamic>))
           .toList();
 
+  static Future<List<ImportFileEntry>> listImportedFiles({String? path}) async {
+    path ??= (await getApplicationDocumentsDirectory()).path;
+    final state = File('$path/$fileName');
+    if (!await state.exists()) return const [];
+    return compute(_fileEntries, await state.readAsString());
+  }
+
+  static List<ImportFileEntry> _fileEntries(String content) {
+    final snapshots = jsonDecode(content)['snapshots'] as List;
+    return [
+      for (var i = snapshots.length - 1; i >= 0; i--)
+        if (snapshots[i]['files'] case final List files)
+          for (var j = 0; j < files.length; j++) _fileEntry(snapshots[i], i, j)
+        else
+          _fileEntry(snapshots[i], i, null),
+    ];
+  }
+
+  static ImportFileEntry _fileEntry(Map snapshot, int index, int? fileIndex) {
+    final file = fileIndex == null
+        ? null
+        : (snapshot['files'] as List)[fileIndex] as Map;
+    return (
+      snapshotIndex: index,
+      fileIndex: fileIndex,
+      date: DateTime.parse(snapshot['date'] as String),
+      name: file?['name'] as String?,
+      fingerprint: file?['fingerprint'] as String?,
+    );
+  }
+
+  static Future<void> removeImportedFile(
+    ImportFileEntry entry, {
+    String? path,
+  }) => write(() async {
+    path ??= (await getApplicationDocumentsDirectory()).path;
+    final state = File('$path/$fileName');
+    final content = await state.readAsString();
+    final rebuilt = await compute(_removeFromHistory, (content, entry));
+    await _save(state, rebuilt);
+  });
+
+  static (List<ImportSnapshot>, Set<String>, Set<String>) _removeFromHistory(
+    (String, ImportFileEntry) request,
+  ) {
+    final (content, entry) = request;
+    final state = jsonDecode(content) as Map<String, dynamic>;
+    final raw = state['snapshots'] as List;
+    final target = raw[entry.snapshotIndex] as Map<String, dynamic>;
+    if (_fileEntry(target, entry.snapshotIndex, entry.fileIndex) != entry) {
+      throw StateError('Import history changed');
+    }
+    final rebuilt = <ImportSnapshot>[];
+    ImportSnapshot? originalPrevious;
+    for (var index = 0; index < raw.length; index++) {
+      final json = raw[index] as Map<String, dynamic>;
+      final original = ImportSnapshot.fromJson(json);
+      final files = original.files?.toList();
+      final isTarget = index == entry.snapshotIndex;
+      if (isTarget && entry.fileIndex != null) {
+        files!.removeAt(entry.fileIndex!);
+      }
+      if (!(isTarget && entry.fileIndex == null) &&
+          (files == null || files.isNotEmpty)) {
+        final previous = rebuilt.lastOrNull;
+        final followers = <String, InstagramUser>{};
+        final following = <String, InstagramUser>{};
+        var hasFollowers = false;
+        var hasFollowing = false;
+        if (files != null) {
+          for (final file in files) {
+            (file.isFollowers ? followers : following).addAll(file.users);
+            hasFollowers |= file.isFollowers;
+            hasFollowing |= !file.isFollowers;
+          }
+        } else {
+          hasFollowers = original.followersImported;
+          hasFollowing =
+              original.followingImported ||
+              (original.hasFollowing &&
+                  !(originalPrevious?.hasFollowing ?? false)) ||
+              (!json.containsKey('followingImported') &&
+                  original.hasFollowing &&
+                  !_sameUsers(
+                    original.following,
+                    originalPrevious?.following ?? const {},
+                  ));
+          if (hasFollowers) followers.addAll(original.followers);
+          if (hasFollowing) following.addAll(original.following);
+        }
+
+        if (hasFollowers || hasFollowing) {
+          final changes = <String, String>{
+            if (hasFollowers && previous != null)
+              for (final change in original.usernameChanges.entries)
+                if (!followers.containsKey(change.key) &&
+                    !previous.followers.containsKey(change.value) &&
+                    _sameFollowTime(
+                      previous.followers[change.key],
+                      followers[change.value],
+                    ))
+                  change.key: change.value,
+          };
+          final nextFollowing = hasFollowing
+              ? following
+              : {...?previous?.following};
+          _applyUsernameChanges(nextFollowing, changes);
+          rebuilt.add(
+            ImportSnapshot(
+              date: original.date,
+              estimatedDate: original.estimatedDate,
+              followersImported: hasFollowers,
+              followingImported: hasFollowing,
+              hasFollowers: hasFollowers || (previous?.hasFollowers ?? false),
+              hasFollowing: hasFollowing || (previous?.hasFollowing ?? false),
+              followers: hasFollowers
+                  ? followers
+                  : previous?.followers ?? const {},
+              following: nextFollowing,
+              usernameChanges: changes,
+              files: files,
+            ),
+          );
+        }
+      }
+      originalPrevious = original;
+    }
+    return (
+      rebuilt,
+      Set<String>.from(state['whitelist'] as List),
+      Set<String>.from(state['automaticWhitelist'] as List? ?? []),
+    );
+  }
+
+  static bool _sameFollowTime(
+    InstagramUser? previous,
+    InstagramUser? current,
+  ) =>
+      previous != null &&
+      previous.timestamp > 0 &&
+      previous.timestamp == current?.timestamp;
+
+  static void _applyUsernameChanges(
+    Map<String, InstagramUser> following,
+    Map<String, String> changes,
+  ) {
+    for (final entry in changes.entries) {
+      final old = following.remove(entry.key);
+      if (old != null) {
+        following.putIfAbsent(
+          entry.value,
+          () => InstagramUser(username: entry.value, timestamp: old.timestamp),
+        );
+      }
+    }
+  }
+
   static Future<List<UnfollowInterval>> loadTimeline({String? path}) async {
     path ??= (await getApplicationDocumentsDirectory()).path;
     return compute(_readTimeline, path);
@@ -52,7 +216,7 @@ class HistoryService {
     for (final entry in snapshots) {
       final data = entry as Map<String, dynamic>;
       if (!(data['followersImported'] as bool)) continue;
-      final current = ImportSnapshot.fromJson(data);
+      final current = ImportSnapshot.fromJson(data, includeFiles: false);
       if (previous != null) intervals.add(UnfollowInterval(previous, current));
       previous = current;
     }
@@ -85,22 +249,27 @@ class HistoryService {
     ResolveUsernameChanges? resolveUsernameChanges,
   }) async {
     path ??= (await getApplicationDocumentsDirectory()).path;
+    final state = File('$path/$fileName');
     final followers = <String, InstagramUser>{};
     final following = <String, InstagramUser>{};
+    final imported = <ImportedExportFile>[];
     var hasFollowers = false;
     var hasFollowing = false;
     for (final entry in files.entries) {
-      final name = entry.key.split(RegExp(r'[/\\]')).last.toLowerCase();
+      final filename = entry.key.split(RegExp(r'[/\\]')).last;
+      final name = filename.toLowerCase();
       if (!name.endsWith('.json')) continue;
       final isFollowers = name.startsWith('followers');
       final isFollowing = name.startsWith('following');
       if (!isFollowers && !isFollowing) continue;
-      final users = await compute(_validateProfiles, (
-        name,
+      final file = await compute(_parseFile, (
+        filename,
         entry.value,
         AppStrings.current.localeName,
+        isFollowers,
       ));
-      (isFollowers ? followers : following).addAll(users);
+      imported.add(file);
+      (isFollowers ? followers : following).addAll(file.users);
       hasFollowers |= isFollowers;
       hasFollowing |= isFollowing;
     }
@@ -109,7 +278,7 @@ class HistoryService {
     }
 
     final history = await load(path: path);
-    if (history.isEmpty) {
+    if (history.isEmpty && !await state.exists()) {
       final legacy = await compute(DataService.loadAppDataFromDirectory, (
         path,
         SortOption.dateDesc,
@@ -132,6 +301,7 @@ class HistoryService {
             date: modified ?? DateTime.now(),
             estimatedDate: true,
             followersImported: legacy.hasFollowersFile,
+            followingImported: legacy.hasFollowingFile,
             hasFollowers: legacy.hasFollowersFile,
             hasFollowing: legacy.hasFollowingFile,
             followers: legacy.followers,
@@ -140,6 +310,7 @@ class HistoryService {
         );
       }
     }
+    _checkDuplicateFollowers(imported, history);
     final previous = history.lastOrNull;
     // Dates must move forward; reimporting the same day is permitted.
     if (previous != null && _day(date).isBefore(_day(previous.date))) {
@@ -174,15 +345,7 @@ class HistoryService {
     final nextFollowing = Map<String, InstagramUser>.of(
       hasFollowing ? following : previous?.following ?? {},
     );
-    for (final entry in changes.entries) {
-      final old = nextFollowing.remove(entry.key);
-      if (old != null) {
-        nextFollowing.putIfAbsent(
-          entry.value,
-          () => InstagramUser(username: entry.value, timestamp: old.timestamp),
-        );
-      }
-    }
+    _applyUsernameChanges(nextFollowing, changes);
     final next = ImportSnapshot(
       date: date,
       followersImported: hasFollowers,
@@ -192,9 +355,9 @@ class HistoryService {
       followers: hasFollowers ? followers : previous?.followers ?? {},
       following: nextFollowing,
       usernameChanges: changes,
+      files: imported,
     );
     final whitelistFile = File('$path/whitelist.txt');
-    final state = File('$path/$fileName');
     final saved = await state.exists()
         ? jsonDecode(await state.readAsString()) as Map<String, dynamic>
         : null;
@@ -243,14 +406,69 @@ class HistoryService {
       }
     }
     history.add(next);
-    final pending = File('$path/$fileName.tmp');
-    await pending.writeAsString(
-      await compute(_encode, (history, whitelist, automatic)),
-      flush: true,
-    );
+    await _save(state, (history, whitelist, automatic));
+  }
+
+  static Future<void> _save(
+    File state,
+    (List<ImportSnapshot>, Set<String>, Set<String>) data,
+  ) async {
+    final pending = File('${state.path}.tmp');
+    await pending.writeAsString(await compute(_encode, data), flush: true);
     // The state is authoritative; legacy raw JSONs remain untouched.
     await pending.rename(state.path);
   }
+
+  static ImportedExportFile _parseFile(
+    (String, List<int>, String, bool) input,
+  ) {
+    final (name, bytes, language, isFollowers) = input;
+    return ImportedExportFile(
+      name,
+      sha256.convert(bytes).toString(),
+      isFollowers,
+      _validateProfiles((name, bytes, language)),
+    );
+  }
+
+  static void _checkDuplicateFollowers(
+    List<ImportedExportFile> files,
+    List<ImportSnapshot> history,
+  ) {
+    final known = {
+      for (final snapshot in history)
+        for (final file in snapshot.files ?? const <ImportedExportFile>[])
+          if (file.isFollowers) file.fingerprint,
+    };
+    final followersFiles = files.where((file) => file.isFollowers).toList();
+    for (final file in followersFiles) {
+      if (!known.add(file.fingerprint)) {
+        throw DuplicateFollowerFileException(file.name);
+      }
+    }
+    // Older versions only kept merged profiles, so compare their full list
+    // when the new selection contains a single followers file.
+    if (followersFiles.length == 1) {
+      final file = followersFiles.single;
+      if (history.any(
+        (snapshot) =>
+            snapshot.files == null &&
+            snapshot.followersImported &&
+            _sameUsers(snapshot.followers, file.users),
+      )) {
+        throw DuplicateFollowerFileException(file.name);
+      }
+    }
+  }
+
+  static bool _sameUsers(
+    Map<String, InstagramUser> a,
+    Map<String, InstagramUser> b,
+  ) =>
+      a.length == b.length &&
+      a.entries.every(
+        (entry) => b[entry.key]?.timestamp == entry.value.timestamp,
+      );
 
   static String _encode(
     (List<ImportSnapshot>, Set<String>, Set<String>) data,

@@ -1,13 +1,18 @@
-# InstaLander 0.9.0 McConaughey
+# InstaLander 0.9.1 McConaughey
 
-Novità rispetto alla 0.8.2 · build 2028.
+Novità rispetto a 0.9.0 · build 2035.
 
-- Il Report ha un solo pulsante **Importa** per selezionare più file JSON o un archivio ZIP.
-- Il **Filtro per numero di follower** aggiunge alla Whitelist i profili sopra la soglia impostata. Legge i conteggi dalle pagine pubbliche di Instagram, converte le abbreviazioni e riprende quando torni nell’app dopo lo standby.
-- Chi smette di seguirti resta nel Report anche con la Whitelist automatica attiva. Le voci salvate dalle versioni precedenti si gestiscono dalla scheda Whitelist.
-- La Timeline raggruppa il vecchio e il nuovo username dei cambi confermati. I profili mancanti da entrambe le liste aggiornate possono ricevere il tag **Possibile cancellazione**, visibile anche nel Report.
-- Le voci con `__deleted__` sono raccolte in fondo al Report e alla Whitelist come artefatti dell’esportazione ed escluse dai contatori.
-- La griglia della Whitelist adotta il layout del Report. Lo swipe di rimozione usa sempre il gradiente rosso.
-- Migliorato il contrasto delle icone delle barre di sistema nei temi chiaro e scuro.
+- L’app blocca l’importazione di un file follower già caricato e mostra un avviso con il nome del file, anche se arriva da uno ZIP o è stato rinominato.
+- La guida all’esportazione ha sei passaggi. Il quarto mostra come scegliere «Sempre» come intervallo di date.
+- La Timeline ha due viste, Profili e File importati. I file sono raggruppati per data di esportazione, con i follower prima dei seguiti. Puoi rimuovere un file con la X sulla sua scheda e ricalcolare il Report e la Timeline.
+- I menu di ordinamento del Report e della Whitelist riprendono i colori dei pulsanti che li aprono.
+- Corretti maiuscole e punteggiatura nel filtro per numero di follower.
 
-Android minimo 8.0 (API 26).
+## Download
+
+- InstaLander-0.9.1-universal.apk per tutti i dispositivi supportati.
+- APK dedicati per ARM64, ARM a 32 bit e x86 a 64 bit.
+- InstaLander-0.9.1.aab per la distribuzione tramite store.
+- SHA256SUMS.txt con i checksum dei cinque pacchetti.
+
+Android minimo: 8.0 (API 26).

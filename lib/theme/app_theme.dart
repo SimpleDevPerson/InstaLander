@@ -4,6 +4,11 @@ import 'package:flutter/services.dart';
 class AppTheme {
   static const toolbarControlRadius = BorderRadius.all(Radius.circular(20));
 
+  static Color toolbarControlFill(BuildContext context) => Color.alphaBlend(
+    Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+    getBgColor(context),
+  );
+
   static List<Color> redGradientColors(Brightness brightness) =>
       brightness == Brightness.dark
       ? const [Color(0xFF542326), Color(0xFFAD3942)]

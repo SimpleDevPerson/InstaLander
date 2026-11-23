@@ -1,12 +1,13 @@
 name: instalander
 description: "InstaLander - Instagram follower report"
 publish_to: 'none'
-version: 0.9.0+2028
+version: 0.9.1+2035
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
 
 dependencies:
+  crypto: ^3.0.7
   flutter:
     sdk: flutter
   flutter_localizations:

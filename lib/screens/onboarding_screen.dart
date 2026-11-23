@@ -55,31 +55,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   List<_OnboardingStep> get _exportSteps => [
     _OnboardingStep(
       icon: Icons.account_circle_outlined,
-      eyebrow: context.l10n.exportStep1of5,
+      eyebrow: context.l10n.exportStep1of6,
       title: context.l10n.accountsCenterTitle,
       description: context.l10n.accountsCenterDescription,
     ),
     _OnboardingStep(
       icon: Icons.folder_open_outlined,
-      eyebrow: context.l10n.exportStep2of5,
+      eyebrow: context.l10n.exportStep2of6,
       title: context.l10n.requestDataTitle,
       description: context.l10n.requestDataDescription,
     ),
     _OnboardingStep(
       icon: Icons.checklist_rounded,
-      eyebrow: context.l10n.exportStep3of5,
+      eyebrow: context.l10n.exportStep3of6,
       title: context.l10n.selectFollowDataTitle,
       description: context.l10n.selectFollowDataDescription,
     ),
     _OnboardingStep(
+      icon: Icons.date_range_outlined,
+      eyebrow: context.l10n.exportStep4of6,
+      title: context.l10n.exportDateRangeTitle,
+      description: context.l10n.exportDateRangeDescription,
+    ),
+    _OnboardingStep(
       icon: Icons.data_object,
-      eyebrow: context.l10n.exportStep4of5,
+      eyebrow: context.l10n.exportStep5of6,
       title: context.l10n.chooseJsonTitle,
       description: context.l10n.chooseJsonDescription,
     ),
     _OnboardingStep(
       icon: Icons.download_done_outlined,
-      eyebrow: context.l10n.exportStep5of5,
+      eyebrow: context.l10n.exportStep6of6,
       title: context.l10n.downloadArchiveTitle,
       description: context.l10n.downloadArchiveDescription,
     ),

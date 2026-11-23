@@ -9,6 +9,48 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String timelineFileCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count files imported',
+      one: '1 file imported',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get duplicateFollowerTitle => 'Followers file already imported';
+
+  @override
+  String duplicateFollowerDescription(String arg0) {
+    return 'You already imported “$arg0”. The import was blocked. Select files from a new export.';
+  }
+
+  @override
+  String get timelineProfilesView => 'Profiles';
+
+  @override
+  String get timelineFilesView => 'Imported files';
+
+  @override
+  String get timelineFilesEmpty => 'You haven’t imported any files yet.';
+
+  @override
+  String get timelineLegacyImport => 'Previous import';
+
+  @override
+  String get timelineRemoveFile => 'Remove import';
+
+  @override
+  String timelineRemoveFileDescription(String arg0) {
+    return 'Remove “$arg0” from history? The Report and Timeline will be recalculated from the remaining files.';
+  }
+
+  @override
+  String get timelineRemoveFileError => 'Unable to remove the import.';
+
+  @override
   String get exportArtifacts => 'Instagram export artifacts';
 
   @override
@@ -255,7 +297,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your report updates when you import new files. In Settings, you can enable a reminder every month, every 3 months or every 6 months to request a new export. The notification is local and works without keeping the app open.';
 
   @override
-  String get exportStep1of5 => 'STEP 1 OF 5';
+  String get exportStep1of6 => 'STEP 1 OF 6';
 
   @override
   String get accountsCenterTitle => 'Open Accounts Center';
@@ -265,7 +307,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open Instagram, go to your profile and tap the ≡ menu at the top. Open Accounts Center.';
 
   @override
-  String get exportStep2of5 => 'STEP 2 OF 5';
+  String get exportStep2of6 => 'STEP 2 OF 6';
 
   @override
   String get requestDataTitle => 'Request a copy of your data';
@@ -275,17 +317,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open “Your information and permissions” and choose “Export your information”, then “Create export”. Select your Instagram account.';
 
   @override
-  String get exportStep3of5 => 'STEP 3 OF 5';
+  String get exportStep3of6 => 'STEP 3 OF 6';
 
   @override
   String get chooseJsonTitle => 'Choose JSON format';
 
   @override
   String get chooseJsonDescription =>
-      'Select “Export to device”. In the export options, choose JSON format and submit the request. Menu names may vary slightly depending on your Instagram version.';
+      'In the export options, choose JSON format, then submit the request.';
 
   @override
-  String get exportStep4of5 => 'STEP 4 OF 5';
+  String get exportStep4of6 => 'STEP 4 OF 6';
+
+  @override
+  String get exportDateRangeTitle => 'Choose “All time” as the date range';
+
+  @override
+  String get exportDateRangeDescription =>
+      'Select “Export to device”. In the export options, open “Date range” and select “All time”. This includes your full lists of followers and accounts you follow.';
 
   @override
   String get downloadArchiveTitle => 'Download and extract the archive';
@@ -873,7 +922,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get glowDarkIconDescription => 'Come to the dark side.';
 
   @override
-  String get exportStep5of5 => 'STEP 5 OF 5';
+  String get exportStep5of6 => 'STEP 5 OF 6';
+
+  @override
+  String get exportStep6of6 => 'STEP 6 OF 6';
 
   @override
   String get selectFollowDataTitle => 'Choose only followers and following';

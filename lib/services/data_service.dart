@@ -157,16 +157,19 @@ class DataService {
       final state =
           jsonDecode(historyFile.readAsStringSync()) as Map<String, dynamic>;
       final snapshots = state['snapshots'] as List;
-      final latest = ImportSnapshot.fromJson(
-        snapshots.last as Map<String, dynamic>,
-      );
+      final latest = snapshots.isEmpty
+          ? null
+          : ImportSnapshot.fromJson(
+              snapshots.last as Map<String, dynamic>,
+              includeFiles: false,
+            );
       return AppDataSnapshot(
-        followers: latest.followers,
-        following: latest.following,
+        followers: latest?.followers ?? const {},
+        following: latest?.following ?? const {},
         whitelist:
             whitelistOverride ?? Set<String>.from(state['whitelist'] as List),
-        hasFollowersFile: latest.hasFollowers,
-        hasFollowingFile: latest.hasFollowing,
+        hasFollowersFile: latest?.hasFollowers ?? false,
+        hasFollowingFile: latest?.hasFollowing ?? false,
         sort: sort,
         followerSnapshotCount: snapshots
             .where((snapshot) => snapshot['followersImported'] as bool)

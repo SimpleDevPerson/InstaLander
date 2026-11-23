@@ -9,6 +9,48 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
+  String timelineFileCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count file caricati',
+      one: '1 file caricato',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get duplicateFollowerTitle => 'File follower già importato';
+
+  @override
+  String duplicateFollowerDescription(String arg0) {
+    return 'Hai già importato «$arg0». L’importazione è stata bloccata. Seleziona i file di una nuova esportazione.';
+  }
+
+  @override
+  String get timelineProfilesView => 'Profili';
+
+  @override
+  String get timelineFilesView => 'File importati';
+
+  @override
+  String get timelineFilesEmpty => 'Non hai ancora importato file.';
+
+  @override
+  String get timelineLegacyImport => 'Importazione precedente';
+
+  @override
+  String get timelineRemoveFile => 'Rimuovi importazione';
+
+  @override
+  String timelineRemoveFileDescription(String arg0) {
+    return 'Vuoi rimuovere «$arg0» dalla cronologia? Il Report e la Timeline verranno ricalcolati con i file rimasti.';
+  }
+
+  @override
+  String get timelineRemoveFileError => 'Impossibile rimuovere l’importazione.';
+
+  @override
   String get exportArtifacts => 'Artefatti dell’esportazione di Instagram';
 
   @override
@@ -27,7 +69,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get followerWhitelistDescription =>
-      'permette di inserire automaticamente nella whitelist tutti i profili con un numero di follower superiore alla soglia impostata. Potrebbe richiedere qualche minuto';
+      'Permette di inserire automaticamente nella whitelist tutti i profili con un numero di follower superiore alla soglia impostata. Potrebbe richiedere qualche minuto.';
 
   @override
   String get followerWhitelistThreshold => 'Soglia follower';
@@ -255,7 +297,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Il report si aggiorna quando importi nuovi file. Nelle Impostazioni puoi attivare un promemoria ogni mese, ogni 3 mesi o ogni 6 mesi per richiedere una nuova esportazione. La notifica è locale e non richiede di mantenere l’app attiva.';
 
   @override
-  String get exportStep1of5 => 'PASSAGGIO 1 DI 5';
+  String get exportStep1of6 => 'PASSAGGIO 1 DI 6';
 
   @override
   String get accountsCenterTitle => 'Apri il Centro gestione account';
@@ -265,7 +307,7 @@ class AppLocalizationsIt extends AppLocalizations {
       'Apri Instagram, vai sul tuo profilo e tocca il menu ≡ in alto. Entra nel Centro gestione account.';
 
   @override
-  String get exportStep2of5 => 'PASSAGGIO 2 DI 5';
+  String get exportStep2of6 => 'PASSAGGIO 2 DI 6';
 
   @override
   String get requestDataTitle => 'Richiedi una copia dei dati';
@@ -275,17 +317,24 @@ class AppLocalizationsIt extends AppLocalizations {
       'Apri “Le tue informazioni e autorizzazioni” e scegli “Esporta le tue informazioni”, poi “Crea esportazione”. Seleziona il tuo account Instagram.';
 
   @override
-  String get exportStep3of5 => 'PASSAGGIO 3 DI 5';
+  String get exportStep3of6 => 'PASSAGGIO 3 DI 6';
 
   @override
   String get chooseJsonTitle => 'Scegli il formato JSON';
 
   @override
   String get chooseJsonDescription =>
-      'Seleziona “Esporta sul dispositivo”. Nelle opzioni dell’esportazione scegli il formato JSON e invia la richiesta. I nomi delle voci possono variare leggermente in base alla versione di Instagram.';
+      'Nelle opzioni di esportazione scegli il formato JSON, poi invia la richiesta.';
 
   @override
-  String get exportStep4of5 => 'PASSAGGIO 4 DI 5';
+  String get exportStep4of6 => 'PASSAGGIO 4 DI 6';
+
+  @override
+  String get exportDateRangeTitle => 'Scegli «Sempre» come intervallo';
+
+  @override
+  String get exportDateRangeDescription =>
+      'Seleziona «Esporta sul dispositivo». Nelle opzioni di esportazione, apri «Intervallo di date» e seleziona «Sempre». Così Instagram include l’intera lista dei follower e dei seguiti.';
 
   @override
   String get downloadArchiveTitle => 'Scarica ed estrai l’archivio';
@@ -880,7 +929,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get glowDarkIconDescription => 'Passa al lato oscuro.';
 
   @override
-  String get exportStep5of5 => 'PASSAGGIO 5 DI 5';
+  String get exportStep5of6 => 'PASSAGGIO 5 DI 6';
+
+  @override
+  String get exportStep6of6 => 'PASSAGGIO 6 DI 6';
 
   @override
   String get selectFollowDataTitle => 'Seleziona solo follower e seguiti';

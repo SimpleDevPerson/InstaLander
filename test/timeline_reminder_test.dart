@@ -28,8 +28,9 @@ ImportSnapshot snapshot(int month, List<String> users) => ImportSnapshot(
 );
 
 class TimelineProvider extends AppProvider {
-  TimelineProvider(this.intervals);
+  TimelineProvider(this.intervals, {this.files = const []});
   final List<UnfollowInterval> intervals;
+  List<ImportFileEntry> files;
   @override
   bool get isLoading => false;
   @override
@@ -38,11 +39,120 @@ class TimelineProvider extends AppProvider {
   );
   @override
   Set<String> get whitelist => {'lost'};
+  @override
+  late Future<List<ImportFileEntry>> savedImports = Future.value(files);
+
+  @override
+  Future<void> removeImportedFile(ImportFileEntry entry) async {
+    files = files.where((file) => file != entry).toList();
+    savedImports = Future.value(files);
+    notifyListeners();
+  }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets(
+    'file timeline groups reimported following with followers from the same day',
+    (tester) async {
+      final date = DateTime(2026, 11, 23);
+      final app = TimelineProvider(
+        [],
+        files: [
+          (
+            snapshotIndex: 2,
+            fileIndex: 0,
+            date: DateTime(2026, 11, 23, 18),
+            name: 'following.json',
+            fingerprint: 'two',
+          ),
+          (
+            snapshotIndex: 1,
+            fileIndex: 0,
+            date: date,
+            name: 'followers_1.json',
+            fingerprint: 'one',
+          ),
+          (
+            snapshotIndex: 0,
+            fileIndex: 0,
+            date: DateTime(2026, 11, 22),
+            name: 'followers_2.json',
+            fingerprint: 'three',
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AppProvider>.value(value: app),
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ],
+          child: const MaterialApp(home: Scaffold(body: TimelineScreen())),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('followers_1.json'), findsNothing);
+      await tester.tap(find.text('File importati'));
+      await tester.pumpAndSettle();
+      final followers = find.text('followers_1.json');
+      final following = find.text('following.json');
+      final otherBatch = find.text('followers_2.json');
+      expect(find.textContaining('2 file caricati'), findsOneWidget);
+      expect(find.textContaining('1 file caricato'), findsOneWidget);
+      expect(tester.getTopLeft(followers).dx, tester.getTopLeft(following).dx);
+      expect(
+        tester.getCenter(followers).dy,
+        lessThan(tester.getCenter(following).dy),
+      );
+      expect(
+        tester.getCenter(otherBatch).dy,
+        greaterThan(tester.getCenter(following).dy),
+      );
+      final nodes = find.byKey(const ValueKey('timeline-node'));
+      expect(nodes, findsNWidgets(5));
+      expect({
+        for (var i = 0; i < 5; i++) tester.getCenter(nodes.at(i)).dx,
+      }, hasLength(1));
+      final colors = Theme.of(tester.element(followers)).colorScheme;
+      final item = find.ancestor(
+        of: followers,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Material && widget.color == colors.surfaceContainerLow,
+        ),
+      );
+      final remove = find.descendant(
+        of: item,
+        matching: find.byIcon(Icons.close),
+      );
+      final cardBounds = tester.getRect(item);
+      final closeBounds = tester.getRect(remove);
+      expect(closeBounds.top, greaterThan(cardBounds.top));
+      expect(closeBounds.right, lessThan(cardBounds.right));
+      final jsonIcon = find.descendant(
+        of: item,
+        matching: find.byIcon(Icons.data_object),
+      );
+      expect(tester.widget<Icon>(jsonIcon).color, colors.onSurfaceVariant);
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Annulla'));
+      await tester.pumpAndSettle();
+      expect(item, findsOneWidget);
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Rimuovi'));
+      await tester.pumpAndSettle();
+      expect(find.text('followers_1.json'), findsNothing);
+      expect(find.text('following.json'), findsOneWidget);
+      expect(find.textContaining('1 file caricato'), findsNWidgets(2));
+      await tester.pumpWidget(const SizedBox.shrink());
+      app.dispose();
+    },
+  );
 
   testWidgets('timeline groups both usernames in the tagged rename card', (
     tester,

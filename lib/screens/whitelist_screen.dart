@@ -318,24 +318,27 @@ class _WhitelistScreenState extends State<WhitelistScreen> {
 
   Widget _buildSortSelector(BuildContext context, AppProvider provider) {
     final colorScheme = Theme.of(context).colorScheme;
+    final controlFill = AppTheme.toolbarControlFill(context);
+    final controlBorder = BorderSide(color: colorScheme.outlineVariant);
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
-        border: Border.all(color: colorScheme.outlineVariant),
+        color: controlFill,
+        border: Border.fromBorderSide(controlBorder),
         borderRadius: AppTheme.toolbarControlRadius,
       ),
       child: PopupMenuButton<SortOption>(
         onSelected: provider.setSortOption,
         position: PopupMenuPosition.under,
         offset: const Offset(0, 4),
-        color: colorScheme.surfaceContainerHighest,
+        color: controlFill,
+        surfaceTintColor: Colors.transparent,
         elevation: 8,
         constraints: const BoxConstraints(minWidth: 220, maxWidth: 240),
         menuPadding: const EdgeInsets.all(8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: colorScheme.outline, width: 1.5),
+          side: controlBorder,
         ),
         itemBuilder: (context) => SortOption.values.map((option) {
           final title = switch (option) {
