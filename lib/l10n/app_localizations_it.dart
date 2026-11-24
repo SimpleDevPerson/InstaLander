@@ -446,7 +446,45 @@ class AppLocalizationsIt extends AppLocalizations {
       'Dalla seconda esportazione dei follower, aggiunge i profili che seguivi già e che non risultano mai tra i follower importati. Chi smette di seguirti resta nel Report.';
 
   @override
-  String get reminders => 'Promemoria';
+  String get followerTrackingNotifications => 'Notifiche';
+
+  @override
+  String get followerTrackingAutomatic => 'Controllo automatico';
+
+  @override
+  String get followerTrackingDescription =>
+      'Controlla il numero di follower all’attivazione e poi una volta al giorno. Ti avvisa quando il conteggio cambia. Con il toggle disattivato, l’app non gira in background per controllare i follower.';
+
+  @override
+  String get followerTrackingChooseProfile =>
+      'Aggiungi un profilo per attivare il tracciamento.';
+
+  @override
+  String get followerTrackingAdd => 'Aggiungi profilo tracciato';
+
+  @override
+  String get followerTrackingEdit => 'Modifica profilo tracciato';
+
+  @override
+  String get followerTrackingRemove => 'Rimuovi profilo tracciato';
+
+  @override
+  String get followerTrackingUsername => 'Nome utente Instagram';
+
+  @override
+  String get followerTrackingInvalidUsername =>
+      'Inserisci un nome utente Instagram valido.';
+
+  @override
+  String get followerTrackingSave => 'Salva';
+
+  @override
+  String get followerTrackingUnavailable =>
+      'Impossibile attivare il tracciamento. Controlla che le notifiche siano consentite nelle impostazioni di Android.';
+
+  @override
+  String get followerTrackingError =>
+      'Impossibile aggiornare le impostazioni di tracciamento.';
 
   @override
   String get instagramReminder => 'Promemoria Instagram';

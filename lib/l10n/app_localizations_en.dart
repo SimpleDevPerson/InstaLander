@@ -443,7 +443,44 @@ class AppLocalizationsEn extends AppLocalizations {
       'From the second follower export, adds accounts you already followed that have never appeared in your imported followers. Accounts that unfollow you stay in the Report.';
 
   @override
-  String get reminders => 'Reminders';
+  String get followerTrackingNotifications => 'Notifications';
+
+  @override
+  String get followerTrackingAutomatic => 'Automatic check';
+
+  @override
+  String get followerTrackingDescription =>
+      'Checks the follower count when enabled and once a day after that. You’ll be notified when the count changes. With this setting off, the app doesn’t run in the background to check followers.';
+
+  @override
+  String get followerTrackingChooseProfile =>
+      'Add a profile to turn on tracking.';
+
+  @override
+  String get followerTrackingAdd => 'Add tracked profile';
+
+  @override
+  String get followerTrackingEdit => 'Edit tracked profile';
+
+  @override
+  String get followerTrackingRemove => 'Remove tracked profile';
+
+  @override
+  String get followerTrackingUsername => 'Instagram username';
+
+  @override
+  String get followerTrackingInvalidUsername =>
+      'Enter a valid Instagram username.';
+
+  @override
+  String get followerTrackingSave => 'Save';
+
+  @override
+  String get followerTrackingUnavailable =>
+      'Unable to turn on tracking. Check that notifications are allowed in Android settings.';
+
+  @override
+  String get followerTrackingError => 'Unable to update tracking settings.';
 
   @override
   String get instagramReminder => 'Instagram reminder';

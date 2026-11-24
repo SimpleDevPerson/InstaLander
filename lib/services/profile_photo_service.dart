@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart';
 import 'package:html/parser.dart' as html;
 
 class ProfilePhotoService {
@@ -14,6 +15,9 @@ class ProfilePhotoService {
   static final _username = RegExp(r'^[a-zA-Z0-9_.]{1,30}$');
   static const _downloadLimit = 256 * 1024;
   static const _timeout = Duration(seconds: 6);
+  static const _followerCountChannel = MethodChannel(
+    'com.simpledevperson.instalander/follower_count',
+  );
   static final _followerDescription = RegExp(
     r'^\s*(?:(\d+)(?:[.,](\d+))?\s*([KMB])|'
     r'(\d{1,3}(?:[,\u00A0\u202F ]\d{3})+|\d+))\s+Followers?\b',
@@ -48,6 +52,16 @@ class ProfilePhotoService {
       final cached = _followerCounts[name];
       if (cached != null || isRateLimited) return cached;
       try {
+        if (Platform.isAndroid) {
+          final response = await _followerCountChannel
+              .invokeMapMethod<String, Object?>('load', name);
+          if (response?['throttled'] == true) {
+            _retryAfter = DateTime.now().add(const Duration(minutes: 5));
+          }
+          final count = response?['count'] as int?;
+          if (count != null) _followerCounts[name] = count;
+          return isNeeded() ? count : null;
+        }
         final profile = await _withClient(
           (client) => _fetchProfile(client, name, isNeeded),
         );

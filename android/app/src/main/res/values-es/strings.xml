@@ -11,4 +11,6 @@
     <string name="notification_request_busy">Ya hay una solicitud de permiso de notificaciones en curso</string>
     <string name="invalid_notification_delay">Introduce un tiempo de espera positivo</string>
     <string name="invalid_reminder_interval">Elige 1, 3 o 6 meses</string>
+    <string name="follower_tracking_channel">Seguimiento de seguidores</string>
+    <string name="follower_tracking_change">¡Los seguidores de @%1$s han pasado de %2$s a %3$s! ¡Exporta tus datos para ver quién te siguió o dejó de seguirte!</string>
 </resources>

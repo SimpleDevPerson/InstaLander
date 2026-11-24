@@ -8,6 +8,7 @@ import '../models/user.dart';
 import '../models/username_change.dart';
 import '../services/data_service.dart';
 import '../services/debug_data_service.dart';
+import '../services/follower_tracking_service.dart';
 import '../services/history_service.dart';
 import '../services/profile_launcher.dart';
 import '../services/reminder_service.dart';
@@ -287,6 +288,7 @@ class AppProvider extends ChangeNotifier {
     _setLoading(true);
 
     try {
+      await FollowerTrackingService.clear();
       if (ReminderService.supported) {
         await ReminderService.cancelDebugNotification();
         await ReminderService.setEnabled(false);

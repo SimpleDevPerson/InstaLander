@@ -856,11 +856,77 @@ abstract class AppLocalizations {
   /// **'Dalla seconda esportazione dei follower, aggiunge i profili che seguivi già e che non risultano mai tra i follower importati. Chi smette di seguirti resta nel Report.'**
   String get autoWhitelistDescription;
 
-  /// No description provided for @reminders.
+  /// No description provided for @followerTrackingNotifications.
   ///
   /// In it, this message translates to:
-  /// **'Promemoria'**
-  String get reminders;
+  /// **'Notifiche'**
+  String get followerTrackingNotifications;
+
+  /// No description provided for @followerTrackingAutomatic.
+  ///
+  /// In it, this message translates to:
+  /// **'Controllo automatico'**
+  String get followerTrackingAutomatic;
+
+  /// No description provided for @followerTrackingDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Controlla il numero di follower all’attivazione e poi una volta al giorno. Ti avvisa quando il conteggio cambia. Con il toggle disattivato, l’app non gira in background per controllare i follower.'**
+  String get followerTrackingDescription;
+
+  /// No description provided for @followerTrackingChooseProfile.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiungi un profilo per attivare il tracciamento.'**
+  String get followerTrackingChooseProfile;
+
+  /// No description provided for @followerTrackingAdd.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiungi profilo tracciato'**
+  String get followerTrackingAdd;
+
+  /// No description provided for @followerTrackingEdit.
+  ///
+  /// In it, this message translates to:
+  /// **'Modifica profilo tracciato'**
+  String get followerTrackingEdit;
+
+  /// No description provided for @followerTrackingRemove.
+  ///
+  /// In it, this message translates to:
+  /// **'Rimuovi profilo tracciato'**
+  String get followerTrackingRemove;
+
+  /// No description provided for @followerTrackingUsername.
+  ///
+  /// In it, this message translates to:
+  /// **'Nome utente Instagram'**
+  String get followerTrackingUsername;
+
+  /// No description provided for @followerTrackingInvalidUsername.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci un nome utente Instagram valido.'**
+  String get followerTrackingInvalidUsername;
+
+  /// No description provided for @followerTrackingSave.
+  ///
+  /// In it, this message translates to:
+  /// **'Salva'**
+  String get followerTrackingSave;
+
+  /// No description provided for @followerTrackingUnavailable.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile attivare il tracciamento. Controlla che le notifiche siano consentite nelle impostazioni di Android.'**
+  String get followerTrackingUnavailable;
+
+  /// No description provided for @followerTrackingError.
+  ///
+  /// In it, this message translates to:
+  /// **'Impossibile aggiornare le impostazioni di tracciamento.'**
+  String get followerTrackingError;
 
   /// No description provided for @instagramReminder.
   ///

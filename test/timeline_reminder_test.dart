@@ -228,9 +228,9 @@ void main() {
           matching: find.byType(Switch),
         ),
       );
-      await tester.scrollUntilVisible(find.text('Promemoria'), 250);
+      await tester.scrollUntilVisible(find.text('Notifiche'), 250);
       await tester.pumpAndSettle();
-      expect(find.text('Promemoria'), findsOneWidget);
+      expect(find.text('Notifiche'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('reminder-frequency')),
         250,
@@ -263,6 +263,8 @@ void main() {
         expect(calls.last.arguments, interval);
       }
       expect(calls.where((c) => c.method == 'setEnabled'), isEmpty);
+      await tester.scrollUntilVisible(find.text('Controllo automatico'), 150);
+      expect(find.text('Controllo automatico'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       app.dispose();

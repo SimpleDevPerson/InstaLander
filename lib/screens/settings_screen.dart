@@ -12,6 +12,7 @@ import '../services/ads_service.dart';
 import '../services/reminder_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/debug_notification_dialog.dart';
+import '../widgets/follower_tracking_settings.dart';
 import '../widgets/language_selector.dart';
 import '../widgets/one_ui_brightness_selector.dart';
 import '../widgets/reminder_interval_selector.dart';
@@ -26,6 +27,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   int _versionTapCount = 0;
+  int _trackingSettingsRevision = 0;
   bool _unlockingDebug = false;
   ValueNotifier<String>? _developerNotice;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _developerSnackBar;
@@ -394,7 +396,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: 24),
                       _buildSectionHeader(
                         context,
-                        context.l10n.reminders,
+                        context.l10n.followerTrackingNotifications,
                         Icons.notifications_outlined,
                       ),
                       const SizedBox(height: 8),
@@ -485,6 +487,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         ),
                       ),
+                      FollowerTrackingSettings(
+                        key: ValueKey(_trackingSettingsRevision),
+                        isSamsung: themeProvider.isSamsungTheme,
+                      ),
                       const SizedBox(height: 24),
                       // About Section
                       _buildSectionHeader(
@@ -496,7 +502,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildInfoTile(
                         context,
                         context.l10n.version,
-                        '0.9.1',
+                        '0.9.2',
                         Icons.tag,
                         onTap: _onVersionTap,
                       ),
@@ -903,6 +909,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final themeProvider = context.read<ThemeProvider>();
     try {
       await appProvider.clearAllData();
+      if (mounted) setState(() => _trackingSettingsRevision++);
       await themeProvider.resetToDefaults();
       await AdsService.instance.setAdsEnabled(false);
     } catch (error) {

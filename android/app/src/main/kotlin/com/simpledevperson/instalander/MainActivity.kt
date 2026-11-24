@@ -37,6 +37,44 @@ open class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        FollowerTracking.restore(this)
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
+        MethodChannel(messenger, "com.simpledevperson.instalander/follower_tracking")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "state" -> result.success(FollowerTracking.state(this).toMap())
+                    "setEnabled" -> if (call.arguments == true) {
+                        withNotificationPermission(result) { FollowerTracking.setEnabled(this, true) }
+                    } else {
+                        result.success(FollowerTracking.setEnabled(this, false))
+                    }
+                    "setProfile" -> {
+                        val name = (call.arguments as? String)?.let(InstagramFollowerCount::normalize)
+                        if (name == null && call.arguments != null) {
+                            result.error("invalid_username", null, null)
+                        } else {
+                            result.success(FollowerTracking.setProfile(this, name))
+                        }
+                    }
+                    "clear" -> {
+                        FollowerTracking.setEnabled(this, false)
+                        FollowerTracking.setProfile(this, null)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+        MethodChannel(messenger, "com.simpledevperson.instalander/follower_count",
+            io.flutter.plugin.common.StandardMethodCodec.INSTANCE, messenger.makeBackgroundTaskQueue())
+            .setMethodCallHandler { call, result ->
+                if (call.method == "load") {
+                    val name = (call.arguments as? String)?.let(InstagramFollowerCount::normalize)
+                    val count = name?.let { InstagramFollowerCount.Request().fetch(it) }
+                    result.success(mapOf("count" to count?.count, "throttled" to (count?.throttled == true)))
+                } else {
+                    result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "com.simpledevperson.instalander/locale").setMethodCallHandler { call, result ->
             if (call.method == "setLanguage") {
