@@ -1,5 +1,7 @@
 import 'user.dart';
 
+enum ArchiveImportMode { all, followersOnly, restart }
+
 class ImportedExportFile {
   const ImportedExportFile(
     this.name,
@@ -162,6 +164,8 @@ class UnfollowInterval {
   UnfollowInterval(ImportSnapshot previous, ImportSnapshot current)
     : previousDate = previous.date,
       currentDate = current.date,
+      previousFollowerCount = previous.followers.length,
+      currentFollowerCount = current.followers.length,
       estimatedDate = previous.estimatedDate {
     final changes = <TimelineProfile>[];
     final missing = <InstagramUser>[];
@@ -199,6 +203,11 @@ class UnfollowInterval {
 
   final DateTime previousDate;
   final DateTime currentDate;
+  final int previousFollowerCount;
+  final int currentFollowerCount;
+  int get newFollowerCount =>
+      currentFollowerCount - previousFollowerCount + users.length;
+  int get intermediateFollowerCount => previousFollowerCount + newFollowerCount;
   final bool estimatedDate;
   late final List<InstagramUser> users;
   late final List<TimelineProfile> profiles;

@@ -9,6 +9,40 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
+  String get timelineHelpTitle => 'Cómo leer la Timeline';
+
+  @override
+  String timelineNewFollowers(int count) {
+    return '$count nuevos';
+  }
+
+  @override
+  String timelineLostFollowers(int count) {
+    return '$count perdidos';
+  }
+
+  @override
+  String get archiveImportTitle => '¿Cómo quieres importar el ZIP?';
+
+  @override
+  String get archiveFollowersOnly => 'Solo seguidores';
+
+  @override
+  String get archiveFollowersOnlyDescription =>
+      'Actualiza los seguidores y conserva los seguidos, el historial y la lista blanca.';
+
+  @override
+  String get archiveRestart => 'Empezar de cero';
+
+  @override
+  String get archiveRestartDescription =>
+      'Importa seguidores y seguidos, eliminando el historial y la lista blanca anteriores.';
+
+  @override
+  String get archiveRestartRequiresBoth =>
+      'Para empezar de cero, el ZIP debe contener tanto seguidores como seguidos.';
+
+  @override
   String timelineFileCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -632,7 +666,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get timelineDescription =>
-      'Comparación entre exportaciones. Las tarjetas muestran seguidores ausentes y cambios de nombre confirmados. Si un perfil desaparece también de la lista de seguidos, podría haber sido eliminado.';
+      'La Timeline compara dos exportaciones de seguidores y muestra los cambios del intervalo, sin indicar el momento exacto en que alguien dejó de seguirte.\n\nLa etiqueta verde indica nuevos seguidores y la roja, perfiles que ya no aparecen. Los recuentos suman primero los nuevos y restan después los perdidos. El total intermedio explica el saldo; no es una medición en un momento concreto.\n\nLos cambios de nombre confirmados no cuentan como seguidores nuevos ni perdidos. Un perfil que tampoco aparece en una lista actualizada de seguidos podría haber sido eliminado.\n\nEn “Archivos importados” puedes ver y eliminar importaciones. El Informe y la Timeline se recalculan con los archivos restantes.';
 
   @override
   String get populateProfileChanges => 'Añadir cambios de perfil de prueba';

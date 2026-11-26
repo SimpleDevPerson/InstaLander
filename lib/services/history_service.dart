@@ -229,6 +229,7 @@ class HistoryService {
     Map<String, List<int>> files, {
     required DateTime date,
     bool autoWhitelistOnImport = true,
+    bool restartHistory = false,
     String? path,
     ResolveUsernameChanges? resolveUsernameChanges,
   }) => write(
@@ -236,6 +237,7 @@ class HistoryService {
       files,
       date: date,
       autoWhitelistOnImport: autoWhitelistOnImport,
+      restartHistory: restartHistory,
       path: path,
       resolveUsernameChanges: resolveUsernameChanges,
     ),
@@ -245,6 +247,7 @@ class HistoryService {
     Map<String, List<int>> files, {
     required DateTime date,
     required bool autoWhitelistOnImport,
+    required bool restartHistory,
     String? path,
     ResolveUsernameChanges? resolveUsernameChanges,
   }) async {
@@ -276,9 +279,14 @@ class HistoryService {
     if (!hasFollowers && !hasFollowing) {
       throw FormatException(AppStrings.current.selectValidFiles);
     }
+    if (restartHistory && (!hasFollowers || !hasFollowing)) {
+      throw FormatException(AppStrings.current.archiveRestartRequiresBoth);
+    }
 
-    final history = await load(path: path);
-    if (history.isEmpty && !await state.exists()) {
+    final history = restartHistory
+        ? <ImportSnapshot>[]
+        : await load(path: path);
+    if (!restartHistory && history.isEmpty && !await state.exists()) {
       final legacy = await compute(DataService.loadAppDataFromDirectory, (
         path,
         SortOption.dateDesc,
@@ -358,12 +366,12 @@ class HistoryService {
       files: imported,
     );
     final whitelistFile = File('$path/whitelist.txt');
-    final saved = await state.exists()
+    final saved = !restartHistory && await state.exists()
         ? jsonDecode(await state.readAsString()) as Map<String, dynamic>
         : null;
     final whitelist = saved != null
         ? Set<String>.from(saved['whitelist'] as List)
-        : await whitelistFile.exists()
+        : !restartHistory && await whitelistFile.exists()
         ? (await whitelistFile.readAsLines())
               .where((s) => s.trim().isNotEmpty)
               .map((s) => s.trim())

@@ -9,6 +9,40 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get timelineHelpTitle => 'How to read the Timeline';
+
+  @override
+  String timelineNewFollowers(int count) {
+    return '$count new';
+  }
+
+  @override
+  String timelineLostFollowers(int count) {
+    return '$count lost';
+  }
+
+  @override
+  String get archiveImportTitle => 'How would you like to import the ZIP?';
+
+  @override
+  String get archiveFollowersOnly => 'Followers only';
+
+  @override
+  String get archiveFollowersOnlyDescription =>
+      'Update followers and keep your following list, history and whitelist.';
+
+  @override
+  String get archiveRestart => 'Start over';
+
+  @override
+  String get archiveRestartDescription =>
+      'Import followers and following, deleting your previous history and whitelist.';
+
+  @override
+  String get archiveRestartRequiresBoth =>
+      'To start over, the ZIP must contain both followers and following.';
+
+  @override
   String timelineFileCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -623,7 +657,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timelineDescription =>
-      'Comparison between exports. Cards show missing followers and confirmed username changes. An account that also disappears from following may have been deleted.';
+      'The Timeline compares two follower exports, showing changes over that interval without identifying the exact time of an unfollow.\n\nThe green pill shows new followers; the red pill shows profiles no longer present. Counts add new followers first, then subtract losses. The intermediate total explains the balance; it is not a measurement at a specific time.\n\nConfirmed username changes do not count as new or lost followers. A profile also absent from an updated following list may have been deleted.\n\nIn “Imported files” you can view and remove imports. The Report and Timeline are recalculated using the remaining files.';
 
   @override
   String get populateProfileChanges => 'Populate profile changes';

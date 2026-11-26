@@ -1038,15 +1038,63 @@ class _MainScreenState extends State<MainScreen> {
     AppProvider provider,
     PlatformFile archive,
   ) async {
-    final date = await _pickExportDate();
+    final mode = provider.hasFollowersFile || provider.hasFollowingFile
+        ? await _chooseArchiveImportMode()
+        : ArchiveImportMode.all;
+    if (mode == null || !mounted) return;
+    final creationDate = await DataService.jsonFilesCreationDate([archive]);
+    if (!mounted) return;
+    final date = creationDate ?? await _pickExportDate();
     if (date == null || !mounted) return;
     await provider.loadInstagramArchive(
       archive,
       exportDate: date,
+      mode: mode,
       resolveUsernameChanges: _resolveUsernameChanges,
     );
     await _showExportNoticeAfterImport(provider);
   }
+
+  Future<ArchiveImportMode?> _chooseArchiveImportMode() =>
+      showDialog<ArchiveImportMode>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(context.l10n.archiveImportTitle),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.people_outline),
+                  title: Text(context.l10n.archiveFollowersOnly),
+                  subtitle: Text(context.l10n.archiveFollowersOnlyDescription),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).pop(ArchiveImportMode.followersOnly),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.restart_alt),
+                  title: Text(context.l10n.archiveRestart),
+                  subtitle: Text(context.l10n.archiveRestartDescription),
+                  onTap: () =>
+                      Navigator.of(context).pop(ArchiveImportMode.restart),
+                ),
+              ],
+            ),
+          ),
+          scrollable: true,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(context.l10n.cancel),
+            ),
+          ],
+        ),
+      );
 
   Future<void> _showExportNoticeAfterImport(AppProvider provider) async {
     if (!mounted || provider.errorMessage != null || !provider.hasData) return;

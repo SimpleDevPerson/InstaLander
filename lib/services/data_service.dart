@@ -386,6 +386,7 @@ class DataService {
   static Future<void> saveInstagramArchive(
     PlatformFile archiveFile, {
     DateTime? exportDate,
+    ArchiveImportMode mode = ArchiveImportMode.all,
     bool autoWhitelistOnImport = true,
     ResolveUsernameChanges? resolveUsernameChanges,
   }) async {
@@ -394,9 +395,13 @@ class DataService {
       bytes,
       AppStrings.current.localeName,
     ));
+    if (mode == ArchiveImportMode.followersOnly) {
+      extractedFiles.removeWhere((name, _) => !name.startsWith('followers'));
+    }
     await HistoryService.importFiles(
       extractedFiles,
       date: exportDate ?? DateTime.now(),
+      restartHistory: mode == ArchiveImportMode.restart,
       autoWhitelistOnImport: autoWhitelistOnImport,
       resolveUsernameChanges: resolveUsernameChanges,
     );

@@ -80,16 +80,6 @@ class _TimelineScreenState extends State<TimelineScreen> {
               onChanged: (view) => setState(() => _view = view),
             ),
           ),
-          if (_view == _TimelineView.profiles)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                context.l10n.timelineDescription,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
           const SizedBox(height: 16),
           Expanded(
             child: provider.isLoading
@@ -102,6 +92,47 @@ class _TimelineScreenState extends State<TimelineScreen> {
       ),
     );
   }
+
+  Widget _buildHelpFooter() => Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: IconButton.filledTonal(
+        key: const ValueKey('timeline-help'),
+        tooltip: context.l10n.timelineHelpTitle,
+        icon: const Icon(Icons.question_mark_rounded, size: 14),
+        onPressed: _showTimelineHelp,
+        style: IconButton.styleFrom(
+          padding: const EdgeInsets.all(4),
+          minimumSize: const Size(28, 28),
+          maximumSize: const Size(28, 28),
+        ),
+      ),
+    ),
+  );
+
+  Widget _buildEmptyState(String message, double bottomPadding) => ListView(
+    padding: EdgeInsets.fromLTRB(16, 24, 16, bottomPadding),
+    children: [
+      Text(message, textAlign: TextAlign.center),
+      _buildHelpFooter(),
+    ],
+  );
+
+  Future<void> _showTimelineHelp() => showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(context.l10n.timelineHelpTitle),
+      content: Text(context.l10n.timelineDescription),
+      scrollable: true,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(MaterialLocalizations.of(context).okButtonLabel),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildFiles(AppProvider provider, double bottomPadding) {
     return FutureBuilder<List<ImportFileEntry>>(
@@ -120,7 +151,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
         }
         final files = snapshot.data ?? const <ImportFileEntry>[];
         if (files.isEmpty) {
-          return Center(child: Text(context.l10n.timelineFilesEmpty));
+          return _buildEmptyState(
+            context.l10n.timelineFilesEmpty,
+            bottomPadding,
+          );
         }
         // A following file can be reimported separately for the same export.
         // Keep its original entry for removal, but display it with that day.
@@ -270,12 +304,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
     double bottomPadding,
   ) {
     if (intervals.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(context.l10n.timelineEmpty, textAlign: TextAlign.center),
-        ),
-      );
+      return _buildEmptyState(context.l10n.timelineEmpty, bottomPadding);
     }
 
     final rows = <(UnfollowInterval, TimelineProfile?)>[
@@ -314,6 +343,7 @@ class _TimelineScreenState extends State<TimelineScreen> {
                     strings.exportComparison,
                     if (interval.estimatedDate) strings.estimatedDate,
                   ],
+                  trailing: _FollowerCountChange(interval: interval),
                   minHeight: 104,
                 )
               : _TimelineCard(
@@ -354,8 +384,10 @@ class _TimelineScreenState extends State<TimelineScreen> {
       return ListView.builder(
         key: key,
         padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding),
-        itemCount: length,
-        itemBuilder: (context, index) => rowBuilder(context, index, dateWidth),
+        itemCount: length + 1,
+        itemBuilder: (context, index) => index == length
+            ? _buildHelpFooter()
+            : rowBuilder(context, index, dateWidth),
       );
     },
   );
@@ -379,11 +411,13 @@ class _TimelineHeading extends StatelessWidget {
   const _TimelineHeading({
     required this.title,
     this.subtitle = const [],
+    this.trailing,
     this.minHeight = 56,
   });
 
   final String title;
   final List<String> subtitle;
+  final Widget? trailing;
   final double minHeight;
 
   @override
@@ -411,7 +445,133 @@ class _TimelineHeading extends StatelessWidget {
                 ),
               ),
             ],
+            if (trailing != null) ...[const SizedBox(height: 6), trailing!],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FollowerCountChange extends StatelessWidget {
+  const _FollowerCountChange({required this.interval});
+
+  final UnfollowInterval interval;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DefaultTextStyle(
+      style: theme.textTheme.bodySmall!.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+        height: 1,
+      ),
+      child: Column(
+        key: const ValueKey('timeline-follower-count'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (interval.newFollowerCount > 0) ...[
+            _FollowerCountStep(
+              key: const ValueKey('timeline-follower-gains'),
+              label: context.l10n.timelineNewFollowers(
+                interval.newFollowerCount,
+              ),
+              from: interval.previousFollowerCount,
+              to: interval.intermediateFollowerCount,
+              color: Colors.green.shade800,
+            ),
+            const SizedBox(height: 6),
+          ],
+          _FollowerCountStep(
+            key: const ValueKey('timeline-follower-losses'),
+            label: context.l10n.timelineLostFollowers(interval.users.length),
+            from: interval.intermediateFollowerCount,
+            to: interval.currentFollowerCount,
+            color: Colors.red.shade800,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FollowerCountStep extends StatelessWidget {
+  const _FollowerCountStep({
+    super.key,
+    required this.label,
+    required this.from,
+    required this.to,
+    required this.color,
+  });
+
+  final String label;
+  final int from;
+  final int to;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final pillBackground = Color.alphaBlend(
+      color.withValues(alpha: isDark ? 0.28 : 0.10),
+      theme.colorScheme.surface,
+    );
+    final pillBorder = isDark
+        ? Color.lerp(color, Colors.white, 0.35)!
+        : color.withValues(alpha: 0.55);
+    return DefaultTextStyle.merge(
+      style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+      child: Semantics(
+        label: '$label $from → $to',
+        child: ExcludeSemantics(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: pillBackground,
+                  shape: StadiumBorder(side: BorderSide(color: pillBorder)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text('$from'),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(
+                        Icons.arrow_forward_rounded,
+                        size: MediaQuery.textScalerOf(
+                          context,
+                        ).scale(theme.textTheme.bodySmall!.fontSize!),
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Text('$to'),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

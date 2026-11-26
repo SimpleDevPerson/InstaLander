@@ -1,4 +1,15 @@
 {
+  "timelineHelpTitle": "Come leggere la Timeline",
+  "timelineNewFollowers": "{count} nuovi",
+  "@timelineNewFollowers": {"placeholders": {"count": {"type": "int"}}},
+  "timelineLostFollowers": "{count} persi",
+  "@timelineLostFollowers": {"placeholders": {"count": {"type": "int"}}},
+  "archiveImportTitle": "Come vuoi importare lo ZIP?",
+  "archiveFollowersOnly": "Solo follower",
+  "archiveFollowersOnlyDescription": "Aggiorna i follower e conserva i seguiti, la cronologia e la whitelist.",
+  "archiveRestart": "Ricomincia da zero",
+  "archiveRestartDescription": "Importa follower e seguiti, eliminando la cronologia e la whitelist precedenti.",
+  "archiveRestartRequiresBoth": "Per ricominciare da zero, lo ZIP deve contenere sia i follower sia i seguiti.",
   "timelineFileCount": "{count, plural, =1{1 file caricato} other{{count} file caricati}}",
   "@timelineFileCount": {"placeholders": {"count": {"type": "int"}}},
   "duplicateFollowerTitle": "File follower già importato",
@@ -287,7 +298,7 @@
       }
     }
   },
-  "timelineDescription": "Confronto tra esportazioni. Le schede mostrano follower mancanti e cambi di nome confermati. Se un profilo sparisce anche dai seguiti, potrebbe essere stato cancellato.",
+  "timelineDescription": "La Timeline confronta due esportazioni dei follower: mostra cosa è cambiato nell’intervallo, senza indicare il momento esatto degli unfollow.\n\nLa pillola verde indica i nuovi follower, quella rossa i profili non più presenti. I conteggi aggiungono prima i nuovi e sottraggono poi i persi: il totale intermedio serve a spiegare il saldo, non rappresenta una rilevazione nel tempo.\n\nI cambi di nome confermati non contano come nuovi follower o perdite. Un profilo assente anche dai seguiti aggiornati potrebbe essere stato cancellato.\n\nIn “File importati” puoi vedere e rimuovere le importazioni. Report e Timeline vengono ricalcolati con i file rimasti.",
   "populateProfileChanges": "Popola cambi di profilo",
   "populateProfileChangesDescription": "Aggiungi alla timeline profili rinominati e possibilmente cancellati",
   "timelineRenamed": "Nome cambiato",

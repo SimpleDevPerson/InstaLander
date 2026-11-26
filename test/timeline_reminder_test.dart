@@ -272,6 +272,170 @@ void main() {
     variant: TargetPlatformVariant.only(TargetPlatform.android),
   );
 
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'timeline separates gains before losses with contrast in $brightness',
+      (tester) async {
+        final kept = List.generate(470, (index) => 'kept_$index');
+        final interval = UnfollowInterval(
+          snapshot(1, [...kept, 'lost']),
+          snapshot(2, [...kept, ...List.generate(9, (index) => 'new_$index')]),
+        );
+        expect(interval.newFollowerCount, 9);
+        expect(interval.intermediateFollowerCount, 480);
+        final app = TimelineProvider([interval]);
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<AppProvider>.value(value: app),
+              ChangeNotifierProvider(create: (_) => ThemeProvider()),
+            ],
+            child: MaterialApp(
+              theme: ThemeData(brightness: brightness),
+              home: const Scaffold(body: TimelineScreen()),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        for (final (key, label, from, to) in [
+          ('timeline-follower-gains', '9 nuovi', '471', '480'),
+          ('timeline-follower-losses', '1 persi', '480', '479'),
+        ]) {
+          final step = find.byKey(ValueKey(key));
+          final color = key == 'timeline-follower-gains'
+              ? Colors.green.shade800
+              : Colors.red.shade800;
+          final colors = Theme.of(tester.element(step)).colorScheme;
+          final normalColor = colors.onSurfaceVariant;
+          final pill = tester.widget<DecoratedBox>(
+            find.descendant(of: step, matching: find.byType(DecoratedBox)),
+          );
+          final decoration = pill.decoration as ShapeDecoration;
+          expect(decoration.color, isNot(color));
+          expect(decoration.shape, isA<StadiumBorder>());
+          expect(
+            (decoration.shape as StadiumBorder).side.color,
+            isNot(decoration.color),
+          );
+          expect(
+            tester.widget<Text>(find.text(label)).style?.color,
+            colors.onSurface,
+          );
+          final foregroundLuminance = colors.onSurface.computeLuminance();
+          final backgroundLuminance = decoration.color!.computeLuminance();
+          final lighter = foregroundLuminance > backgroundLuminance
+              ? foregroundLuminance
+              : backgroundLuminance;
+          final darker = foregroundLuminance < backgroundLuminance
+              ? foregroundLuminance
+              : backgroundLuminance;
+          expect((lighter + 0.05) / (darker + 0.05), greaterThanOrEqualTo(4.5));
+          expect(
+            tester
+                .widget<Icon>(
+                  find.descendant(
+                    of: step,
+                    matching: find.byIcon(Icons.arrow_forward_rounded),
+                  ),
+                )
+                .color,
+            normalColor,
+          );
+          for (final text in [label, from, to]) {
+            final item = find.descendant(of: step, matching: find.text(text));
+            expect(item, findsOneWidget);
+            expect(
+              tester.widget<Text>(item).style?.color ??
+                  DefaultTextStyle.of(tester.element(item)).style.color,
+              text == label ? colors.onSurface : normalColor,
+            );
+          }
+          expect(
+            find.descendant(of: step, matching: find.text('(')),
+            findsNothing,
+          );
+          expect(
+            find.descendant(of: step, matching: find.text(')')),
+            findsNothing,
+          );
+        }
+        expect(
+          tester.getRect(find.text('9 nuovi')).bottom,
+          lessThan(tester.getRect(find.text('1 persi')).top),
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+        app.dispose();
+      },
+    );
+  }
+
+  testWidgets(
+    'timeline description opens from help after the last item in both views',
+    (tester) async {
+      final app = TimelineProvider(
+        [
+          UnfollowInterval(
+            snapshot(1, ['kept', 'lost']),
+            snapshot(2, ['kept']),
+          ),
+        ],
+        files: [
+          (
+            snapshotIndex: 0,
+            fileIndex: 0,
+            date: DateTime(2026, 1, 1),
+            name: 'followers_1.json',
+            fingerprint: 'help-test',
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AppProvider>.value(value: app),
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ],
+          child: const MaterialApp(home: Scaffold(body: TimelineScreen())),
+        ),
+      );
+      await tester.pumpAndSettle();
+      for (final filesView in [false, true]) {
+        if (filesView) {
+          await tester.tap(find.text('File importati'));
+          await tester.pumpAndSettle();
+        }
+        final description = find.textContaining(
+          'La Timeline confronta due esportazioni',
+        );
+        expect(description, findsNothing);
+        final help = find.byKey(const ValueKey('timeline-help'));
+        final bounds = tester.getRect(find.byType(TimelineScreen));
+        expect(tester.getCenter(help).dx, lessThan(bounds.center.dx));
+        final lastItem = find.text(filesView ? 'followers_1.json' : '@lost');
+        expect(
+          tester.getRect(help).top,
+          greaterThan(tester.getRect(lastItem).bottom),
+        );
+        expect(
+          find.ancestor(of: help, matching: find.byType(Scrollable)),
+          findsOneWidget,
+        );
+        await tester.tap(help);
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.text('Come leggere la Timeline'), findsOneWidget);
+        expect(description, findsOneWidget);
+        await tester.tap(find.text('OK'));
+        await tester.pumpAndSettle();
+        expect(description, findsNothing);
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      app.dispose();
+    },
+  );
+
   testWidgets('timeline shows dated losses even for whitelisted profiles', (
     tester,
   ) async {
@@ -295,6 +459,30 @@ void main() {
     expect(title.style?.fontWeight, FontWeight.w700);
     expect(find.byIcon(Icons.timeline), findsOneWidget);
     expect(find.text('@lost'), findsOneWidget);
+    final counter = find.byKey(const ValueKey('timeline-follower-count'));
+    expect(counter, findsOneWidget);
+    expect(find.text('0 nuovi'), findsNothing);
+    expect(find.byKey(const ValueKey('timeline-follower-gains')), findsNothing);
+    expect(find.text('1 persi'), findsOneWidget);
+    final losses = find.byKey(const ValueKey('timeline-follower-losses'));
+    final arrow = find.descendant(
+      of: losses,
+      matching: find.byIcon(Icons.arrow_forward_rounded),
+    );
+    for (final count in ['2', '1']) {
+      final number = find.descendant(of: losses, matching: find.text(count));
+      expect(tester.getCenter(arrow).dy, tester.getCenter(number).dy);
+    }
+    expect(
+      tester.getRect(counter).top,
+      greaterThan(
+        tester.getRect(find.text('Confronto tra esportazioni')).bottom,
+      ),
+    );
+    expect(
+      tester.getRect(counter).bottom,
+      lessThan(tester.getRect(find.text('@lost')).top),
+    );
     expect(find.text('@kept'), findsNothing);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -335,7 +523,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       // Compare the axis after bringing profile rows into the viewport.
-      await tester.drag(find.byType(ListView), const Offset(0, -200));
+      await tester.scrollUntilVisible(find.text('@long_profile_name_0'), 150);
       await tester.pumpAndSettle();
       final nodes = find.byKey(const ValueKey('timeline-node'));
       expect(nodes, findsAtLeastNWidgets(2));

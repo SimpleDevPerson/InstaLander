@@ -9,6 +9,40 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
+  String get timelineHelpTitle => 'Come leggere la Timeline';
+
+  @override
+  String timelineNewFollowers(int count) {
+    return '$count nuovi';
+  }
+
+  @override
+  String timelineLostFollowers(int count) {
+    return '$count persi';
+  }
+
+  @override
+  String get archiveImportTitle => 'Come vuoi importare lo ZIP?';
+
+  @override
+  String get archiveFollowersOnly => 'Solo follower';
+
+  @override
+  String get archiveFollowersOnlyDescription =>
+      'Aggiorna i follower e conserva i seguiti, la cronologia e la whitelist.';
+
+  @override
+  String get archiveRestart => 'Ricomincia da zero';
+
+  @override
+  String get archiveRestartDescription =>
+      'Importa follower e seguiti, eliminando la cronologia e la whitelist precedenti.';
+
+  @override
+  String get archiveRestartRequiresBoth =>
+      'Per ricominciare da zero, lo ZIP deve contenere sia i follower sia i seguiti.';
+
+  @override
   String timelineFileCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -628,7 +662,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get timelineDescription =>
-      'Confronto tra esportazioni. Le schede mostrano follower mancanti e cambi di nome confermati. Se un profilo sparisce anche dai seguiti, potrebbe essere stato cancellato.';
+      'La Timeline confronta due esportazioni dei follower: mostra cosa è cambiato nell’intervallo, senza indicare il momento esatto degli unfollow.\n\nLa pillola verde indica i nuovi follower, quella rossa i profili non più presenti. I conteggi aggiungono prima i nuovi e sottraggono poi i persi: il totale intermedio serve a spiegare il saldo, non rappresenta una rilevazione nel tempo.\n\nI cambi di nome confermati non contano come nuovi follower o perdite. Un profilo assente anche dai seguiti aggiornati potrebbe essere stato cancellato.\n\nIn “File importati” puoi vedere e rimuovere le importazioni. Report e Timeline vengono ricalcolati con i file rimasti.';
 
   @override
   String get populateProfileChanges => 'Popola cambi di profilo';

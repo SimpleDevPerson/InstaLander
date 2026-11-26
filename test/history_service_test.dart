@@ -234,6 +234,8 @@ void main() {
       expect(data.following.keys, ['never', 'new']);
       expect(data.whitelist, {'never'});
       expect((await loadTimeline()).single.users, isEmpty);
+      expect((await loadTimeline()).single.newFollowerCount, 0);
+      expect((await loadTimeline()).single.intermediateFollowerCount, 2);
       final rename = (await loadTimeline()).single.profiles.single;
       expect(rename.kind, TimelineProfileKind.renamed);
       expect(rename.previousUsername, 'old');

@@ -100,6 +100,60 @@ abstract class AppLocalizations {
     Locale('it'),
   ];
 
+  /// No description provided for @timelineHelpTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Come leggere la Timeline'**
+  String get timelineHelpTitle;
+
+  /// No description provided for @timelineNewFollowers.
+  ///
+  /// In it, this message translates to:
+  /// **'{count} nuovi'**
+  String timelineNewFollowers(int count);
+
+  /// No description provided for @timelineLostFollowers.
+  ///
+  /// In it, this message translates to:
+  /// **'{count} persi'**
+  String timelineLostFollowers(int count);
+
+  /// No description provided for @archiveImportTitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Come vuoi importare lo ZIP?'**
+  String get archiveImportTitle;
+
+  /// No description provided for @archiveFollowersOnly.
+  ///
+  /// In it, this message translates to:
+  /// **'Solo follower'**
+  String get archiveFollowersOnly;
+
+  /// No description provided for @archiveFollowersOnlyDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiorna i follower e conserva i seguiti, la cronologia e la whitelist.'**
+  String get archiveFollowersOnlyDescription;
+
+  /// No description provided for @archiveRestart.
+  ///
+  /// In it, this message translates to:
+  /// **'Ricomincia da zero'**
+  String get archiveRestart;
+
+  /// No description provided for @archiveRestartDescription.
+  ///
+  /// In it, this message translates to:
+  /// **'Importa follower e seguiti, eliminando la cronologia e la whitelist precedenti.'**
+  String get archiveRestartDescription;
+
+  /// No description provided for @archiveRestartRequiresBoth.
+  ///
+  /// In it, this message translates to:
+  /// **'Per ricominciare da zero, lo ZIP deve contenere sia i follower sia i seguiti.'**
+  String get archiveRestartRequiresBoth;
+
   /// No description provided for @timelineFileCount.
   ///
   /// In it, this message translates to:
@@ -1165,7 +1219,7 @@ abstract class AppLocalizations {
   /// No description provided for @timelineDescription.
   ///
   /// In it, this message translates to:
-  /// **'Confronto tra esportazioni. Le schede mostrano follower mancanti e cambi di nome confermati. Se un profilo sparisce anche dai seguiti, potrebbe essere stato cancellato.'**
+  /// **'La Timeline confronta due esportazioni dei follower: mostra cosa è cambiato nell’intervallo, senza indicare il momento esatto degli unfollow.\n\nLa pillola verde indica i nuovi follower, quella rossa i profili non più presenti. I conteggi aggiungono prima i nuovi e sottraggono poi i persi: il totale intermedio serve a spiegare il saldo, non rappresenta una rilevazione nel tempo.\n\nI cambi di nome confermati non contano come nuovi follower o perdite. Un profilo assente anche dai seguiti aggiornati potrebbe essere stato cancellato.\n\nIn “File importati” puoi vedere e rimuovere le importazioni. Report e Timeline vengono ricalcolati con i file rimasti.'**
   String get timelineDescription;
 
   /// No description provided for @populateProfileChanges.

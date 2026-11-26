@@ -360,6 +360,7 @@ class AppProvider extends ChangeNotifier {
   Future<void> loadInstagramArchive(
     PlatformFile archiveFile, {
     DateTime? exportDate,
+    ArchiveImportMode mode = ArchiveImportMode.all,
     ResolveUsernameChanges? resolveUsernameChanges,
   }) async {
     _setLoading(true);
@@ -369,6 +370,7 @@ class AppProvider extends ChangeNotifier {
       await DataService.saveInstagramArchive(
         archiveFile,
         exportDate: exportDate,
+        mode: mode,
         autoWhitelistOnImport: _autoWhitelistOnImport,
         resolveUsernameChanges: resolveUsernameChanges,
       );
